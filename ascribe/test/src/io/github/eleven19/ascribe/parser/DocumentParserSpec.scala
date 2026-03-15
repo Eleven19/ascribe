@@ -17,7 +17,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                         assertTrue(
                             doc == Document(List(Block.Heading(1, List(Inline.Text("Title")))))
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a level-3 heading") {
                 parse("=== Section\n") match
@@ -25,7 +25,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                         assertTrue(
                             doc == Document(List(Block.Heading(3, List(Inline.Text("Section")))))
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a heading with inline bold") {
                 parse("== **Bold** Title\n") match
@@ -43,7 +43,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
         suite("paragraphs")(
@@ -53,7 +53,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                         assertTrue(
                             doc == Document(List(Block.Paragraph(List(Inline.Text("Hello world.")))))
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a paragraph with inline markup") {
                 parse("Use **parsley** to parse.\n") match
@@ -71,7 +71,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
         suite("unordered lists")(
@@ -87,7 +87,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a multi-item unordered list") {
                 parse("* alpha\n* beta\n* gamma\n") match
@@ -105,7 +105,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
         suite("ordered lists")(
@@ -124,7 +124,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
         suite("multi-block documents")(
@@ -139,7 +139,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses heading, paragraph and list") {
                 val input = "= Guide\n\nRead the steps:\n\n* step one\n* step two\n"
@@ -159,7 +159,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                                 )
                             )
                         )
-                    case Failure(_) => assertTrue(false)
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         )
     )

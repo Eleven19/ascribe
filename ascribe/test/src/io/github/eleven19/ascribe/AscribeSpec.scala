@@ -15,7 +15,7 @@ object AscribeSpec extends ZIOSpecDefault:
                             List(Block.Heading(1, List(Inline.Text("Hello World"))))
                         )
                     )
-                case Failure(_) => assertTrue(false)
+                case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
         },
         test("parses a paragraph") {
             Ascribe.parse("Hello world.\n") match
@@ -23,11 +23,11 @@ object AscribeSpec extends ZIOSpecDefault:
                     assertTrue(
                         doc == Document(List(Block.Paragraph(List(Inline.Text("Hello world.")))))
                     )
-                case Failure(_) => assertTrue(false)
+                case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
         },
         test("empty input produces an empty document") {
             Ascribe.parse("") match
                 case Success(doc) => assertTrue(doc == Document(List()))
-                case Failure(_)   => assertTrue(false)
+                case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
         }
     )

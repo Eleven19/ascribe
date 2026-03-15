@@ -62,7 +62,7 @@ Feature: AsciiDoc document parsing
     Given an AsciiDoc source of "* only item"
     When the source is parsed
     Then the document contains 1 block
-    And block 1 is an unordered list with 1 items
+    And block 1 is an unordered list with 1 item
     And unordered list item 1 contains the text "only item"
 
   Scenario: Multi-item unordered list
@@ -80,7 +80,7 @@ Feature: AsciiDoc document parsing
     Given an AsciiDoc source of ". first step"
     When the source is parsed
     Then the document contains 1 block
-    And block 1 is an ordered list with 1 items
+    And block 1 is an ordered list with 1 item
 
   # ---------------------------------------------------------------------------
   # Multi-block documents
