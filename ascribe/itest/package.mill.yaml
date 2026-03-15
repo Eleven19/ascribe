@@ -1,4 +1,4 @@
-extends: [TestModule.Junit5]
+extends: [ascribe.ScalaTests, TestModule.Junit5]
 mvnDeps:
   - org.scalameta::munit::1.0.4
   - io.cucumber::cucumber-scala::8.25.1
