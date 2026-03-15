@@ -1,0 +1,17 @@
+extends: [ScalaModule, scalafmt.ScalafmtModule]
+
+#------------------------------------
+# Scala settings
+#------------------------------------
+scalaVersion: "3.8.2"
+scalacOptions:
+  - "-Wvalue-discard"
+  - "-Wnonunit-statement"
+  - "-Wconf:msg=(unused.*value|discarded.*value|pure.*statement):error"
+  - "-language:strictEquality"
+
+#------------------------------------
+# Maven dependencies
+#------------------------------------
+mvnDeps:
+  - com.github.j-mie6::parsley::4.6.2
