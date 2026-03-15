@@ -1,0 +1,11 @@
+# Release Process
+
+For release workflow, release docs, or release-note generation changes, follow
+the shared repo skill:
+
+- `.github/skills/release-process/SKILL.md`
+
+References:
+
+- `docs/contributing/releasing.md`
+- `scripts/ci/build-release-notes.sh`

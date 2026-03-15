@@ -1,0 +1,10 @@
+# Changelog Maintenance
+
+For tasks that change release-worthy behavior, update `CHANGELOG.md` using the
+shared repo skill:
+
+- `.github/skills/changelog-maintenance/SKILL.md`
+
+Reference:
+
+- `docs/contributing/changelog.md`
