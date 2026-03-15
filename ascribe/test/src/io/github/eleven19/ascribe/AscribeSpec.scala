@@ -3,7 +3,7 @@ package io.github.eleven19.ascribe
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.github.eleven19.ascribe.ast.{Block, Document, Inline, ListItem}
+import io.github.eleven19.ascribe.ast.{Block, Document, Inline}
 
 object AscribeSpec extends ZIOSpecDefault:
     def spec = suite("Ascribe public API")(
