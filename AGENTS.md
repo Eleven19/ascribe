@@ -1,5 +1,8 @@
 # Agent Instructions
 
+**ASCIIDOC SPECIFICATION**: As we are implementing things we should consult [https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang) for the authoritative spec of ASCIIDOC.
+We should also note the TCK is here: [https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck).
+
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
 ## Quick Reference
