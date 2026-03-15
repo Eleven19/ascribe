@@ -11,9 +11,8 @@ import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
 
 /** Parsers for inline AsciiDoc elements.
   *
-  * Inline content sits inside headings, paragraphs, and list items. This module handles
-  * unconstrained markup spans (double-delimiter pairs) and falls back to plain text for
-  * everything else.
+  * Inline content sits inside headings, paragraphs, and list items. This module handles unconstrained markup spans
+  * (double-delimiter pairs) and falls back to plain text for everything else.
   *
   * ==Supported markup==
   *   - `**bold**` – [[Inline.Bold]]
@@ -22,8 +21,8 @@ import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
   *   - everything else – [[Inline.Text]]
   *
   * ==Error handling==
-  * Every parser carries a `.label` for "expected" messages and, where helpful, an `.explain`
-  * that describes the correct syntax to the user.
+  * Every parser carries a `.label` for "expected" messages and, where helpful, an `.explain` that describes the correct
+  * syntax to the user.
   */
 object InlineParser:
 
@@ -33,10 +32,9 @@ object InlineParser:
 
     /** Parses a delimited inline span.
       *
-      * Consumes the `open` delimiter, then all [[nonEolChar]] characters until the `close`
-      * delimiter is consumed, returning the collected characters as a `String`. The entire
-      * parser is wrapped in [[atomic]] so that a missing closing delimiter causes clean
-      * backtracking to before the opening delimiter.
+      * Consumes the `open` delimiter, then all [[nonEolChar]] characters until the `close` delimiter is consumed,
+      * returning the collected characters as a `String`. The entire parser is wrapped in [[atomic]] so that a missing
+      * closing delimiter causes clean backtracking to before the opening delimiter.
       *
       * @param open
       *   opening delimiter string (e.g. `"**"`)
@@ -52,8 +50,8 @@ object InlineParser:
 
     /** Parses an unconstrained **bold** span: `**content**`.
       *
-      * Uses [[atomic]] to guarantee that a lone `*` or an unclosed `**` does not consume
-      * input and instead falls through to [[unpairedMarkupInline]].
+      * Uses [[atomic]] to guarantee that a lone `*` or an unclosed `**` does not consume input and instead falls
+      * through to [[unpairedMarkupInline]].
       */
     val boldSpan: Parsley[Inline] =
         delimitedContent("**", "**")
@@ -77,8 +75,8 @@ object InlineParser:
 
     /** Parses one or more unadorned prose characters as a [[Inline.Text]] node.
       *
-      * Stops at any inline markup delimiter (`*`, `_`, `` ` ``) or newline so that
-      * [[boldSpan]], [[italicSpan]], and [[monoSpan]] get first priority.
+      * Stops at any inline markup delimiter (`*`, `_`, `` ` ``) or newline so that [[boldSpan]], [[italicSpan]], and
+      * [[monoSpan]] get first priority.
       */
     val plainTextInline: Parsley[Inline] =
         plainText
@@ -87,8 +85,8 @@ object InlineParser:
 
     /** Fallback for a single markup character that did not open a valid span.
       *
-      * For example, a lone `*` in prose (not followed by another `*` to form `**`) is
-      * consumed here as a [[Inline.Text]] of length 1.
+      * For example, a lone `*` in prose (not followed by another `*` to form `**`) is consumed here as a
+      * [[Inline.Text]] of length 1.
       */
     val unpairedMarkupInline: Parsley[Inline] =
         unpairedMarkupChar

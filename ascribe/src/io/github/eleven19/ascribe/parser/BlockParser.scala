@@ -12,9 +12,9 @@ import io.github.eleven19.ascribe.parser.InlineParser.*
 
 /** Parsers for block-level AsciiDoc elements.
   *
-  * Each parser recognises exactly one kind of block and is meant to be composed by
-  * [[DocumentParser]]. Parsers that start with a distinctive prefix (heading markers, list
-  * markers) are wrapped in [[atomic]] so that failures produce clean backtracking.
+  * Each parser recognises exactly one kind of block and is meant to be composed by [[DocumentParser]]. Parsers that
+  * start with a distinctive prefix (heading markers, list markers) are wrapped in [[atomic]] so that failures produce
+  * clean backtracking.
   *
   * ==Supported blocks==
   *   - `= Title` through `===== Title` – [[heading]]
@@ -41,8 +41,8 @@ object BlockParser:
 
     /** Parses a section heading.
       *
-      * Syntax: one to five `=` characters, a single space, then the title on the rest of the
-      * line.  Level is determined by the number of `=` signs.
+      * Syntax: one to five `=` characters, a single space, then the title on the rest of the line. Level is determined
+      * by the number of `=` signs.
       *
       * {{{
       * = Document title
@@ -119,8 +119,8 @@ object BlockParser:
 
     /** Parses one or more consecutive paragraph lines, joining their inline content.
       *
-      * Consecutive lines within the same paragraph are concatenated with an implicit
-      * [[Inline.Text]] space between them, mirroring AsciiDoc's line-continuation semantics.
+      * Consecutive lines within the same paragraph are concatenated with an implicit [[Inline.Text]] space between
+      * them, mirroring AsciiDoc's line-continuation semantics.
       */
     val paragraph: Parsley[Block] =
         some(paragraphLine)

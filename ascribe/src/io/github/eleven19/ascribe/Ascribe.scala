@@ -20,9 +20,7 @@ object Ascribe:
       * @param source
       *   the raw AsciiDoc text (UTF-8 string)
       * @return
-      *   [[parsley.Success]] wrapping the [[Document]], or [[parsley.Failure]] with a
-      *   human-readable error message
+      *   [[parsley.Success]] wrapping the [[Document]], or [[parsley.Failure]] with a human-readable error message
       */
     def parse(source: String): Result[String, Document] =
         DocumentParser.document.parse(source)
-

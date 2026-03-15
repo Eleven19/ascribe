@@ -6,6 +6,7 @@ import zio.test.*
 import io.github.eleven19.ascribe.ast.{Block, Document, Inline}
 
 object AscribeSpec extends ZIOSpecDefault:
+
     def spec = suite("Ascribe public API")(
         test("parses a simple heading document") {
             Ascribe.parse("= Hello World\n") match

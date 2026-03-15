@@ -10,8 +10,8 @@ import io.github.eleven19.ascribe.parser.BlockParser.*
 
 /** Top-level parser for a complete AsciiDoc document.
   *
-  * A document is a sequence of [[Block]] elements separated (and optionally terminated) by
-  * blank lines.  Leading blank lines are tolerated and silently discarded.
+  * A document is a sequence of [[Block]] elements separated (and optionally terminated) by blank lines. Leading blank
+  * lines are tolerated and silently discarded.
   *
   * {{{
   * val result = DocumentParser.document.parse(source)
@@ -37,8 +37,8 @@ object DocumentParser:
 
     /** Parses a complete AsciiDoc document from start to end of input.
       *
-      * Blocks are separated by [[blankLines]]; any leading blank lines before the first block
-      * are discarded.  Parsing fails if any input remains after the final block.
+      * Blocks are separated by [[blankLines]]; any leading blank lines before the first block are discarded. Parsing
+      * fails if any input remains after the final block.
       */
     val document: Parsley[Document] =
         (option(blankLines) *> sepEndBy(block, blankLines) <* eof)

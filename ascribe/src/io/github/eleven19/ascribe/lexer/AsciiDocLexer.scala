@@ -11,9 +11,9 @@ import parsley.token.predicate
 
 /** Provides tokenisation primitives for AsciiDoc content.
   *
-  * Parsley's [[Lexer]] is used to configure word recognition (via [[LexicalDesc]]) and to ensure
-  * that keyword/operator boundaries are respected. Raw character-level parsers handle the
-  * newline-sensitive, line-oriented aspects of the format.
+  * Parsley's [[Lexer]] is used to configure word recognition (via [[LexicalDesc]]) and to ensure that keyword/operator
+  * boundaries are respected. Raw character-level parsers handle the newline-sensitive, line-oriented aspects of the
+  * format.
   */
 object AsciiDocLexer:
 
@@ -23,17 +23,15 @@ object AsciiDocLexer:
 
     /** Lexical description for AsciiDoc "word" tokens.
       *
-      * Identifiers (words) start with a letter or digit and may contain letters, digits, hyphens,
-      * apostrophes, dots, colons, or slashes – common in prose, URLs, and attribute values.
-      * Whitespace is limited to horizontal characters only; newlines are structurally significant
-      * in AsciiDoc and must **not** be skipped by the lexer.
+      * Identifiers (words) start with a letter or digit and may contain letters, digits, hyphens, apostrophes, dots,
+      * colons, or slashes – common in prose, URLs, and attribute values. Whitespace is limited to horizontal characters
+      * only; newlines are structurally significant in AsciiDoc and must **not** be skipped by the lexer.
       */
     private val desc: LexicalDesc = LexicalDesc.plain.copy(
         nameDesc = NameDesc.plain.copy(
             identifierStart = predicate.Basic(c => c.isLetter || c.isDigit),
-            identifierLetter = predicate.Basic(c =>
-                c.isLetterOrDigit || c == '-' || c == '\'' || c == '.' || c == ':' || c == '/'
-            )
+            identifierLetter =
+                predicate.Basic(c => c.isLetterOrDigit || c == '-' || c == '\'' || c == '.' || c == ':' || c == '/')
         ),
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set.empty,
@@ -74,8 +72,7 @@ object AsciiDocLexer:
 
     /** Returns `true` for characters that may appear as unadorned prose text.
       *
-      * Excluded: control characters, newlines, and the four inline markup delimiters
-      * (`*`, `_`, `` ` ``, `\`).
+      * Excluded: control characters, newlines, and the four inline markup delimiters (`*`, `_`, `` ` ``, `\`).
       */
     def isContentChar(c: Char): Boolean =
         !c.isControl && c != '\n' && c != '\r' &&
@@ -90,8 +87,8 @@ object AsciiDocLexer:
     /** Parses any character that is not a newline (used inside delimited spans). */
     val nonEolChar: Parsley[Char] = satisfy(c => c != '\n' && c != '\r')
 
-    /** Parses a single inline-markup character (`*`, `_`, or `` ` ``) that is not a newline.
-      * Used as a fallback when a delimiter sequence does not open a valid span.
+    /** Parses a single inline-markup character (`*`, `_`, or `` ` ``) that is not a newline. Used as a fallback when a
+      * delimiter sequence does not open a valid span.
       */
     val unpairedMarkupChar: Parsley[Char] =
         satisfy(c => (c == '*' || c == '_' || c == '`') && c != '\n')
