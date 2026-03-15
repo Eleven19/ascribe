@@ -1,4 +1,4 @@
-extends: [scalafmt.ScalafmtModule]
+extends: [ScalaModule, scalafmt.ScalafmtModule]
 
 #------------------------------------
 # Scala settings

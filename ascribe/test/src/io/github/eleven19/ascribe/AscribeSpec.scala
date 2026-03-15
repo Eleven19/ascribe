@@ -1,11 +1,33 @@
 package io.github.eleven19.ascribe
 
+import parsley.{Failure, Success}
 import zio.test.*
-import parsley.Success
+
+import io.github.eleven19.ascribe.ast.{Block, Document, Inline, ListItem}
 
 object AscribeSpec extends ZIOSpecDefault:
-    def spec = suite("Ascribe")(
-        test("hello parses 'ascribe'") {
-            assertTrue(Ascribe.hello.parse("ascribe") == Success("ascribe"))
+    def spec = suite("Ascribe public API")(
+        test("parses a simple heading document") {
+            Ascribe.parse("= Hello World\n") match
+                case Success(doc) =>
+                    assertTrue(
+                        doc == Document(
+                            List(Block.Heading(1, List(Inline.Text("Hello World"))))
+                        )
+                    )
+                case Failure(_) => assertTrue(false)
+        },
+        test("parses a paragraph") {
+            Ascribe.parse("Hello world.\n") match
+                case Success(doc) =>
+                    assertTrue(
+                        doc == Document(List(Block.Paragraph(List(Inline.Text("Hello world.")))))
+                    )
+                case Failure(_) => assertTrue(false)
+        },
+        test("empty input produces an empty document") {
+            Ascribe.parse("") match
+                case Success(doc) => assertTrue(doc == Document(List()))
+                case Failure(_)   => assertTrue(false)
         }
     )
