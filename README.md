@@ -1,32 +1,16 @@
-# mill-interceptor
+<div align="center">
+  <img src="docs/assets/logo.png" alt="Ascribe Logo" width="200" />
+</div>
 
-A tool for intercepting other build tools using mill.
-The idea is to use mill to "impersonate" other build tools.
+# ascribe
 
-## What does it do?
+[![CI](https://github.com/Eleven19/ascribe/actions/workflows/ci.yml/badge.svg)](https://github.com/Eleven19/ascribe/actions/workflows/ci.yml)
+[![Release](https://github.com/Eleven19/ascribe/actions/workflows/release.yml/badge.svg)](https://github.com/Eleven19/ascribe/actions/workflows/release.yml)
 
-This tool serves as a replacement* for:
+Ascribe is an asciidoc library and toolchain. We provide parsers, ASTs, and traversal tools for processing asciidocs.
 
-- mvn
-- gradle
-- sbt 
-
-## Usage
-
-Invoke the interceptor through the explicit parent command:
-
-- `mill-interceptor intercept mvn test`
-- `mill-interceptor intercept maven clean install`
-- `mill-interceptor intercept sbt compile`
-- `mill-interceptor intercept gradle build`
-
-`mvn` is accepted as an alias for `maven`.
-
-## Should I use this?
-
-Sure, if you find it useful.
-I had a very particular use-case involving integration with certain build pipelines that were
-setup to work with common tools like maven, gradle, and sbt, but with no native support for mill.
+As we are implementing things we should consult the [Asciidoc Language Specification](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang) for the authoritative spec of ASCIIDOC.
+The Asciidoc TCK (Technology Compatibility Kit) can also be found at [https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck).
 
 ## Native releases
 
