@@ -17,7 +17,9 @@ object `package` extends build.ascribe.`tck-runner`.ScalaTests with TestModule.J
   )
 
   override def customTckFeatures: T[Seq[PathRef]] = Task {
-    val featuresDir = moduleDir / "resources" / "features"
-    if (os.exists(featuresDir)) Seq(PathRef(featuresDir)) else Seq.empty
+    mill.api.BuildCtx.withFilesystemCheckerDisabled {
+      val featuresDir = moduleDir / "resources" / "features"
+      if (os.exists(featuresDir)) Seq(PathRef(featuresDir)) else Seq.empty
+    }
   }
 }
