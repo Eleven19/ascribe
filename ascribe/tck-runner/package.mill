@@ -1,0 +1,19 @@
+package build.ascribe.`tck-runner`
+
+import mill.*
+import mill.scalalib.*
+
+object `package` extends ScalaModule with scalafmt.ScalafmtModule with _root_.build.TckSubmoduleSupport {
+
+  def scalaVersion = "3.8.2"
+
+  def moduleDeps = Seq(build.ascribe)
+
+  def tckRefresh() = Task.Command {
+    val syncResult = tckSync()()
+    Task.log.info(s"TCK submodule synced: ${syncResult.path}")
+    val genResult = _root_.build_.ascribe.`tck-runner`.test.package_.generateTckFeatures()
+    Task.log.info(s"TCK features generated: ${genResult.path}")
+    genResult
+  }
+}
