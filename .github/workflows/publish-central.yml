@@ -34,10 +34,10 @@ jobs:
     needs: metadata
     runs-on: ubuntu-latest
     env:
-      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-      SONATYPE_GPG_PRIVATE_KEY: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
-      SONATYPE_GPG_PASSPHRASE: ${{ secrets.SONATYPE_GPG_PASSPHRASE }}
+      SONATYPE_USERNAME: ${{ secrets.ELEVEN19_SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.ELEVEN19_SONATYPE_PASSWORD }}
+      PGP_SECRET: ${{ secrets.ELEVEN19_IO_PGP_SECRET_BASE64 }}
+      PGP_PASSPHRASE: ${{ secrets.ELEVEN19_IO_PGP_PASSPHRASE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,10 +47,9 @@ jobs:
           java-version: "21"
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ env.SONATYPE_GPG_PRIVATE_KEY }}
-          passphrase: ${{ env.SONATYPE_GPG_PASSPHRASE }}
+        if: env.PGP_SECRET != ''
+        shell: bash
+        run: echo "$PGP_SECRET" | base64 --decode | gpg --batch --import
 
       - name: Publish to Maven Central
         shell: bash

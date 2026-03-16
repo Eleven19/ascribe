@@ -5,7 +5,7 @@ version="${1:?version is required}"
 
 sonatype_username="${SONATYPE_USERNAME:?SONATYPE_USERNAME is required}"
 sonatype_password="${SONATYPE_PASSWORD:?SONATYPE_PASSWORD is required}"
-gpg_passphrase="${SONATYPE_GPG_PASSPHRASE:?SONATYPE_GPG_PASSPHRASE is required}"
+gpg_passphrase="${PGP_PASSPHRASE:?PGP_PASSPHRASE is required}"
 
 export ASCRIBE_PUBLISH_VERSION="$version"
 
