@@ -3,9 +3,8 @@ package io.eleven19.ascribe.asg
 import zio.blocks.chunk.Chunk
 import zio.blocks.schema.Schema
 
-/** Document header with optional title and authors.
-  * Not a Node — embedded within Document.
-  * All fields are optional per the ASG schema.
+/** Document header with optional title and authors. Not a Node — embedded within Document. All fields are optional per
+  * the ASG schema.
   */
 case class Header(
     title: Option[Chunk[Inline]] = None,

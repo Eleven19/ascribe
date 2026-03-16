@@ -1,0 +1,13 @@
+package build.ascribe.asg
+
+import mill.*
+import mill.scalalib.*
+
+object `package` extends ScalaModule with scalafmt.ScalafmtModule {
+
+  def scalaVersion = "3.8.2"
+
+  def mvnDeps = Seq(
+    mvn"dev.zio::zio-blocks-schema::0.0.29"
+  )
+}

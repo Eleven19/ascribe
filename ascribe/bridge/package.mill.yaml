@@ -1,7 +1,0 @@
-extends: [ScalaModule, scalafmt.ScalafmtModule]
-
-scalaVersion: "3.8.2"
-
-moduleDeps:
-  - ascribe
-  - ascribe.asg
