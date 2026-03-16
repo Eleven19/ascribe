@@ -34,7 +34,7 @@ import zio.Chunk
 
 type Location = Chunk[Position]
 
-case class Position(line: Int, col: Int)
+case class Position(line: Int, col: Int, file: Option[Chunk[String]] = None)
 
 sealed abstract class Node(val name: String, val nodeType: String):
   def location: Location
@@ -42,14 +42,16 @@ sealed abstract class Node(val name: String, val nodeType: String):
 sealed abstract class Block(name: String) extends Node(name, "block"):
   def id: Option[String]
   def title: Option[Chunk[Inline]]
+  def reftext: Option[Chunk[Inline]]
   def metadata: Option[BlockMetadata]
 
 sealed abstract class Inline(name: String, nodeType: String) extends Node(name, nodeType)
 ```
 
 - `name` and `nodeType` are immutable vals on the abstract classes, computed from the type — impossible to construct a `Paragraph` with name `"section"`
-- `Block` provides common optional fields (`id`, `title`, `metadata`) as abstract defs with `None` defaults on concrete subtypes
+- `Block` provides common optional fields (`id`, `title`, `reftext`, `metadata`) as abstract defs with `None` defaults on concrete subtypes
 - `Inline` takes both `name` and `nodeType` since inline literals use `"string"` while parent inlines use `"inline"`
+- `Position` includes the optional `file` field from the schema's `locationBoundary`
 
 #### Supporting Types
 
@@ -62,9 +64,9 @@ case class BlockMetadata(
 )
 
 case class Header(
-  title: Chunk[Inline],
+  title: Option[Chunk[Inline]] = None,
   authors: Chunk[Author] = Chunk.empty,
-  location: Location
+  location: Option[Location] = None
 )
 
 case class Author(
@@ -77,54 +79,87 @@ case class Author(
 )
 ```
 
-`Header` and `Author` are plain case classes — not part of the `Node` hierarchy since they have no `name`/`type` discriminator in the ASG schema.
+`Header` and `Author` are plain case classes — not part of the `Node` hierarchy since they have no `name`/`type` discriminator in the ASG schema. All `Header` fields are optional per the schema (no `required` array on the header definition).
 
-#### Block Types
+#### Document (root — extends Node directly, not Block)
 
-**Document (root):**
+The ASG schema defines `Document` separately from `abstractBlock` — it has `attributes` and `header` but NOT `id`, `title`, `reftext`, or `metadata`. It extends `Node` directly:
+
 ```scala
 case class Document(
-  id: Option[String] = None,
-  title: Option[Chunk[Inline]] = None,
-  metadata: Option[BlockMetadata] = None,
-  attributes: Option[Map[String, String]] = None,
+  attributes: Option[Map[String, Option[String]]] = None,
   header: Option[Header] = None,
   blocks: Chunk[Block] = Chunk.empty,
   location: Location
-) extends Block("document")
+) extends Node("document", "block")
 ```
 
-**Section:**
+Note: `attributes` uses `Map[String, Option[String]]` because the schema allows null values (used for unset attributes in AsciiDoc).
+
+#### Block Types
+
+**Section and Heading** — both derive from `abstractHeading` which requires `title` and `level`:
+
 ```scala
 case class Section(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
   level: Int,
   blocks: Chunk[Block] = Chunk.empty,
   location: Location
 ) extends Block("section")
+
+case class Heading(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  level: Int,
+  location: Location
+) extends Block("heading")
 ```
 
+Note: The schema declares `title` and `level` as required on `abstractHeading`, but in our Scala model `title` remains `Option` on the `Block` base class. In practice, valid ASG data for sections and headings always has a title. Validation is handled at the codec/schema level, not the type level.
+
 **Leaf blocks** (paragraph, listing, literal, pass, stem, verse) — blocks containing inline content:
+
 ```scala
 case class Paragraph(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
+  form: Option[String] = None,
+  delimiter: Option[String] = None,
   inlines: Chunk[Inline] = Chunk.empty,
   location: Location
 ) extends Block("paragraph")
 
-// Same pattern for Listing, Literal, Pass, Stem, Verse
-// with additional form: Option[String] and delimiter: Option[String]
+case class Listing(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: Option[String] = None,
+  delimiter: Option[String] = None,
+  inlines: Chunk[Inline] = Chunk.empty,
+  location: Location
+) extends Block("listing")
+
+// Same pattern for Literal, Pass, Stem, Verse
 ```
 
+`form` and `delimiter` are optional on all leaf blocks. The schema has a conditional rule: when `form` is `"delimited"`, `delimiter` is required. This is enforced at the codec/validation level, not the type level.
+
 **Parent blocks** (sidebar, example, admonition, open, quote) — blocks containing child blocks:
+
 ```scala
 case class Sidebar(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
   form: String,
   delimiter: String,
@@ -132,15 +167,61 @@ case class Sidebar(
   location: Location
 ) extends Block("sidebar")
 
-// Same pattern for Example, Open, Quote
-// Admonition adds variant: String
+case class Example(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String,
+  delimiter: String,
+  blocks: Chunk[Block] = Chunk.empty,
+  location: Location
+) extends Block("example")
+
+case class Admonition(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String,
+  delimiter: String,
+  variant: String,
+  blocks: Chunk[Block] = Chunk.empty,
+  location: Location
+) extends Block("admonition")
+
+case class Open(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String,
+  delimiter: String,
+  blocks: Chunk[Block] = Chunk.empty,
+  location: Location
+) extends Block("open")
+
+case class Quote(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String,
+  delimiter: String,
+  blocks: Chunk[Block] = Chunk.empty,
+  location: Location
+) extends Block("quote")
 ```
 
+Parent blocks require `form` and `delimiter` (non-optional).
+
 **Lists:**
+
 ```scala
 case class List(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
   variant: String,
   marker: String,
@@ -148,9 +229,20 @@ case class List(
   location: Location
 ) extends Block("list")
 
+case class DList(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  marker: String,
+  items: Chunk[DListItem],
+  location: Location
+) extends Block("dlist")
+
 case class ListItem(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
   marker: String,
   principal: Chunk[Inline],
@@ -158,44 +250,80 @@ case class ListItem(
   location: Location
 ) extends Block("listItem")
 
-// DList and DListItem follow similar patterns
-```
-
-**Other blocks:**
-```scala
-case class Heading(
+case class DListItem(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
-  level: Int,
+  marker: String,
+  terms: Chunk[Chunk[Inline]],
+  principal: Option[Chunk[Inline]] = None,
+  blocks: Chunk[Block] = Chunk.empty,
   location: Location
-) extends Block("heading")
+) extends Block("dlistItem")
+```
 
+Note: `DListItem.principal` is `Option` (not required in the schema), while `ListItem.principal` is required.
+
+**Block macros** — split into concrete types since each has a fixed `name` value (required for schema derivation):
+
+```scala
 case class Break(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
   variant: String,
   location: Location
 ) extends Block("break")
 
-case class BlockMacro(
+case class Audio(
   id: Option[String] = None,
   title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
   metadata: Option[BlockMetadata] = None,
-  macroName: String,
   form: String = "macro",
   target: Option[String] = None,
   location: Location
-) extends Block(macroName)
+) extends Block("audio")
+
+case class Video(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String = "macro",
+  target: Option[String] = None,
+  location: Location
+) extends Block("video")
+
+case class Image(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String = "macro",
+  target: Option[String] = None,
+  location: Location
+) extends Block("image")
+
+case class Toc(
+  id: Option[String] = None,
+  title: Option[Chunk[Inline]] = None,
+  reftext: Option[Chunk[Inline]] = None,
+  metadata: Option[BlockMetadata] = None,
+  form: String = "macro",
+  target: Option[String] = None,
+  location: Location
+) extends Block("toc")
 ```
 
-Note: `BlockMacro` is the one type where `name` varies (`audio`, `video`, `image`, `toc`), so it takes `macroName` as a constructor argument passed to `Block(macroName)`.
+Each macro type has a fixed `name`, making them compatible with sealed hierarchy schema derivation.
 
 #### Inline Types
 
 ```scala
-// Parent inlines (contain child inlines)
+// Parent inlines (contain child inlines, type = "inline")
 case class Span(
   variant: String,
   form: String,
@@ -210,7 +338,7 @@ case class Ref(
   location: Location
 ) extends Inline("ref", "inline")
 
-// Literal inlines (leaf nodes with string values)
+// Literal inlines (leaf nodes with string values, type = "string")
 case class Text(
   value: String,
   location: Location
@@ -235,6 +363,7 @@ Custom codec handling is needed for:
 - The `name` and `type` discriminator fields (derived from the sealed hierarchy, not stored as data)
 - The `location` field format (`[{line, col}, {line, col}]`)
 - Optional fields that should be omitted from JSON when `None`
+- `Document.attributes` allowing null values (`Map[String, Option[String]]`)
 
 Codecs are bidirectional — encode ASG to JSON for comparing parser output, decode TCK expected JSON into ASG types for structured comparison.
 
@@ -253,22 +382,26 @@ object AstToAsg:
 
 Mapping from current AST types:
 
-| AST Type | ASG Type |
-|----------|----------|
-| `ast.Document` | `asg.Document` |
-| `ast.Paragraph` | `asg.Paragraph` |
-| `ast.Heading` | `asg.Section` (level > 0) |
-| `ast.UnorderedList` | `asg.List(variant = "unordered")` |
-| `ast.OrderedList` | `asg.List(variant = "ordered")` |
-| `ast.ListItem` | `asg.ListItem` |
-| `ast.Text` | `asg.Text` |
-| `ast.Bold` | `asg.Span(variant = "strong", form = "unconstrained")` |
-| `ast.Italic` | `asg.Span(variant = "emphasis", form = "unconstrained")` |
-| `ast.Mono` | `asg.Span(variant = "code", form = "unconstrained")` |
+| AST Type | ASG Type | Notes |
+|----------|----------|-------|
+| `ast.Document` | `asg.Document` | |
+| `ast.Paragraph` | `asg.Paragraph` | |
+| `ast.Heading` | `asg.Section` | AST levels 1-5 map directly to ASG levels; see note below |
+| `ast.UnorderedList` | `asg.List(variant = "unordered")` | `marker = "*"` |
+| `ast.OrderedList` | `asg.List(variant = "ordered")` | `marker = "."` |
+| `ast.ListItem` | `asg.ListItem` | |
+| `ast.Text` | `asg.Text` | |
+| `ast.Bold` | `asg.Span(variant = "strong", form = "unconstrained")` | |
+| `ast.Italic` | `asg.Span(variant = "emphasis", form = "unconstrained")` | |
+| `ast.Mono` | `asg.Span(variant = "code", form = "unconstrained")` | |
 
-Position conversion: `ast.Span(start, end)` → `asg.Location(Chunk(Position(start.line, start.col), Position(end.line, end.col)))`.
+**Level mapping note:** The ASG schema allows section levels starting at 0 (for document title `=`). The AST parser currently produces heading levels 1-5 (for `=` through `=====`). The exact mapping (whether to subtract 1 or pass through directly) should be determined by comparing against TCK expected output during implementation.
 
-The converter only handles AST types that exist today. ASG types not yet produced by the parser (section, sidebar, listing, etc.) exist in the type system for TCK test assertions but won't be produced by the converter until the parser supports them.
+**Heading vs Section:** The AST's `ast.Heading` maps to `asg.Section` (a section heading that contains child blocks). The ASG also has `asg.Heading` for discrete headings (headings not associated with a section). The current parser does not distinguish between these, so all headings map to `asg.Section` for now.
+
+Position conversion: `ast.Span(start, end)` → `Chunk(asg.Position(start.line, start.col), asg.Position(end.line, end.col))`.
+
+The converter only handles AST types that exist today. ASG types not yet produced by the parser exist in the type system for TCK test assertions but won't be produced by the converter until the parser supports them.
 
 ## Scope
 
