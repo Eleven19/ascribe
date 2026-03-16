@@ -3,13 +3,15 @@ package build
 import mill.*
 import mill.scalalib.JavaModule
 import mill.scalalib.PublishModule
+import mill.scalalib.SonatypeCentralPublishModule
 import mill.scalalib.publish.{Developer, License, PomSettings, VersionControl}
 
-trait PublishSupport extends PublishModule { this: JavaModule =>
+trait PublishSupport extends PublishModule with SonatypeCentralPublishModule {
+  this: JavaModule =>
   private val defaultPublishVersion = "0.1.0-SNAPSHOT"
 
   def publishVersion = Task.Input {
-    sys.env.getOrElse("ASCRIBE_PUBLISH_VERSION", defaultPublishVersion)
+    sys.env.getOrElse("MILL_VERSION", defaultPublishVersion)
   }
 
   def pomSettings = Task {
