@@ -6,7 +6,7 @@ import mill.scalalib.PublishModule
 import mill.scalalib.publish.{Developer, License, PomSettings, VersionControl}
 
 trait PublishSupport extends PublishModule { this: JavaModule =>
-  private val defaultPublishVersion = "0.0.0-SNAPSHOT"
+  private val defaultPublishVersion = "0.1.0-SNAPSHOT"
 
   def publishVersion = Task.Input {
     sys.env.getOrElse("ASCRIBE_PUBLISH_VERSION", defaultPublishVersion)
