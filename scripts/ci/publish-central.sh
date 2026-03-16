@@ -10,6 +10,6 @@ export MILL_SONATYPE_USERNAME="${SONATYPE_USERNAME:?SONATYPE_USERNAME is require
 export MILL_SONATYPE_PASSWORD="${SONATYPE_PASSWORD:?SONATYPE_PASSWORD is required}"
 export MILL_PGP_PASSPHRASE="${PGP_PASSPHRASE:?PGP_PASSPHRASE is required}"
 export MILL_PGP_SECRET_BASE64="$(echo "$PGP_SECRET" | tr -d '\n\r ')"
-export MILL_VERSION="$version"
+export PUBLISH_VERSION="$version"
 
 ./mill -i __.publishSonatypeCentral

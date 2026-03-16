@@ -11,7 +11,7 @@ trait PublishSupport extends PublishModule with SonatypeCentralPublishModule {
   private val defaultPublishVersion = "0.1.0-SNAPSHOT"
 
   def publishVersion = Task.Input {
-    sys.env.getOrElse("MILL_VERSION", defaultPublishVersion)
+    sys.env.getOrElse("PUBLISH_VERSION", defaultPublishVersion)
   }
 
   def pomSettings = Task {
