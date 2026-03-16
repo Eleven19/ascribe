@@ -9,10 +9,6 @@ object `package` extends ScalaModule with scalafmt.ScalafmtModule with _root_.bu
 
   def moduleDeps = Seq(build.ascribe)
 
-  def mvnDeps = Seq(
-    mvn"com.lihaoyi::os-lib::0.10.1"
-  )
-
   def tckRefresh() = Task.Command {
     val syncResult = tckSync()()
     Task.log.info(s"TCK submodule synced: ${syncResult.path}")
