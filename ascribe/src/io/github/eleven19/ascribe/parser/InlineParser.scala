@@ -56,28 +56,31 @@ object InlineParser:
       * List[Inline].
       */
     val boldSpan: Parsley[Inline] =
-        (pos <~> delimitedContent("**", "**") <~> pos).map { case ((s, content), e) =>
-            val span = mkSpan(s, e)
-            Bold(List(Text(content)(span)))(span)
-        }
+        (pos <~> delimitedContent("**", "**") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                Bold(List(Text(content)(span)))(span)
+            }
             .label("bold span")
             .explain("Bold text is surrounded by double asterisks, e.g. **bold**")
 
     /** Parses an unconstrained _italic_ span: `__content__`. */
     val italicSpan: Parsley[Inline] =
-        (pos <~> delimitedContent("__", "__") <~> pos).map { case ((s, content), e) =>
-            val span = mkSpan(s, e)
-            Italic(List(Text(content)(span)))(span)
-        }
+        (pos <~> delimitedContent("__", "__") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                Italic(List(Text(content)(span)))(span)
+            }
             .label("italic span")
             .explain("Italic text is surrounded by double underscores, e.g. __italic__")
 
     /** Parses an unconstrained `monospace` span: ` ``content`` `. */
     val monoSpan: Parsley[Inline] =
-        (pos <~> delimitedContent("``", "``") <~> pos).map { case ((s, content), e) =>
-            val span = mkSpan(s, e)
-            Mono(List(Text(content)(span)))(span)
-        }
+        (pos <~> delimitedContent("``", "``") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                Mono(List(Text(content)(span)))(span)
+            }
             .label("monospace span")
             .explain("Monospace text is surrounded by double backticks, e.g. ``mono``")
 

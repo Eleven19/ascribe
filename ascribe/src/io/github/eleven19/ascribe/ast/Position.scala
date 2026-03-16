@@ -7,7 +7,7 @@ case class Position(line: Int, col: Int)
 case class Span(start: Position, end: Position)
 
 object Span:
-  /** Sentinel for tests and contexts where position is irrelevant. Scala case class equals only considers the first
-    * parameter list, so nodes created with Span.unknown still compare equal to nodes with real spans.
-    */
-  val unknown: Span = Span(Position(0, 0), Position(0, 0))
+    /** Sentinel for tests and contexts where position is irrelevant. Scala case class equals only considers the first
+      * parameter list, so nodes created with Span.unknown still compare equal to nodes with real spans.
+      */
+    val unknown: Span = Span(Position(0, 0), Position(0, 0))

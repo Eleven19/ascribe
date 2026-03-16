@@ -35,8 +35,8 @@ object DocumentParser:
     private val block: Parsley[io.github.eleven19.ascribe.ast.Block] =
         heading | unorderedList | orderedList | paragraph
 
-    /** Parses a complete AsciiDoc document from start to end of input. The Document bridge constructor captures position
-      * before and after parsing.
+    /** Parses a complete AsciiDoc document from start to end of input. The Document bridge constructor captures
+      * position before and after parsing.
       *
       * Blocks are separated by [[blankLines]]; any leading blank lines before the first block are discarded. Parsing
       * fails if any input remains after the final block.

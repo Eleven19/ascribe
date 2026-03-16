@@ -5,10 +5,10 @@ type InlineContent = List[Inline]
 
 /** An inline element within a paragraph, heading, or list item. */
 sealed trait Inline:
-  def span: Span
+    def span: Span
 
 object Inline:
-  given CanEqual[Inline, Inline] = CanEqual.derived
+    given CanEqual[Inline, Inline] = CanEqual.derived
 
 /** Plain text content. */
 case class Text(content: String)(val span: Span) extends Inline derives CanEqual
@@ -23,29 +23,29 @@ case class Italic(content: List[Inline])(val span: Span) extends Inline derives 
 case class Mono(content: List[Inline])(val span: Span) extends Inline derives CanEqual
 
 object Text extends PosParserBridge1[String, Text]:
-  def apply(content: String)(span: Span): Text = new Text(content)(span)
+    def apply(content: String)(span: Span): Text = new Text(content)(span)
 
 object Bold extends PosParserBridge1[List[Inline], Bold]:
-  def apply(content: List[Inline])(span: Span): Bold = new Bold(content)(span)
+    def apply(content: List[Inline])(span: Span): Bold = new Bold(content)(span)
 
 object Italic extends PosParserBridge1[List[Inline], Italic]:
-  def apply(content: List[Inline])(span: Span): Italic = new Italic(content)(span)
+    def apply(content: List[Inline])(span: Span): Italic = new Italic(content)(span)
 
 object Mono extends PosParserBridge1[List[Inline], Mono]:
-  def apply(content: List[Inline])(span: Span): Mono = new Mono(content)(span)
+    def apply(content: List[Inline])(span: Span): Mono = new Mono(content)(span)
 
 /** A single item in a list block. */
 case class ListItem(content: InlineContent)(val span: Span) derives CanEqual
 
 object ListItem extends PosParserBridge1[InlineContent, ListItem]:
-  def apply(content: InlineContent)(span: Span): ListItem = new ListItem(content)(span)
+    def apply(content: InlineContent)(span: Span): ListItem = new ListItem(content)(span)
 
 /** A block-level element in an AsciiDoc document. */
 sealed trait Block:
-  def span: Span
+    def span: Span
 
 object Block:
-  given CanEqual[Block, Block] = CanEqual.derived
+    given CanEqual[Block, Block] = CanEqual.derived
 
 /** A section heading.
   *
@@ -66,19 +66,19 @@ case class UnorderedList(items: List[ListItem])(val span: Span) extends Block de
 case class OrderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual
 
 object Heading extends PosParserBridge2[Int, InlineContent, Heading]:
-  def apply(level: Int, title: InlineContent)(span: Span): Heading = new Heading(level, title)(span)
+    def apply(level: Int, title: InlineContent)(span: Span): Heading = new Heading(level, title)(span)
 
 object Paragraph extends PosParserBridge1[InlineContent, Paragraph]:
-  def apply(content: InlineContent)(span: Span): Paragraph = new Paragraph(content)(span)
+    def apply(content: InlineContent)(span: Span): Paragraph = new Paragraph(content)(span)
 
 object UnorderedList extends PosParserBridge1[List[ListItem], UnorderedList]:
-  def apply(items: List[ListItem])(span: Span): UnorderedList = new UnorderedList(items)(span)
+    def apply(items: List[ListItem])(span: Span): UnorderedList = new UnorderedList(items)(span)
 
 object OrderedList extends PosParserBridge1[List[ListItem], OrderedList]:
-  def apply(items: List[ListItem])(span: Span): OrderedList = new OrderedList(items)(span)
+    def apply(items: List[ListItem])(span: Span): OrderedList = new OrderedList(items)(span)
 
 /** The top-level document containing an ordered sequence of blocks. */
 case class Document(blocks: List[Block])(val span: Span) derives CanEqual
 
 object Document extends PosParserBridge1[List[Block], Document]:
-  def apply(blocks: List[Block])(span: Span): Document = new Document(blocks)(span)
+    def apply(blocks: List[Block])(span: Span): Document = new Document(blocks)(span)
