@@ -17,7 +17,7 @@ trait PublishSupport extends PublishModule with SonatypeCentralPublishModule {
   def pomSettings = Task {
     PomSettings(
       description = "An AsciiDoc parser library for Scala.",
-      organization = "io.github.eleven19",
+      organization = "io.eleven19.ascribe",
       url = "https://github.com/Eleven19/ascribe",
       licenses = Seq(License.`Apache-2.0`),
       versionControl = VersionControl.github("Eleven19", "ascribe"),
