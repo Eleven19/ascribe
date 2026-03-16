@@ -1,6 +1,7 @@
 package io.eleven19.ascribe.asg
 
 import zio.blocks.chunk.Chunk
+import zio.blocks.schema.Schema
 
 /** Document header with optional title and authors.
   * Not a Node — embedded within Document.
@@ -20,4 +21,4 @@ case class Author(
     middlename: Option[String] = None,
     lastname: Option[String] = None,
     address: Option[String] = None
-)
+) derives Schema
