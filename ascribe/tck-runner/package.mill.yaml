@@ -1,0 +1,10 @@
+extends: [ScalaModule, scalafmt.ScalafmtModule]
+
+scalaVersion: "3.8.2"
+
+moduleDeps:
+  - ascribe
+
+mvnDeps:
+  - com.lihaoyi::os-lib::0.10.1
+
