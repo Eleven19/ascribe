@@ -1,4 +1,4 @@
-extends: [ScalaModule, scalafmt.ScalafmtModule]
+extends: [ScalaModule, scalafmt.ScalafmtModule, _root_.build.TckSubmoduleSupport]
 
 scalaVersion: "3.8.2"
 
@@ -7,4 +7,3 @@ moduleDeps:
 
 mvnDeps:
   - com.lihaoyi::os-lib::0.10.1
-
