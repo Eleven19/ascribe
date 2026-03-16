@@ -5,8 +5,9 @@ import parsley.Parsley.atomic
 import parsley.character.string
 import parsley.combinator.{many, manyTill}
 import parsley.errors.combinator.ErrorMethods
+import parsley.position.pos
 
-import io.github.eleven19.ascribe.ast.{Inline, InlineContent}
+import io.github.eleven19.ascribe.ast.{Bold, Inline, InlineContent, Italic, Mono, Span, Text, mkSpan}
 import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
 
 /** Parsers for inline AsciiDoc elements.
@@ -15,10 +16,10 @@ import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
   * (double-delimiter pairs) and falls back to plain text for everything else.
   *
   * ==Supported markup==
-  *   - `**bold**` – [[Inline.Bold]]
-  *   - `__italic__` – [[Inline.Italic]]
-  *   - ` ``mono`` ` – [[Inline.Mono]]
-  *   - everything else – [[Inline.Text]]
+  *   - `**bold**` -- [[Bold]]
+  *   - `__italic__` -- [[Italic]]
+  *   - ` ``mono`` ` -- [[Mono]]
+  *   - everything else -- [[Text]]
   *
   * ==Error handling==
   * Every parser carries a `.label` for "expected" messages and, where helpful, an `.explain` that describes the correct
@@ -51,47 +52,56 @@ object InlineParser:
     /** Parses an unconstrained **bold** span: `**content**`.
       *
       * Uses [[atomic]] to guarantee that a lone `*` or an unclosed `**` does not consume input and instead falls
-      * through to [[unpairedMarkupInline]].
+      * through to [[unpairedMarkupInline]]. Uses manual pos captures since delimitedContent returns String, not
+      * List[Inline].
       */
     val boldSpan: Parsley[Inline] =
-        delimitedContent("**", "**")
-            .map(s => Inline.Bold(List(Inline.Text(s))))
+        (pos <~> delimitedContent("**", "**") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                Bold(List(Text(content)(span)))(span)
+            }
             .label("bold span")
             .explain("Bold text is surrounded by double asterisks, e.g. **bold**")
 
     /** Parses an unconstrained _italic_ span: `__content__`. */
     val italicSpan: Parsley[Inline] =
-        delimitedContent("__", "__")
-            .map(s => Inline.Italic(List(Inline.Text(s))))
+        (pos <~> delimitedContent("__", "__") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                Italic(List(Text(content)(span)))(span)
+            }
             .label("italic span")
             .explain("Italic text is surrounded by double underscores, e.g. __italic__")
 
     /** Parses an unconstrained `monospace` span: ` ``content`` `. */
     val monoSpan: Parsley[Inline] =
-        delimitedContent("``", "``")
-            .map(s => Inline.Mono(List(Inline.Text(s))))
+        (pos <~> delimitedContent("``", "``") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                Mono(List(Text(content)(span)))(span)
+            }
             .label("monospace span")
             .explain("Monospace text is surrounded by double backticks, e.g. ``mono``")
 
-    /** Parses one or more unadorned prose characters as a [[Inline.Text]] node.
+    /** Parses one or more unadorned prose characters as a [[Text]] node.
       *
       * Stops at any inline markup delimiter (`*`, `_`, `` ` ``) or newline so that [[boldSpan]], [[italicSpan]], and
       * [[monoSpan]] get first priority.
       */
     val plainTextInline: Parsley[Inline] =
-        plainText
-            .map(Inline.Text.apply)
+        Text(plainText)
             .label("text")
 
     /** Fallback for a single markup character that did not open a valid span.
       *
-      * For example, a lone `*` in prose (not followed by another `*` to form `**`) is consumed here as a
-      * [[Inline.Text]] of length 1.
+      * For example, a lone `*` in prose (not followed by another `*` to form `**`) is consumed here as a [[Text]] of
+      * length 1.
       */
     val unpairedMarkupInline: Parsley[Inline] =
-        unpairedMarkupChar
-            .map(c => Inline.Text(c.toString))
-            .hide // suppress from "expected" messages – it is a last resort
+        (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
+            Text(c.toString)(mkSpan(s, e))
+        }.hide
 
     /** Parses a single inline element (one of the above parsers in priority order). */
     val inlineElement: Parsley[Inline] =

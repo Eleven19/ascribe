@@ -3,44 +3,32 @@ package io.github.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.github.eleven19.ascribe.ast.{Block, Document, Inline, ListItem}
-import io.github.eleven19.ascribe.parser.DocumentParser.document
+import io.github.eleven19.ascribe.TestHelpers.*
+import io.github.eleven19.ascribe.parser.DocumentParser.document as parseDocument
 
 object DocumentParserSpec extends ZIOSpecDefault:
-    private def parse(input: String) = document.parse(input)
+    private def parse(input: String) = parseDocument.parse(input)
 
     def spec = suite("DocumentParser")(
         suite("headings")(
             test("parses a level-1 heading") {
                 parse("= Title\n") match
                     case Success(doc) =>
-                        assertTrue(
-                            doc == Document(List(Block.Heading(1, List(Inline.Text("Title")))))
-                        )
+                        assertTrue(doc == document(heading(1, text("Title"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a level-3 heading") {
                 parse("=== Section\n") match
                     case Success(doc) =>
-                        assertTrue(
-                            doc == Document(List(Block.Heading(3, List(Inline.Text("Section")))))
-                        )
+                        assertTrue(doc == document(heading(3, text("Section"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a heading with inline bold") {
                 parse("== **Bold** Title\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.Heading(
-                                        2,
-                                        List(
-                                            Inline.Bold(List(Inline.Text("Bold"))),
-                                            Inline.Text(" Title")
-                                        )
-                                    )
-                                )
+                            doc == document(
+                                heading(2, bold(text("Bold")), text(" Title"))
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
@@ -50,25 +38,15 @@ object DocumentParserSpec extends ZIOSpecDefault:
             test("parses a single-line paragraph") {
                 parse("Hello world.\n") match
                     case Success(doc) =>
-                        assertTrue(
-                            doc == Document(List(Block.Paragraph(List(Inline.Text("Hello world.")))))
-                        )
+                        assertTrue(doc == document(paragraph(text("Hello world."))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a paragraph with inline markup") {
                 parse("Use **parsley** to parse.\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.Paragraph(
-                                        List(
-                                            Inline.Text("Use "),
-                                            Inline.Bold(List(Inline.Text("parsley"))),
-                                            Inline.Text(" to parse.")
-                                        )
-                                    )
-                                )
+                            doc == document(
+                                paragraph(text("Use "), bold(text("parsley")), text(" to parse."))
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
@@ -79,13 +57,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse("* item one\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.UnorderedList(
-                                        List(ListItem(List(Inline.Text("item one"))))
-                                    )
-                                )
-                            )
+                            doc == document(unorderedList(listItem(text("item one"))))
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
@@ -93,15 +65,11 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse("* alpha\n* beta\n* gamma\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.UnorderedList(
-                                        List(
-                                            ListItem(List(Inline.Text("alpha"))),
-                                            ListItem(List(Inline.Text("beta"))),
-                                            ListItem(List(Inline.Text("gamma")))
-                                        )
-                                    )
+                            doc == document(
+                                unorderedList(
+                                    listItem(text("alpha")),
+                                    listItem(text("beta")),
+                                    listItem(text("gamma"))
                                 )
                             )
                         )
@@ -113,15 +81,8 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse(". first\n. second\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.OrderedList(
-                                        List(
-                                            ListItem(List(Inline.Text("first"))),
-                                            ListItem(List(Inline.Text("second")))
-                                        )
-                                    )
-                                )
+                            doc == document(
+                                orderedList(listItem(text("first")), listItem(text("second")))
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
@@ -132,11 +93,9 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse("= Title\n\nIntroduction text.\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.Heading(1, List(Inline.Text("Title"))),
-                                    Block.Paragraph(List(Inline.Text("Introduction text.")))
-                                )
+                            doc == document(
+                                heading(1, text("Title")),
+                                paragraph(text("Introduction text."))
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
@@ -146,16 +105,12 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse(input) match
                     case Success(doc) =>
                         assertTrue(
-                            doc == Document(
-                                List(
-                                    Block.Heading(1, List(Inline.Text("Guide"))),
-                                    Block.Paragraph(List(Inline.Text("Read the steps:"))),
-                                    Block.UnorderedList(
-                                        List(
-                                            ListItem(List(Inline.Text("step one"))),
-                                            ListItem(List(Inline.Text("step two")))
-                                        )
-                                    )
+                            doc == document(
+                                heading(1, text("Guide")),
+                                paragraph(text("Read the steps:")),
+                                unorderedList(
+                                    listItem(text("step one")),
+                                    listItem(text("step two"))
                                 )
                             )
                         )

@@ -3,7 +3,7 @@ package io.github.eleven19.ascribe
 import io.cucumber.scala.{EN, ScalaDsl}
 import parsley.{Failure, Success}
 
-import io.github.eleven19.ascribe.ast.{Block, Document, Inline, ListItem}
+import io.github.eleven19.ascribe.ast.*
 
 /** Cucumber step definitions for the AsciiDoc parser integration tests. */
 class AsciiDocParserSteps extends ScalaDsl with EN:
@@ -58,7 +58,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
         val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
         val block = doc.blocks(idx - 1)
         block match
-            case Block.Heading(l, inlines) =>
+            case Heading(l, inlines) =>
                 assert(l == level, s"Expected heading level $level but got $l")
                 val text = inlinesToText(inlines)
                 assert(text == title, s"Expected title '$title' but got '$text'")
@@ -74,7 +74,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
         val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
         val block = doc.blocks(idx - 1)
         block match
-            case Block.Paragraph(inlines) =>
+            case Paragraph(inlines) =>
                 val text = inlinesToText(inlines)
                 assert(
                     text.contains(expected),
@@ -85,20 +85,20 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     }
 
     Then("""^block (\d+) is a paragraph containing bold text "(.+)"$""") { (idx: Int, expected: String) =>
-        assertContainsInlineSpan(idx, "bold", expected) { case Inline.Bold(inner) =>
-            inlinesToText(inner)
+        assertContainsInlineSpan(idx, "bold", expected) { case Bold(cs) =>
+            inlinesToText(cs)
         }
     }
 
     Then("""^block (\d+) is a paragraph containing italic text "(.+)"$""") { (idx: Int, expected: String) =>
-        assertContainsInlineSpan(idx, "italic", expected) { case Inline.Italic(inner) =>
-            inlinesToText(inner)
+        assertContainsInlineSpan(idx, "italic", expected) { case Italic(cs) =>
+            inlinesToText(cs)
         }
     }
 
     Then("""^block (\d+) is a paragraph containing monospace text "(.+)"$""") { (idx: Int, expected: String) =>
-        assertContainsInlineSpan(idx, "monospace", expected) { case Inline.Mono(inner) =>
-            inlinesToText(inner)
+        assertContainsInlineSpan(idx, "monospace", expected) { case Mono(cs) =>
+            inlinesToText(cs)
         }
     }
 
@@ -110,7 +110,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
         val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
         val block = doc.blocks(idx - 1)
         block match
-            case Block.UnorderedList(items) =>
+            case UnorderedList(items) =>
                 assert(
                     items.length == n,
                     s"Expected $n item(s) but got ${items.length}"
@@ -123,7 +123,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
         val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
         val block = doc.blocks(idx - 1)
         block match
-            case Block.OrderedList(items) =>
+            case OrderedList(items) =>
                 assert(
                     items.length == n,
                     s"Expected $n item(s) but got ${items.length}"
@@ -136,7 +136,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
         val doc = result.getOrElse(throw new AssertionError("No parsed document available"))
         // find the first UnorderedList block
         val listBlock = doc.blocks
-            .collectFirst { case b: Block.UnorderedList => b }
+            .collectFirst { case b: UnorderedList => b }
             .getOrElse(throw new AssertionError("No UnorderedList found in document"))
         val item = listBlock.items(itemIdx - 1)
         val text = inlinesToText(item.content)
@@ -150,10 +150,10 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     /** Flattens an [[InlineContent]] list into a plain string for assertion comparison. */
     private def inlinesToText(inlines: List[Inline]): String =
         inlines.map {
-            case Inline.Text(s)    => s
-            case Inline.Bold(cs)   => inlinesToText(cs)
-            case Inline.Italic(cs) => inlinesToText(cs)
-            case Inline.Mono(cs)   => inlinesToText(cs)
+            case Text(s)    => s
+            case Bold(cs)   => inlinesToText(cs)
+            case Italic(cs) => inlinesToText(cs)
+            case Mono(cs)   => inlinesToText(cs)
         }.mkString
 
     /** Generic helper to assert that block `idx` is a Paragraph containing a span whose inner text equals `expected`.
@@ -165,7 +165,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
         val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
         val block = doc.blocks(idx - 1)
         block match
-            case Block.Paragraph(inlines) =>
+            case Paragraph(inlines) =>
                 val found = inlines.collectFirst(extract)
                 val text = found.getOrElse(
                     throw new AssertionError(
