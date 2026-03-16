@@ -10,6 +10,10 @@ leading `v`.
 
 ### Added
 
+- Added Maven Central publishing via `SonatypeCentralPublishModule` with `publish-central.yml` and `publish-snapshot.yml` workflows.
+- Added `PublishSupport` Mill trait for consistent POM metadata and Sonatype Central integration.
+- Added `compute-publish-version.sh` script for branch-aware SNAPSHOT versioning.
+
 ### Changed
 
 - Changed interceptor selection to use `mill-interceptor intercept <tool> ...`
@@ -22,6 +26,9 @@ leading `v`.
 - Documented the `intercept` subcommand and `mvn` alias behavior.
 
 ### CI
+
+- Added `publish-central.yml` workflow for tag-driven and manual Maven Central releases.
+- Added `publish-snapshot.yml` workflow for manual SNAPSHOT publishing.
 
 ## [0.1.0] - 2026-03-14
 

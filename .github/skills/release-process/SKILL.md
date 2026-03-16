@@ -23,6 +23,12 @@ Use this skill for release workflow work, release docs, changelog promotion from
 - `CHANGELOG.md`
 - `cliff.toml`
 - `scripts/ci/build-release-notes.sh`
+- `scripts/ci/publish-central.sh`
+- `scripts/ci/compute-publish-version.sh`
+- `.github/workflows/publish-central.yml`
+- `.github/workflows/publish-snapshot.yml`
+- `mill-build/src/build/PublishSupport.scala`
+- `VERSION`
 
 ## Verification
 
