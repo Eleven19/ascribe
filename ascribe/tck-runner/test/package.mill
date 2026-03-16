@@ -1,0 +1,23 @@
+package build.ascribe.`tck-runner`.test
+
+import mill.*
+import mill.scalalib.*
+import mill.scalalib.TestModule
+
+object `package` extends build.ascribe.`tck-runner`.ScalaTests with TestModule.Junit5 with _root_.build.TckTestSupport {
+
+  def mvnDeps = Seq(
+    mvn"org.scalameta::munit::1.0.4",
+    mvn"io.cucumber::cucumber-scala::8.25.1",
+    mvn"io.cucumber:cucumber-junit-platform-engine:7.20.1",
+    mvn"org.junit.platform:junit-platform-suite:1.11.4",
+    mvn"org.junit.platform:junit-platform-suite-engine:1.11.4",
+    mvn"org.junit.jupiter:junit-jupiter-engine:5.11.4",
+    mvn"dev.zio::zio-json::0.7.3"
+  )
+
+  override def customTckFeatures: T[Seq[PathRef]] = Task {
+    val featuresDir = moduleDir / "resources" / "features"
+    if (os.exists(featuresDir)) Seq(PathRef(featuresDir)) else Seq.empty
+  }
+}
