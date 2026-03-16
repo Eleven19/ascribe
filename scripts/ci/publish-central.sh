@@ -13,4 +13,4 @@ export ASCRIBE_PUBLISH_VERSION="$version"
   --sonatypeCreds "${sonatype_username}:${sonatype_password}" \
   --signed true \
   --release true \
-  --gpgArgs "--batch,--yes,--pinentry-mode,loopback,--passphrase,${gpg_passphrase}"
+  --gpgArgs "--batch,--yes,--no-tty,--pinentry-mode,loopback,--passphrase,${gpg_passphrase},--armor,--detach-sign"
