@@ -9,28 +9,8 @@ gpg_passphrase="${PGP_PASSPHRASE:?PGP_PASSPHRASE is required}"
 
 export ASCRIBE_PUBLISH_VERSION="$version"
 
-args=(
-  ./mill
-  --no-server
-  ascribe.publish
-  --sonatypeCreds
-  "${sonatype_username}:${sonatype_password}"
-  --signed
-  true
-  --release
-  true
-  --gpgArgs
-  --batch
-  --gpgArgs
-  --yes
-  --gpgArgs
-  --pinentry-mode
-  --gpgArgs
-  loopback
-  --gpgArgs
-  --passphrase
-  --gpgArgs
-  "$gpg_passphrase"
-)
-
-"${args[@]}"
+./mill --no-server ascribe.publish \
+  --sonatypeCreds "${sonatype_username}:${sonatype_password}" \
+  --signed true \
+  --release true \
+  --gpgArgs "--batch,--yes,--pinentry-mode,loopback,--passphrase,${gpg_passphrase}"
