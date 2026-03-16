@@ -1,10 +1,85 @@
-# Releasing Native Archives
+# Releasing
 
-This repository publishes GraalVM native executables through GitHub Releases as platform-specific archives that are compatible with `mise`'s GitHub backend.
+This document covers two publishing pipelines:
 
-## Overview
+1. **Maven Central** — library JARs published to Maven Central via Sonatype
+2. **Native Archives** — GraalVM native executables published to GitHub Releases
 
-The release pipeline has three goals:
+---
+
+## Maven Central Publishing
+
+The project publishes Scala library artifacts to Maven Central under the group `io.eleven19.ascribe`.
+
+### Coordinates
+
+```
+io.eleven19.ascribe:ascribe_3:<version>
+```
+
+### How it works
+
+Publishing uses Mill's built-in `SonatypeCentralPublishModule`. The `PublishSupport` trait in `mill-build/src/build/PublishSupport.scala` configures POM metadata, and the `scripts/ci/publish-central.sh` script maps repo secrets to the `MILL_*` env vars that Mill reads automatically:
+
+- `MILL_SONATYPE_USERNAME` / `MILL_SONATYPE_PASSWORD` — Sonatype Central credentials
+- `MILL_PGP_PASSPHRASE` / `MILL_PGP_SECRET_BASE64` — GPG signing key
+
+### Release publish (stable)
+
+Triggered by pushing a `v*` tag or via manual `workflow_dispatch`:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+The `publish-central.yml` workflow extracts the version from the tag (stripping the `v` prefix) and publishes to Maven Central's staging repository.
+
+You can also trigger it manually from GitHub Actions and provide a version like `1.2.3`.
+
+### SNAPSHOT publish
+
+Triggered via manual `workflow_dispatch` on the `publish-snapshot.yml` workflow. It reads the base version from the `VERSION` file and appends `-SNAPSHOT` (or `-<branch>-SNAPSHOT` for non-main branches).
+
+```bash
+# From the GitHub Actions UI:
+# Run workflow → publish-snapshot.yml → main branch
+```
+
+### Required secrets
+
+The following GitHub Actions secrets must be configured:
+
+| Secret | Description |
+|--------|-------------|
+| `ELEVEN19_SONATYPE_USERNAME` | Sonatype Central username |
+| `ELEVEN19_SONATYPE_PASSWORD` | Sonatype Central password |
+| `ELEVEN19_IO_PGP_SECRET_BASE64` | Base64-encoded GPG private key |
+| `ELEVEN19_IO_PGP_PASSPHRASE` | GPG key passphrase |
+
+### Local testing
+
+```bash
+# Check the publish version computation
+bash scripts/ci/compute-publish-version.sh "$(cat VERSION)"
+
+# Dry-run publish locally (requires credentials)
+PUBLISH_VERSION=0.1.0-SNAPSHOT ./mill __.publishSonatypeCentral
+```
+
+### VERSION file
+
+The `VERSION` file at the repo root contains the current base version (e.g. `0.1.0`). This is used by the SNAPSHOT workflow and as the default fallback in `PublishSupport`.
+
+---
+
+## Native Archives
+
+This section covers GraalVM native executables published through GitHub Releases as platform-specific archives that are compatible with `mise`'s GitHub backend.
+
+### Overview
+
+The native release pipeline has three goals:
 
 1. Build a native executable for each supported target with Mill and GraalVM native-image.
 2. Package each executable into a predictable archive layout that `mise` can install from GitHub Releases.
@@ -13,7 +88,7 @@ The release pipeline has three goals:
 
 The workflow definition lives in `.github/workflows/release.yml`. The workflow shell logic is intentionally kept in `scripts/ci/` so the YAML stays declarative and the release steps can be tested locally.
 
-## Release flow diagram
+### Release flow diagram
 
 ```text
              +----------------------+
@@ -56,7 +131,7 @@ The workflow definition lives in `.github/workflows/release.yml`. The workflow s
              +----------------------+
 ```
 
-## Supported targets
+### Supported targets
 
 The release workflow currently targets:
 
@@ -68,7 +143,7 @@ The release workflow currently targets:
 
 These match the native executable platforms Mill currently documents as supported.
 
-## Release entrypoints
+### Release entrypoints
 
 Two release entrypoints are supported:
 
@@ -77,7 +152,7 @@ Two release entrypoints are supported:
 
 Tag pushes are the normal stable-release path. `workflow_dispatch` is useful for prereleases, dry-run-style cuts against a branch head, or when you want the workflow to create the matching Git tag for you.
 
-## Versioning rules
+### Versioning rules
 
 The repository uses two related but different version forms:
 
@@ -93,11 +168,11 @@ Examples:
 
 The release metadata action normalizes the version by stripping any leading `v`, rebuilding the tag as `v<version>`, and detecting prereleases from semantic version syntax.
 
-## Workflow structure
+### Workflow structure
 
 The release workflow has three jobs.
 
-### 1. `metadata`
+#### 1. `metadata`
 
 This job:
 
@@ -141,7 +216,7 @@ input version/tag
 +----------------------+
 ```
 
-### 2. `build`
+#### 2. `build`
 
 This job runs as a matrix over the supported targets. For each target it:
 
@@ -154,7 +229,7 @@ The build job delegates shell logic to:
 - `scripts/ci/compute-archive-name.sh`
 - `scripts/ci/build-release-archive.sh`
 
-### 3. `publish`
+#### 3. `publish`
 
 This job only runs after all matrix builds succeed. It:
 
@@ -201,7 +276,7 @@ create release
 upload archives + SHA256SUMS
 ```
 
-## Changelog and release notes contract
+### Changelog and release notes contract
 
 The checked-in `CHANGELOG.md` is the curated source of truth for release
 summaries.
@@ -246,7 +321,7 @@ The final GitHub Release body is assembled as:
          +----------------------------+
 ```
 
-## Artifact contract
+### Artifact contract
 
 Asset names follow the pattern:
 
@@ -266,7 +341,7 @@ Archive contents place the executable at the archive root:
 
 That layout keeps extraction simple for `mise`.
 
-## Mill release commands
+### Mill release commands
 
 The build exposes release-specific commands through `mill-build/src/build/ReleaseSupport.scala`.
 
@@ -280,7 +355,7 @@ Useful local commands:
 
 These commands are what the workflow uses under the hood. If you need to debug packaging behavior, start here rather than editing the workflow first.
 
-## Packaging flow diagram
+### Packaging flow diagram
 
 ```text
 releaseArchive(version, target)
@@ -321,7 +396,7 @@ tar.gz         zip
 +---------------------------+
 ```
 
-## Local verification
+### Local verification
 
 Before pushing release-workflow changes, run at least:
 
@@ -345,7 +420,7 @@ scripts/ci/build-release-notes.sh 0.1.0
 bash scripts/ci/test-build-release-notes.sh
 ```
 
-## Manual release flow
+### Manual release flow
 
 To cut a manual prerelease or stable release:
 
@@ -369,7 +444,7 @@ The workflow will:
 7. Create or update the GitHub release.
 8. Upload the archives and checksums.
 
-## Tag-driven stable release flow
+### Tag-driven stable release flow
 
 To cut a stable release from a tag:
 
@@ -380,13 +455,13 @@ git push origin v1.2.3
 
 That path skips manual tag creation because the pushed tag is already the source of truth for the release.
 
-## Missing changelog section
+### Missing changelog section
 
 If a release fails with a missing-version changelog error, fix `CHANGELOG.md`
 before retrying. The workflow intentionally refuses to fall back to generated
 notes only.
 
-## Checksums
+### Checksums
 
 The publish job generates `SHA256SUMS` from the downloaded platform archives and uploads it to the GitHub release alongside the binaries.
 
@@ -396,7 +471,7 @@ To verify a downloaded archive locally:
 sha256sum -c SHA256SUMS --ignore-missing
 ```
 
-## `mise` expectations
+### `mise` expectations
 
 The current release contract is designed for `mise`'s GitHub backend:
 
@@ -406,23 +481,23 @@ The current release contract is designed for `mise`'s GitHub backend:
 
 If you change the asset naming pattern or move the executable into nested directories, verify `mise` installation behavior before shipping the change.
 
-## Troubleshooting
+### Troubleshooting
 
-### Native image builds fail on one matrix target
+#### Native image builds fail on one matrix target
 
 Start by checking whether the failure is target-specific or shared:
 
 - If only one runner fails, inspect that matrix job’s native-image output first.
 - If every target fails in the same place, inspect the Mill command or metadata logic instead.
 
-### Workflow dispatch created the wrong release type
+#### Workflow dispatch created the wrong release type
 
 Check the `metadata` job output and confirm the version follows semantic versioning:
 
 - `1.2.3` -> stable release
 - `1.2.3-rc.1` -> prerelease
 
-### Archive naming looks wrong
+#### Archive naming looks wrong
 
 Verify locally with:
 
@@ -430,6 +505,6 @@ Verify locally with:
 ./mill show releaseAssetName --version 1.2.3 --target x86_64-pc-windows-msvc
 ```
 
-### Workflow YAML is getting hard to read
+#### Workflow YAML is getting hard to read
 
 Put shell logic in `scripts/ci/` and keep the workflow file focused on orchestration.

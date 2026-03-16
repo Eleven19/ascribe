@@ -6,11 +6,36 @@
 
 [![CI](https://github.com/Eleven19/ascribe/actions/workflows/ci.yml/badge.svg)](https://github.com/Eleven19/ascribe/actions/workflows/ci.yml)
 [![Release](https://github.com/Eleven19/ascribe/actions/workflows/release.yml/badge.svg)](https://github.com/Eleven19/ascribe/actions/workflows/release.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.eleven19.ascribe/ascribe_3)](https://central.sonatype.com/artifact/io.eleven19.ascribe/ascribe_3)
 
 Ascribe is an asciidoc library and toolchain. We provide parsers, ASTs, and traversal tools for processing asciidocs.
 
 As we are implementing things we should consult the [Asciidoc Language Specification](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang) for the authoritative spec of ASCIIDOC.
 The Asciidoc TCK (Technology Compatibility Kit) can also be found at [https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck).
+
+## Installation
+
+### Mill
+
+```scala
+ivy"io.eleven19.ascribe::ascribe:0.1.0"
+```
+
+### sbt
+
+```scala
+libraryDependencies += "io.eleven19.ascribe" %% "ascribe" % "0.1.0"
+```
+
+### Maven
+
+```xml
+<dependency>
+  <groupId>io.eleven19.ascribe</groupId>
+  <artifactId>ascribe_3</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
 
 ## Native releases
 
