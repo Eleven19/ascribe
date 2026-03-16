@@ -28,39 +28,41 @@ trait TckTestSupport extends JavaModule {
     os.makeDir.all(outDir)
 
     def generateForCategory(categoryDir: os.Path, prefix: String): Unit = {
-      if (os.exists(categoryDir)) {
-        for {
-          constructDir <- os.list(categoryDir).sorted
-          if os.isDir(constructDir)
-        } {
-          val constructName = constructDir.last.split("-").map(_.capitalize).mkString("-")
-          val featureFile = outDir / s"$prefix${constructName}.feature"
+      mill.api.BuildCtx.withFilesystemCheckerDisabled {
+        if (os.exists(categoryDir)) {
+          for {
+            constructDir <- os.list(categoryDir).sorted
+            if os.isDir(constructDir)
+          } {
+            val constructName = constructDir.last.split("-").map(_.capitalize).mkString("-")
+            val featureFile = outDir / s"$prefix${constructName}.feature"
 
-          val featureLines = Seq(
-            s"Feature: $prefix - $constructName",
-            s"  Scenario Outline: TCK validation for <test_name>",
-            s"""    Given the AsciiDoc input from "<input_file>"""",
-            s"    When the input is parsed",
-            s"""    Then the resulting ASG should match the expected JSON in "<output_file>"""",
-            "",
-            "    Examples:",
-            "      | test_name | input_file | output_file |"
-          )
+            val featureLines = Seq(
+              s"Feature: $prefix - $constructName",
+              s"  Scenario Outline: TCK validation for <test_name>",
+              s"""    Given the AsciiDoc input from "<input_file>"""",
+              s"    When the input is parsed",
+              s"""    Then the resulting ASG should match the expected JSON in "<output_file>"""",
+              "",
+              "    Examples:",
+              "      | test_name | input_file | output_file |"
+            )
 
-          val workspace = Task.ctx().workspace
-          val examples = os.list(constructDir).sorted
-            .filter(_.last.endsWith("-input.adoc"))
-            .map { inputFile =>
-              val baseName = inputFile.last.stripSuffix("-input.adoc")
-              val relativeInput = inputFile.relativeTo(workspace)
-              val outputFile = constructDir / s"${baseName}-output.json"
-              val relativeOutput = outputFile.relativeTo(workspace)
-              s"      | $baseName | $relativeInput | $relativeOutput |"
+            val workspace = Task.ctx().workspace
+            val examples = os.list(constructDir).sorted
+              .filter(_.last.endsWith("-input.adoc"))
+              .map { inputFile =>
+                val baseName = inputFile.last.stripSuffix("-input.adoc")
+                val relativeInput = inputFile.relativeTo(workspace)
+                val outputFile = constructDir / s"${baseName}-output.json"
+                val relativeOutput = outputFile.relativeTo(workspace)
+                s"      | $baseName | $relativeInput | $relativeOutput |"
+              }
+
+            if (examples.nonEmpty) {
+              Task.log.info(s"  Generating feature: ${featureFile.last}")
+              os.write.over(featureFile, (featureLines ++ examples).mkString("\n") + "\n")
             }
-
-          if (examples.nonEmpty) {
-            Task.log.info(s"  Generating feature: ${featureFile.last}")
-            os.write.over(featureFile, (featureLines ++ examples).mkString("\n") + "\n")
           }
         }
       }
