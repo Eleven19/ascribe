@@ -6,7 +6,7 @@ import parsley.character.{char, string}
 import parsley.combinator.some
 import parsley.errors.combinator.ErrorMethods
 
-import io.github.eleven19.ascribe.ast.{Block, InlineContent, ListItem}
+import io.github.eleven19.ascribe.ast.{Block, Heading, InlineContent, ListItem, OrderedList, Paragraph, UnorderedList}
 import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
 import io.github.eleven19.ascribe.parser.InlineParser.*
 
@@ -17,10 +17,10 @@ import io.github.eleven19.ascribe.parser.InlineParser.*
   * clean backtracking.
   *
   * ==Supported blocks==
-  *   - `= Title` through `===== Title` – [[heading]]
-  *   - `* item` – [[unorderedList]]
-  *   - `. item` – [[orderedList]]
-  *   - everything else – [[paragraph]]
+  *   - `= Title` through `===== Title` -- [[heading]]
+  *   - `* item` -- [[unorderedList]]
+  *   - `. item` -- [[orderedList]]
+  *   - everything else -- [[paragraph]]
   */
 object BlockParser:
 
@@ -28,7 +28,7 @@ object BlockParser:
     // Headings
     // -----------------------------------------------------------------------
 
-    /** Parses the leading `=`-markers of a heading and returns the heading level (1–5).
+    /** Parses the leading `=`-markers of a heading and returns the heading level (1-5).
       *
       * Tries longer sequences first to avoid the two-character `==` matching before `===`.
       */
@@ -39,7 +39,7 @@ object BlockParser:
             atomic(string("==")).as(2) |
             atomic(string("=")).as(1)
 
-    /** Parses a section heading.
+    /** Parses a section heading using the Heading bridge constructor.
       *
       * Syntax: one to five `=` characters, a single space, then the title on the rest of the line. Level is determined
       * by the number of `=` signs.
@@ -51,14 +51,7 @@ object BlockParser:
       * }}}
       */
     val heading: Parsley[Block] =
-        atomic(
-            for
-                level <- headingLevel
-                _     <- char(' ')
-                title <- lineContent
-                _     <- eolOrEof
-            yield Block.Heading(level, title)
-        )
+        atomic(Heading(headingLevel <* char(' '), lineContent <* eolOrEof))
             .label("heading")
             .explain(
                 "A heading starts with one to five equals signs followed by a space, e.g. = Title"
@@ -70,34 +63,22 @@ object BlockParser:
 
     /** Parses a single unordered list item line: `* content`. */
     private val unorderedItem: Parsley[ListItem] =
-        atomic(
-            for
-                _ <- char('*') *> char(' ')
-                c <- lineContent
-                _ <- eolOrEof
-            yield ListItem(c)
-        ).label("unordered list item")
+        atomic(ListItem(char('*') *> char(' ') *> lineContent <* eolOrEof))
+            .label("unordered list item")
 
-    /** Parses one or more consecutive `* item` lines as an [[Block.UnorderedList]]. */
+    /** Parses one or more consecutive `* item` lines as an [[UnorderedList]]. */
     val unorderedList: Parsley[Block] =
-        some(unorderedItem)
-            .map(items => Block.UnorderedList(items.toList))
+        UnorderedList(some(unorderedItem).map(_.toList))
             .label("unordered list")
 
     /** Parses a single ordered list item line: `. content`. */
     private val orderedItem: Parsley[ListItem] =
-        atomic(
-            for
-                _ <- char('.') *> char(' ')
-                c <- lineContent
-                _ <- eolOrEof
-            yield ListItem(c)
-        ).label("ordered list item")
+        atomic(ListItem(char('.') *> char(' ') *> lineContent <* eolOrEof))
+            .label("ordered list item")
 
-    /** Parses one or more consecutive `. item` lines as an [[Block.OrderedList]]. */
+    /** Parses one or more consecutive `. item` lines as an [[OrderedList]]. */
     val orderedList: Parsley[Block] =
-        some(orderedItem)
-            .map(items => Block.OrderedList(items.toList))
+        OrderedList(some(orderedItem).map(_.toList))
             .label("ordered list")
 
     // -----------------------------------------------------------------------
@@ -119,10 +100,8 @@ object BlockParser:
 
     /** Parses one or more consecutive paragraph lines, joining their inline content.
       *
-      * Consecutive lines within the same paragraph are concatenated with an implicit [[Inline.Text]] space between
-      * them, mirroring AsciiDoc's line-continuation semantics.
+      * Consecutive lines within the same paragraph are concatenated, mirroring AsciiDoc's line-continuation semantics.
       */
     val paragraph: Parsley[Block] =
-        some(paragraphLine)
-            .map(lines => Block.Paragraph(lines.flatten))
+        Paragraph(some(paragraphLine).map(_.flatten))
             .label("paragraph")
