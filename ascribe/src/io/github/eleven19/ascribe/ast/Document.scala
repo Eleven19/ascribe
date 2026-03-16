@@ -7,6 +7,9 @@ type InlineContent = List[Inline]
 sealed trait Inline:
   def span: Span
 
+object Inline:
+  given CanEqual[Inline, Inline] = CanEqual.derived
+
 /** Plain text content. */
 case class Text(content: String)(val span: Span) extends Inline derives CanEqual
 
@@ -40,6 +43,9 @@ object ListItem extends PosParserBridge1[InlineContent, ListItem]:
 /** A block-level element in an AsciiDoc document. */
 sealed trait Block:
   def span: Span
+
+object Block:
+  given CanEqual[Block, Block] = CanEqual.derived
 
 /** A section heading.
   *

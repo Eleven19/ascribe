@@ -3,7 +3,8 @@ package io.github.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.github.eleven19.ascribe.ast.{Inline, InlineContent}
+import io.github.eleven19.ascribe.TestHelpers.*
+import io.github.eleven19.ascribe.ast.Inline
 import io.github.eleven19.ascribe.parser.InlineParser.lineContent
 
 object InlineParserSpec extends ZIOSpecDefault:
@@ -14,19 +15,19 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses a simple word") {
                 parse("hello") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Text("hello")))
+                        assertTrue(inlines == List(text("hello")))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a sentence with spaces") {
                 parse("hello world") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Text("hello world")))
+                        assertTrue(inlines == List(text("hello world")))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("stops at newline") {
                 parse("line one\nline two") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Text("line one")))
+                        assertTrue(inlines == List(text("line one")))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -34,25 +35,21 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses **bold** text") {
                 parse("**bold**") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Bold(List(Inline.Text("bold")))))
+                        assertTrue(inlines == List(bold(text("bold"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses bold embedded in text") {
                 parse("hello **world** end") match
                     case Success(inlines) =>
                         assertTrue(
-                            inlines == List(
-                                Inline.Text("hello "),
-                                Inline.Bold(List(Inline.Text("world"))),
-                                Inline.Text(" end")
-                            )
+                            inlines == List(text("hello "), bold(text("world")), text(" end"))
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("treats lone * as plain text") {
                 parse("a*b") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Text("a"), Inline.Text("*"), Inline.Text("b")))
+                        assertTrue(inlines == List(text("a"), text("*"), text("b")))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -60,7 +57,7 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses __italic__ text") {
                 parse("__italic__") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Italic(List(Inline.Text("italic")))))
+                        assertTrue(inlines == List(italic(text("italic"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -68,7 +65,7 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses ``mono`` text") {
                 parse("``mono``") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(Inline.Mono(List(Inline.Text("mono")))))
+                        assertTrue(inlines == List(mono(text("mono"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -77,11 +74,7 @@ object InlineParserSpec extends ZIOSpecDefault:
                 parse("**b** and __i__") match
                     case Success(inlines) =>
                         assertTrue(
-                            inlines == List(
-                                Inline.Bold(List(Inline.Text("b"))),
-                                Inline.Text(" and "),
-                                Inline.Italic(List(Inline.Text("i")))
-                            )
+                            inlines == List(bold(text("b")), text(" and "), italic(text("i")))
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
