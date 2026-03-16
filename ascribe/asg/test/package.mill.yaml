@@ -1,0 +1,4 @@
+extends: [ascribe.asg.ScalaTests, TestModule.Junit5]
+
+mvnDeps:
+  - org.scalameta::munit::1.0.4

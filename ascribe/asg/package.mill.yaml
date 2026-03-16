@@ -1,0 +1,6 @@
+extends: [ScalaModule, scalafmt.ScalafmtModule]
+
+scalaVersion: "3.8.2"
+
+mvnDeps:
+  - dev.zio::zio-blocks-schema::0.0.29
