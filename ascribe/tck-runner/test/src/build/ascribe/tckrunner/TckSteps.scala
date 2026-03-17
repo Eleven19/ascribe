@@ -3,67 +3,85 @@ package build.ascribe.tckrunner
 import io.cucumber.scala.{EN, ScalaDsl}
 import java.nio.file.{Files, Path, Paths}
 import scala.compiletime.uninitialized
-import zio._
-import zio.json._
+import org.junit.Assert.*
+import zio.json.*
 import zio.json.ast.Json
-import org.junit.Assert._
+
+import io.eleven19.ascribe.Ascribe
+import io.eleven19.ascribe.asg.AsgCodecs
+import io.eleven19.ascribe.bridge.AstToAsg
 
 class TckSteps extends ScalaDsl with EN {
 
-  private def resolvePath(relative: String): Path = {
-    val relPath = Paths.get(relative)
-    if (relPath.isAbsolute) relPath
-    else {
-      var current = Paths.get("").toAbsolutePath
-      var attempts = 0
-      val maxAttempts = 6
-      var found: Option[Path] = None
-
-      while (attempts <= maxAttempts && found.isEmpty && current != null) {
-        val candidate = current.resolve(relPath)
-        if (Files.exists(candidate)) found = Some(candidate)
+    private def resolvePath(relative: String): Path = {
+        val relPath = Paths.get(relative)
+        if (relPath.isAbsolute) relPath
         else {
-          current = current.getParent
-          attempts += 1
+            var current     = Paths.get("").toAbsolutePath
+            var attempts    = 0
+            val maxAttempts = 6
+            var found: Option[Path] = None
+
+            while (attempts <= maxAttempts && found.isEmpty && current != null) {
+                val candidate = current.resolve(relPath)
+                if (Files.exists(candidate)) found = Some(candidate)
+                else {
+                    current = current.getParent
+                    attempts += 1
+                }
+            }
+
+            found.getOrElse(relPath)
         }
-      }
-
-      found.getOrElse(relPath)
     }
-  }
 
-  var assciidocInput: String = uninitialized
-  var asgJsonString: String = uninitialized
-  var parsedJsonResult: Option[String] = None
+    var asciidocInput: String          = uninitialized
+    var parsedAsgJson: Option[String]  = None
+    var parseError: Option[String]     = None
 
-  Given("""the AsciiDoc input from {string}""") { (inputFile: String) =>
-    val path = resolvePath(inputFile)
-    assciidocInput = new String(Files.readAllBytes(path))
-  }
+    Given("""the AsciiDoc input from {string}""") { (inputFile: String) =>
+        val path = resolvePath(inputFile)
+        asciidocInput = new String(Files.readAllBytes(path))
+    }
 
-  When("""the input is parsed""") { () =>
-    // TODO: Connect this to ascribe's parser and convert to ZIO Block AST
-    // Right now, this is a placeholder.
-    // val parserResult = parser.parse(assciidocInput)
-    // val zioBlockTree: ZioBlock = convertToZioBlock(parserResult)
-    // parsedJsonResult = Some(zioBlockTree.toJson)
+    When("""the input is parsed""") { () =>
+        Ascribe.parse(asciidocInput) match
+            case parsley.Success(astDoc) =>
+                val asgDoc = AstToAsg.convert(astDoc)
+                parsedAsgJson = Some(AsgCodecs.encode(asgDoc))
+                parseError = None
+            case parsley.Failure(msg) =>
+                parsedAsgJson = None
+                parseError = Some(msg.toString)
+    }
 
-    // For now we will just assume we extracted some valid document:
-    parsedJsonResult = Some("""{"type":"document","children":[]}""")
-  }
+    Then("""the resulting ASG should match the expected JSON in {string}""") { (outputFile: String) =>
+        parseError.foreach { err =>
+            fail(s"Parser failed on input:\n$err")
+        }
 
-  Then("""the resulting ASG should match the expected JSON in {string}""") { (outputFile: String) =>
-    val path = resolvePath(outputFile)
-    asgJsonString = new String(Files.readAllBytes(path))
+        val actualJson   = parsedAsgJson.getOrElse(fail("No parsed result available").asInstanceOf[String])
+        val path         = resolvePath(outputFile)
+        val expectedJson = new String(Files.readAllBytes(path))
 
-    // TODO: Use zio-blocks-json-differ
-    // val diff = JsonDiffer.diff(asgJsonString, parsedJsonResult.get)
-    // assertTrue("ASG does not match expected JSON:\n" + diff.toString, diff.isEmpty)
+        val actualAst = actualJson.fromJson[Json] match
+            case Right(j) => j
+            case Left(e)  => fail(s"Failed to parse actual JSON: $e").asInstanceOf[Json]
 
-    // Basic placeholder assertion
-    assertNotNull("Expected ASG JSON was null", asgJsonString)
-    assertNotNull("Parsed JSON outcome was null", parsedJsonResult.get)
-  }
+        val expectedAst = expectedJson.fromJson[Json] match
+            case Right(j) => j
+            case Left(e)  => fail(s"Failed to parse expected JSON: $e").asInstanceOf[Json]
+
+        if (actualAst != expectedAst) {
+            fail(
+                s"""ASG JSON mismatch.
+                   |
+                   |=== Expected ===
+                   |$expectedJson
+                   |
+                   |=== Actual ===
+                   |$actualJson""".stripMargin
+            )
+        }
+    }
 }
-
-
