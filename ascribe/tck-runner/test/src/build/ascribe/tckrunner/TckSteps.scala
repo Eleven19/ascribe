@@ -8,6 +8,7 @@ import zio.json.*
 import zio.json.ast.Json
 
 import io.eleven19.ascribe.Ascribe
+import io.eleven19.ascribe.asg
 import io.eleven19.ascribe.asg.AsgCodecs
 import io.eleven19.ascribe.bridge.AstToAsg
 
@@ -36,7 +37,7 @@ class TckSteps extends ScalaDsl with EN {
     }
 
     var asciidocInput: String          = uninitialized
-    var parsedAsgJson: Option[String]  = None
+    var parsedAsgDoc: Option[asg.Document] = None
     var parseError: Option[String]     = None
 
     Given("""the AsciiDoc input from {string}""") { (inputFile: String) =>
@@ -47,11 +48,10 @@ class TckSteps extends ScalaDsl with EN {
     When("""the input is parsed""") { () =>
         Ascribe.parse(asciidocInput) match
             case parsley.Success(astDoc) =>
-                val asgDoc = AstToAsg.convert(astDoc)
-                parsedAsgJson = Some(AsgCodecs.encode(asgDoc))
+                parsedAsgDoc = Some(AstToAsg.convert(astDoc))
                 parseError = None
             case parsley.Failure(msg) =>
-                parsedAsgJson = None
+                parsedAsgDoc = None
                 parseError = Some(msg.toString)
     }
 
@@ -60,9 +60,20 @@ class TckSteps extends ScalaDsl with EN {
             fail(s"Parser failed on input:\n$err")
         }
 
-        val actualJson   = parsedAsgJson.getOrElse(fail("No parsed result available").asInstanceOf[String])
+        val doc          = parsedAsgDoc.getOrElse(fail("No parsed result available").asInstanceOf[asg.Document])
         val path         = resolvePath(outputFile)
-        val expectedJson = new String(Files.readAllBytes(path))
+        val expectedJson = new String(Files.readAllBytes(path)).trim
+
+        // Detect inline-only tests: expected JSON is an array, not an object
+        val actualJson = if (expectedJson.startsWith("[")) {
+            // Extract inlines from first paragraph in the document
+            doc.blocks.headOption match {
+                case Some(p: asg.Paragraph) => AsgCodecs.encodeInlines(p.inlines)
+                case _ => fail(s"Expected paragraph for inline test but got: ${doc.blocks}").asInstanceOf[String]
+            }
+        } else {
+            AsgCodecs.encode(doc)
+        }
 
         val actualAst = actualJson.fromJson[Json] match
             case Right(j) => j

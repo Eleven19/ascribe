@@ -7,7 +7,7 @@ import parsley.combinator.{many, manyTill}
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
-import io.eleven19.ascribe.ast.{Bold, Inline, InlineContent, Italic, Mono, Span, Text, mkSpan}
+import io.eleven19.ascribe.ast.{Bold, ConstrainedBold, Inline, InlineContent, Italic, Mono, Span, Text, mkSpan}
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 
 /** Parsers for inline AsciiDoc elements.
@@ -84,6 +84,18 @@ object InlineParser:
             .label("monospace span")
             .explain("Monospace text is surrounded by double backticks, e.g. ``mono``")
 
+    /** Parses a constrained *bold* span: `*content*`.
+      *
+      * Uses single asterisks. Must be tried after unconstrained `**` to avoid ambiguity.
+      */
+    val constrainedBoldSpan: Parsley[Inline] =
+        (pos <~> delimitedContent("*", "*") <~> pos)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                ConstrainedBold(List(Text(content)(span)))(span)
+            }
+            .label("constrained bold span")
+
     /** Parses one or more unadorned prose characters as a [[Text]] node.
       *
       * Stops at any inline markup delimiter (`*`, `_`, `` ` ``) or newline so that [[boldSpan]], [[italicSpan]], and
@@ -103,9 +115,11 @@ object InlineParser:
             Text(c.toString)(mkSpan(s, e))
         }.hide
 
-    /** Parses a single inline element (one of the above parsers in priority order). */
+    /** Parses a single inline element (one of the above parsers in priority order). Unconstrained (`**`) is tried
+      * before constrained (`*`) to avoid ambiguity.
+      */
     val inlineElement: Parsley[Inline] =
-        boldSpan | italicSpan | monoSpan | plainTextInline | unpairedMarkupInline
+        boldSpan | constrainedBoldSpan | italicSpan | monoSpan | plainTextInline | unpairedMarkupInline
 
     /** Parses zero or more inline elements, stopping naturally at a newline or end-of-input. */
     val lineContent: Parsley[InlineContent] = many(inlineElement)

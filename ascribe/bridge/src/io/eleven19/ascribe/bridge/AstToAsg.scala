@@ -9,9 +9,23 @@ object AstToAsg:
 
     /** Convert an AST Document to an ASG Document. */
     def convert(doc: ast.Document): asg.Document =
+        val header = doc.header.map(convertHeader)
+        val attributes = doc.header.map { h =>
+            h.attributes.map((k, v) => (k, Some(v))).toMap
+        }
         asg.Document(
+            attributes = attributes,
+            header = header,
             blocks = Chunk.from(doc.blocks.map(convertBlock)),
-            location = convertLocation(doc.span)
+            location = contentLocation(doc.span.start, lastContentPos(doc))
+        )
+
+    private def convertHeader(h: ast.DocumentHeader): asg.Header =
+        val titleInlines = h.title.map(convertInline)
+        val headerLoc    = contentLocation(h.span.start, lastContentPos(h))
+        asg.Header(
+            title = Some(Chunk.from(titleInlines)),
+            location = Some(headerLoc)
         )
 
     private def convertBlock(block: ast.Block): asg.Block = block match
@@ -19,62 +33,148 @@ object AstToAsg:
             asg.Heading(
                 level = level,
                 title = Some(Chunk.from(title.map(convertInline))),
-                location = convertLocation(block.span)
+                location = contentLocation(block.span.start, lastContentPos(block))
+            )
+        case ast.Section(level, title, blocks) =>
+            asg.Section(
+                level = level,
+                title = Some(Chunk.from(title.map(convertInline))),
+                blocks = Chunk.from(blocks.map(convertBlock)),
+                location = contentLocation(block.span.start, lastContentPos(block))
             )
         case ast.Paragraph(content) =>
+            val converted = mergeAdjacentTexts(content.map(convertInline))
             asg.Paragraph(
-                inlines = Chunk.from(content.map(convertInline)),
-                location = convertLocation(block.span)
+                inlines = Chunk.from(converted),
+                location = contentLocation(block.span.start, lastContentPos(block))
+            )
+        case ast.ListingBlock(delimiter, content) =>
+            // Block location spans from opening delimiter to closing delimiter
+            val blockLoc = inclusiveLocation(block.span)
+            // Content location: lines inside the delimiters
+            val contentStartLine = block.span.start.line + 1
+            val contentLines     = content.split("\n", -1)
+            val lastLineLen      = contentLines.last.length
+            val contentEndLine   = contentStartLine + contentLines.length - 1
+            val contentLoc = asg.Location(
+                asg.Position(contentStartLine, 1),
+                asg.Position(contentEndLine, lastLineLen)
+            )
+            asg.Listing(
+                form = Some("delimited"),
+                delimiter = Some(delimiter),
+                inlines = Chunk(asg.Text(content, contentLoc)),
+                location = blockLoc
+            )
+        case ast.SidebarBlock(delimiter, blocks) =>
+            asg.Sidebar(
+                form = "delimited",
+                delimiter = delimiter,
+                blocks = Chunk.from(blocks.map(convertBlock)),
+                location = inclusiveLocation(block.span)
             )
         case ast.UnorderedList(items) =>
             asg.List(
                 variant = "unordered",
                 marker = "*",
                 items = Chunk.from(items.map(convertListItem("*"))),
-                location = convertLocation(block.span)
+                location = contentLocation(block.span.start, lastContentPos(block))
             )
         case ast.OrderedList(items) =>
             asg.List(
                 variant = "ordered",
                 marker = ".",
                 items = Chunk.from(items.map(convertListItem("."))),
-                location = convertLocation(block.span)
+                location = contentLocation(block.span.start, lastContentPos(block))
             )
 
     private def convertListItem(marker: String)(item: ast.ListItem): asg.ListItem =
         asg.ListItem(
             marker = marker,
-            principal = Chunk.from(item.content.map(convertInline)),
-            location = convertLocation(item.span)
+            principal = Chunk.from(mergeAdjacentTexts(item.content.map(convertInline))),
+            location = contentLocation(item.span.start, lastContentPos(item))
         )
 
     private def convertInline(inline: ast.Inline): asg.Inline = inline match
         case ast.Text(content) =>
-            asg.Text(value = content, location = convertLocation(inline.span))
+            asg.Text(value = content, location = inclusiveLocation(inline.span))
         case ast.Bold(content) =>
             asg.Span(
                 variant = "strong",
                 form = "unconstrained",
                 inlines = Chunk.from(content.map(convertInline)),
-                location = convertLocation(inline.span)
+                location = inclusiveLocation(inline.span)
+            )
+        case ast.ConstrainedBold(content) =>
+            asg.Span(
+                variant = "strong",
+                form = "constrained",
+                inlines = Chunk.from(content.map(convertInline)),
+                location = inclusiveLocation(inline.span)
             )
         case ast.Italic(content) =>
             asg.Span(
                 variant = "emphasis",
                 form = "unconstrained",
                 inlines = Chunk.from(content.map(convertInline)),
-                location = convertLocation(inline.span)
+                location = inclusiveLocation(inline.span)
             )
         case ast.Mono(content) =>
             asg.Span(
                 variant = "code",
                 form = "unconstrained",
                 inlines = Chunk.from(content.map(convertInline)),
-                location = convertLocation(inline.span)
+                location = inclusiveLocation(inline.span)
             )
 
-    private def convertLocation(span: ast.Span): asg.Location =
+    /** Convert a Parsley past-end span to an inclusive ASG location. Subtracts 1 from end col. */
+    private def inclusiveLocation(span: ast.Span): asg.Location =
         asg.Location(
             asg.Position(span.start.line, span.start.col),
-            asg.Position(span.end.line, span.end.col)
+            asg.Position(span.end.line, span.end.col - 1)
         )
+
+    /** Build an ASG location from a start position and a last-content past-end position. */
+    private def contentLocation(start: ast.Position, contentEnd: ast.Position): asg.Location =
+        asg.Location(
+            asg.Position(start.line, start.col),
+            asg.Position(contentEnd.line, contentEnd.col - 1)
+        )
+
+    /** Find the past-end position of the last content character in an AST node. For blocks, this traverses to the
+      * deepest last child to avoid positions that include consumed newlines.
+      */
+    private def lastContentPos(node: ast.AstNode): ast.Position = node match
+        case d: ast.Document =>
+            d.blocks.lastOption
+                .map(lastContentPos)
+                .orElse(d.header.map(lastContentPos))
+                .getOrElse(d.span.end)
+        case dh: ast.DocumentHeader =>
+            dh.attributes.lastOption
+                .map((_, v) => dh.span.end) // attributes extend span
+                .orElse(dh.title.lastOption.map(lastContentPos))
+                .getOrElse(dh.span.end)
+        case h: ast.Heading        => h.title.lastOption.map(lastContentPos).getOrElse(h.span.end)
+        case s: ast.Section        => s.blocks.lastOption.map(lastContentPos).getOrElse(lastContentPos(s))
+        case p: ast.Paragraph      => p.content.lastOption.map(lastContentPos).getOrElse(p.span.end)
+        case lb: ast.ListingBlock  => lb.span.end // listing block span includes closing delimiter
+        case sb: ast.SidebarBlock  => sb.span.end // sidebar block span includes closing delimiter
+        case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
+        case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
+        case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)
+        case i: ast.Inline         => i.span.end
+
+    /** Merge consecutive asg.Text nodes into a single Text with newline-joined content. This handles multi-line
+      * paragraphs where each line was parsed separately.
+      */
+    private def mergeAdjacentTexts(inlines: scala.List[asg.Inline]): scala.List[asg.Inline] =
+        inlines.foldRight(scala.List.empty[asg.Inline]) { (elem, acc) =>
+            (elem, acc) match
+                case (t1: asg.Text, (t2: asg.Text) :: rest) =>
+                    asg.Text(
+                        t1.value + "\n" + t2.value,
+                        asg.Location(t1.location.start, t2.location.end)
+                    ) :: rest
+                case _ => elem :: acc
+        }
