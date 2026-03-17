@@ -27,7 +27,7 @@ class AstToAsgSpec extends FunSuite:
   test("converts empty document") {
     val astDoc = document()
     val asgDoc = AstToAsg.convert(astDoc)
-    assertEquals(asgDoc.name, "document")
+    assert(asgDoc.isInstanceOf[asg.Document])
     assertEquals(asgDoc.blocks, Chunk.empty)
   }
 

@@ -10,7 +10,7 @@ case class Header(
     title: Option[Chunk[Inline]] = None,
     authors: Chunk[Author] = Chunk.empty,
     location: Option[Location] = None
-)
+) derives Schema
 
 /** Author information from the document header. */
 case class Author(
