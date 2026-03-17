@@ -168,6 +168,47 @@ class AsgVisitorSpec extends FunSuite:
     assertEquals(doc.count, 4) // doc + para + 2 texts
   }
 
+  test("foldLeft visits parent before children") {
+    val text = Text("hello", loc)
+    val para = Paragraph(inlines = Chunk(text), location = loc)
+    val doc = Document(blocks = Chunk(para), location = loc)
+
+    val order = doc.foldLeft(Chunk.empty[String]) { (acc, node) =>
+      node match
+        case _: Document  => acc :+ "doc"
+        case _: Paragraph => acc :+ "para"
+        case _: Text      => acc :+ "text"
+        case _            => acc
+    }
+    assertEquals(order, Chunk("doc", "para", "text"))
+  }
+
+  test("foldRight visits children before parent") {
+    val text = Text("hello", loc)
+    val para = Paragraph(inlines = Chunk(text), location = loc)
+    val doc = Document(blocks = Chunk(para), location = loc)
+
+    val order = doc.foldRight(Chunk.empty[String]) { (node, acc) =>
+      node match
+        case _: Document  => acc :+ "doc"
+        case _: Paragraph => acc :+ "para"
+        case _: Text      => acc :+ "text"
+        case _            => acc
+    }
+    assertEquals(order, Chunk("text", "para", "doc"))
+  }
+
+  test("foldRight is stack-safe for deeply nested trees") {
+    val depth = 10000
+    var node: Block = Paragraph(inlines = Chunk(Text("leaf", loc)), location = loc)
+    for _ <- 1 to depth do
+      node = Quote(form = "quote", delimiter = "____", blocks = Chunk(node), location = loc)
+    val doc = Document(blocks = Chunk(node), location = loc)
+
+    val count = doc.foldRight(0) { (_, n) => n + 1 }
+    assertEquals(count, depth + 3)
+  }
+
   test("fold is stack-safe for deeply nested trees") {
     // Build a tree 10,000 levels deep — would overflow the stack without trampolining
     val depth = 10000

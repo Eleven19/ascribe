@@ -127,8 +127,10 @@ object AsgVisitor:
             case _: CharRef => Chunk.empty
             case _: Raw     => Chunk.empty
 
-    /** Pre-order fold over all nodes in the tree. Visits each node before its children. Stack-safe via trampolining. */
-    def fold[A](node: Node)(init: A)(f: (A, Node) => A): A =
+    /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
+      * trampolining.
+      */
+    def foldLeft[A](node: Node)(init: A)(f: (A, Node) => A): A =
         def go(n: Node, acc: A): TailRec[A] =
             val newAcc = f(acc, n)
             val kids   = children(n)
@@ -139,17 +141,35 @@ object AsgVisitor:
                 }
         go(node, init).result
 
+    /** Post-order right fold: visits children before their parent, accumulating right-to-left. Stack-safe via
+      * trampolining.
+      */
+    def foldRight[A](node: Node)(init: A)(f: (Node, A) => A): A =
+        def go(n: Node, acc: A): TailRec[A] =
+            val kids = children(n)
+            val childResult =
+                if kids.isEmpty then done(acc)
+                else
+                    kids.foldRight(done(acc)) { (child, tailAcc) =>
+                        tailAcc.flatMap(a => tailcall(go(child, a)))
+                    }
+            childResult.map(a => f(n, a))
+        go(node, init).result
+
+    /** Pre-order fold (alias for `foldLeft`). */
+    def fold[A](node: Node)(init: A)(f: (A, Node) => A): A = foldLeft(node)(init)(f)
+
     /** Collect values from all nodes in the tree that match a partial function (pre-order). */
     def collect[B](node: Node)(pf: PartialFunction[Node, B]): Chunk[B] =
         val buf = ArrayBuffer.empty[B]
-        fold(node)(()) { (_, n) =>
+        foldLeft(node)(()) { (_, n) =>
             if pf.isDefinedAt(n) then buf += pf(n)
         }
         Chunk.from(buf)
 
     /** Count all nodes in the tree. */
     def count(node: Node): Int =
-        fold(node)(0)((n, _) => n + 1)
+        foldLeft(node)(0)((n, _) => n + 1)
 
 /** Extension methods for visiting and folding over ASG nodes. */
 extension (node: Node)
@@ -157,7 +177,13 @@ extension (node: Node)
     /** Apply a visitor to this node. */
     def visit[A](visitor: AsgVisitor[A]): A = AsgVisitor.visit(node, visitor)
 
-    /** Pre-order fold over this node and all descendants. */
+    /** Pre-order left fold over this node and all descendants. */
+    def foldLeft[A](init: A)(f: (A, Node) => A): A = AsgVisitor.foldLeft(node)(init)(f)
+
+    /** Post-order right fold over this node and all descendants. */
+    def foldRight[A](init: A)(f: (Node, A) => A): A = AsgVisitor.foldRight(node)(init)(f)
+
+    /** Pre-order fold (alias for `foldLeft`). */
     def fold[A](init: A)(f: (A, Node) => A): A = AsgVisitor.fold(node)(init)(f)
 
     /** Return all direct child nodes. */
