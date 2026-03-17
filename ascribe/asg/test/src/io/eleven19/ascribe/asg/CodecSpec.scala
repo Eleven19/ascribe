@@ -5,7 +5,7 @@ import munit.FunSuite
 
 class CodecSpec extends FunSuite:
 
-  val loc: Location = Chunk(Position(1, 1), Position(1, 10))
+  val loc: Location = Location(Position(1, 1), Position(1, 10))
 
   test("Text roundtrip") {
     val text = Text("hello", loc)
@@ -71,4 +71,31 @@ class CodecSpec extends FunSuite:
     val json = AsgCodecs.encode(list: Node)
     val decoded = AsgCodecs.decode(json)
     assertEquals(decoded, Right(list))
+  }
+
+  test("CharRef roundtrip") {
+    val charRef = CharRef("&amp;", loc)
+    val json = AsgCodecs.encode(charRef: Node)
+    assert(json.contains("\"name\":\"charref\""), s"JSON should use 'charref' name: $json")
+    val decoded = AsgCodecs.decode(json)
+    assertEquals(decoded, Right(charRef))
+  }
+
+  test("DList with DListItem roundtrip") {
+    val dlist = DList(
+      marker = "::",
+      items = Chunk(
+        DListItem(
+          marker = "::",
+          terms = Chunk(Chunk(Text("term", loc))),
+          principal = Some(Chunk(Text("definition", loc))),
+          location = loc
+        )
+      ),
+      location = loc
+    )
+    val json = AsgCodecs.encode(dlist: Node)
+    assert(json.contains("\"name\":\"dlist\""), s"JSON should use 'dlist' name: $json")
+    val decoded = AsgCodecs.decode(json)
+    assertEquals(decoded, Right(dlist))
   }

@@ -16,7 +16,7 @@ object AstToAsg:
 
     private def convertBlock(block: ast.Block): asg.Block = block match
         case ast.Heading(level, title) =>
-            asg.Section(
+            asg.Heading(
                 level = level,
                 title = Some(Chunk.from(title.map(convertInline))),
                 location = convertLocation(block.span)
@@ -74,7 +74,7 @@ object AstToAsg:
             )
 
     private def convertLocation(span: ast.Span): asg.Location =
-        Chunk(
+        asg.Location(
             asg.Position(span.start.line, span.start.col),
             asg.Position(span.end.line, span.end.col)
         )

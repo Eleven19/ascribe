@@ -44,13 +44,13 @@ class AstToAsgSpec extends FunSuite:
       case other => fail(s"Expected Paragraph, got $other")
   }
 
-  test("converts heading to section") {
+  test("converts heading to heading") {
     val astDoc = document(heading(1, text("Title")))
     val asgDoc = AstToAsg.convert(astDoc)
     asgDoc.blocks.head match
-      case s: asg.Section =>
-        assertEquals(s.level, 1)
-      case other => fail(s"Expected Section, got $other")
+      case h: asg.Heading =>
+        assertEquals(h.level, 1)
+      case other => fail(s"Expected Heading, got $other")
   }
 
   test("converts bold to strong span") {
@@ -113,5 +113,5 @@ class AstToAsgSpec extends FunSuite:
       scala.List(ast.Paragraph(scala.List(ast.Text("hi")(span)))(span))
     )(span)
     val asgDoc = AstToAsg.convert(astDoc)
-    assertEquals(asgDoc.location, Chunk(asg.Position(1, 1), asg.Position(1, 10)))
+    assertEquals(asgDoc.location, asg.Location(asg.Position(1, 1), asg.Position(1, 10)))
   }

@@ -10,5 +10,12 @@ case class Position(
     file: Option[Chunk[String]] = None
 ) derives Schema
 
-/** A source location as a pair of positions (start, end). */
-type Location = Chunk[Position]
+/** A source location as a pair of positions (start, end). Serializes as a JSON array to match the TCK schema. */
+case class Location(start: Position, end: Position)
+
+object Location:
+
+    given Schema[Location] = summon[Schema[Chunk[Position]]].transform[Location](
+        chunk => Location(chunk(0), chunk(1)),
+        loc => Chunk(loc.start, loc.end)
+    )
