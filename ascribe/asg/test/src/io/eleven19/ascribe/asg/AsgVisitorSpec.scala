@@ -46,13 +46,62 @@ class AsgVisitorSpec extends FunSuite:
     assertEquals(text1.children.size, 0)
   }
 
+  test("children includes Document header title inlines") {
+    val titleText = Text("My Title", loc)
+    val header = Header(title = Some(Chunk(titleText)))
+    val doc = Document(header = Some(header), location = loc)
+
+    val kids = doc.children
+    assertEquals(kids.size, 1)
+    assertEquals(kids.head, titleText)
+  }
+
+  test("children includes block title and reftext inlines") {
+    val titleText = Text("title", loc)
+    val reftextText = Text("ref", loc)
+    val bodyText = Text("body", loc)
+    val para = Paragraph(
+      title = Some(Chunk(titleText)),
+      reftext = Some(Chunk(reftextText)),
+      inlines = Chunk(bodyText),
+      location = loc
+    )
+
+    val kids = para.children
+    assertEquals(kids.size, 3)
+    assertEquals(kids(0), titleText)
+    assertEquals(kids(1), reftextText)
+    assertEquals(kids(2), bodyText)
+  }
+
+  test("children handles DListItem with terms and principal") {
+    val term1 = Text("term1", loc)
+    val term2 = Text("term2", loc)
+    val defn = Text("definition", loc)
+    val dli = DListItem(
+      marker = "::",
+      terms = Chunk(Chunk(term1), Chunk(term2)),
+      principal = Some(Chunk(defn)),
+      location = loc
+    )
+
+    val kids = dli.children
+    assert(kids.contains(term1))
+    assert(kids.contains(term2))
+    assert(kids.contains(defn))
+  }
+
   test("fold counts all nodes in a tree") {
     val text = Text("hello", loc)
     val para = Paragraph(inlines = Chunk(text), location = loc)
     val doc = Document(blocks = Chunk(para), location = loc)
 
-    val count = doc.fold(0)((n, _) => n + 1)
-    assertEquals(count, 3) // doc + para + text
+    assertEquals(doc.count, 3) // doc + para + text
+  }
+
+  test("fold on empty document counts one node") {
+    val doc = Document(location = loc)
+    assertEquals(doc.count, 1)
   }
 
   test("fold collects all text values") {
@@ -70,16 +119,26 @@ class AsgVisitorSpec extends FunSuite:
     assertEquals(texts, Chunk("hello", " world"))
   }
 
+  test("fold includes document header title text") {
+    val titleText = Text("Doc Title", loc)
+    val header = Header(title = Some(Chunk(titleText)))
+    val bodyText = Text("body", loc)
+    val doc = Document(
+      header = Some(header),
+      blocks = Chunk(Paragraph(inlines = Chunk(bodyText), location = loc)),
+      location = loc
+    )
+
+    val texts = doc.collect { case t: Text => t.value }
+    assertEquals(texts, Chunk("Doc Title", "body"))
+  }
+
   test("fold traverses nested list structures") {
     val item1 = ListItem(marker = "*", principal = Chunk(Text("a", loc)), location = loc)
     val item2 = ListItem(marker = "*", principal = Chunk(Text("b", loc)), location = loc)
     val list = List(variant = "unordered", marker = "*", items = Chunk(item1, item2), location = loc)
 
-    val texts = list.fold(Chunk.empty[String]) { (acc, node) =>
-      node match
-        case t: Text => acc :+ t.value
-        case _       => acc
-    }
+    val texts = list.collect { case t: Text => t.value }
     assertEquals(texts, Chunk("a", "b"))
   }
 
@@ -89,12 +148,22 @@ class AsgVisitorSpec extends FunSuite:
     val para = Paragraph(inlines = Chunk(t1, t2), location = loc)
     val doc = Document(blocks = Chunk(para), location = loc)
 
-    val texts = AsgVisitor.collect(doc) { case t: Text => t }
+    val texts = doc.collect { case t: Text => t }
     assertEquals(texts.size, 2)
+  }
+
+  test("collect returns typed values") {
+    val t1 = Text("hello", loc)
+    val t2 = Text("world", loc)
+    val para = Paragraph(inlines = Chunk(t1, t2), location = loc)
+    val doc = Document(blocks = Chunk(para), location = loc)
+
+    val values: Chunk[String] = doc.collect { case t: Text => t.value }
+    assertEquals(values, Chunk("hello", "world"))
   }
 
   test("count returns total number of nodes") {
     val para = Paragraph(inlines = Chunk(Text("a", loc), Text("b", loc)), location = loc)
     val doc = Document(blocks = Chunk(para), location = loc)
-    assertEquals(AsgVisitor.count(doc), 4) // doc + para + 2 texts
+    assertEquals(doc.count, 4) // doc + para + 2 texts
   }

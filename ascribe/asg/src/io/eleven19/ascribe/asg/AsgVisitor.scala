@@ -1,6 +1,7 @@
 package io.eleven19.ascribe.asg
 
 import zio.blocks.chunk.Chunk
+import scala.collection.mutable.ArrayBuffer
 
 /** Visitor trait for ASG nodes. Each method has a default that delegates up the type hierarchy, so you only need to
   * override the methods you care about.
@@ -49,7 +50,12 @@ trait AsgVisitor[A]:
     def visitCharRef(node: CharRef): A = visitInline(node)
     def visitRaw(node: Raw): A         = visitInline(node)
 
-/** Utilities for visiting and folding over ASG trees. */
+/** Utilities for visiting and folding over ASG trees.
+  *
+  * Note: traversal uses structural recursion bounded by document nesting depth, which is safe for real-world AsciiDoc
+  * (typically &lt; 20 levels). For programmatically-generated ASGs with extreme nesting, consider an iterative
+  * approach.
+  */
 object AsgVisitor:
 
     /** Dispatch a node to the appropriate visitor method. */
@@ -88,7 +94,8 @@ object AsgVisitor:
         def optInlines(opt: Option[Chunk[Inline]]): Chunk[Node] =
             opt.getOrElse(Chunk.empty)
         node match
-            case d: Document   => d.blocks
+            case d: Document =>
+                d.header.flatMap(_.title).getOrElse(Chunk.empty[Inline]).asInstanceOf[Chunk[Node]] ++ d.blocks
             case s: Section    => optInlines(s.title) ++ optInlines(s.reftext) ++ s.blocks
             case h: Heading    => optInlines(h.title) ++ optInlines(h.reftext)
             case p: Paragraph  => optInlines(p.title) ++ optInlines(p.reftext) ++ p.inlines
@@ -125,11 +132,13 @@ object AsgVisitor:
         val acc = f(init, node)
         children(node).foldLeft(acc)((a, child) => fold(child)(a)(f))
 
-    /** Collect all nodes in the tree that satisfy a predicate (pre-order). */
-    def collect(node: Node)(pf: PartialFunction[Node, Node]): Chunk[Node] =
-        fold(node)(Chunk.empty[Node]) { (acc, n) =>
-            if pf.isDefinedAt(n) then acc :+ pf(n) else acc
+    /** Collect values from all nodes in the tree that match a partial function (pre-order). */
+    def collect[B](node: Node)(pf: PartialFunction[Node, B]): Chunk[B] =
+        val buf = ArrayBuffer.empty[B]
+        fold(node)(()) { (_, n) =>
+            if pf.isDefinedAt(n) then buf += pf(n)
         }
+        Chunk.from(buf)
 
     /** Count all nodes in the tree. */
     def count(node: Node): Int =
@@ -146,3 +155,9 @@ extension (node: Node)
 
     /** Return all direct child nodes. */
     def children: Chunk[Node] = AsgVisitor.children(node)
+
+    /** Collect values from all descendant nodes matching a partial function. */
+    def collect[B](pf: PartialFunction[Node, B]): Chunk[B] = AsgVisitor.collect(node)(pf)
+
+    /** Count all nodes in this subtree. */
+    def count: Int = AsgVisitor.count(node)
