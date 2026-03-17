@@ -380,7 +380,7 @@ case class List private (
     metadata: Option[BlockMetadata],
     variant: String,
     marker: String,
-    items: Chunk[ListItem],
+    items: Chunk[Block],
     location: Location,
     @Modifier.rename("type") nodeType: String
 ) extends Block derives Schema
@@ -394,7 +394,7 @@ object List:
         metadata: Option[BlockMetadata] = None,
         variant: String,
         marker: String,
-        items: Chunk[ListItem],
+        items: Chunk[Block],
         location: Location
     ): List = new List(id, title, reftext, metadata, variant, marker, items, location, "block")
 
@@ -405,7 +405,7 @@ case class DList private (
     reftext: Option[Chunk[Inline]],
     metadata: Option[BlockMetadata],
     marker: String,
-    items: Chunk[DListItem],
+    items: Chunk[Block],
     location: Location,
     @Modifier.rename("type") nodeType: String
 ) extends Block derives Schema
@@ -418,7 +418,7 @@ object DList:
         reftext: Option[Chunk[Inline]] = None,
         metadata: Option[BlockMetadata] = None,
         marker: String,
-        items: Chunk[DListItem],
+        items: Chunk[Block],
         location: Location
     ): DList = new DList(id, title, reftext, metadata, marker, items, location, "block")
 

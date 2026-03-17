@@ -76,6 +76,9 @@ case class Paragraph(content: InlineContent)(val span: Span) extends Block deriv
 /** A delimited listing block (verbatim code). */
 case class ListingBlock(delimiter: String, content: String)(val span: Span) extends Block derives CanEqual
 
+/** A delimited sidebar block containing nested blocks. */
+case class SidebarBlock(delimiter: String, blocks: List[Block])(val span: Span) extends Block derives CanEqual
+
 /** A bullet list (items prefixed with "* "). */
 case class UnorderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual
 
@@ -94,8 +97,14 @@ object UnorderedList extends PosParserBridge1[List[ListItem], UnorderedList]:
 object OrderedList extends PosParserBridge1[List[ListItem], OrderedList]:
     def apply(items: List[ListItem])(span: Span): OrderedList = new OrderedList(items)(span)
 
-/** The top-level document containing an ordered sequence of blocks. */
-case class Document(blocks: List[Block])(val span: Span) extends AstNode derives CanEqual
+/** A document header with title and optional attributes. */
+case class DocumentHeader(title: InlineContent, attributes: List[(String, String)])(val span: Span) extends AstNode
+    derives CanEqual
 
-object Document extends PosParserBridge1[List[Block], Document]:
-    def apply(blocks: List[Block])(span: Span): Document = new Document(blocks)(span)
+/** The top-level document containing an ordered sequence of blocks, with optional header. */
+case class Document(header: Option[DocumentHeader], blocks: List[Block])(val span: Span) extends AstNode
+    derives CanEqual
+
+object Document:
+    /** Convenience constructor without header for backwards compatibility. */
+    def apply(blocks: List[Block])(span: Span): Document = new Document(None, blocks)(span)

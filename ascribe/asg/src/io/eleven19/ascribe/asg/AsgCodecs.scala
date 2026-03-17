@@ -24,6 +24,10 @@ object AsgCodecs:
     /** Encode an ASG Node to a JSON string. */
     def encode(node: Node): String = new String(codec.encode(node).toArray)
 
+    /** Encode a sequence of Inline nodes as a JSON array. Used for inline-only TCK tests. */
+    def encodeInlines(inlines: zio.blocks.chunk.Chunk[Inline]): String =
+        "[" + inlines.map(i => encode(i: Node)).mkString(",") + "]"
+
     /** Decode a JSON string to an ASG Node. */
     def decode(json: String): Either[String, Node] =
         codec.decode(json.getBytes).left.map(_.toString)

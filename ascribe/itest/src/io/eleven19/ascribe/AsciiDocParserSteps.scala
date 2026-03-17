@@ -11,6 +11,12 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     private var source: String           = ""
     private var result: Option[Document] = None
 
+    /** Get a block by 1-based index, accounting for header offset. */
+    private def getBlock(idx: Int): Block =
+        val doc      = result.getOrElse(throw new AssertionError("No parsed document available"))
+        val blockIdx = if doc.header.isDefined then idx - 2 else idx - 1
+        doc.blocks(blockIdx)
+
     // -----------------------------------------------------------------------
     // Given
     // -----------------------------------------------------------------------
@@ -44,9 +50,11 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
 
     Then("""^the document contains (\d+) blocks?$""") { (n: Int) =>
         val doc = result.getOrElse(throw new AssertionError("No parsed document available"))
+        // Count header as a block for feature file compatibility
+        val totalBlocks = doc.blocks.length + (if doc.header.isDefined then 1 else 0)
         assert(
-            doc.blocks.length == n,
-            s"Expected $n block(s) but got ${doc.blocks.length}: ${doc.blocks}"
+            totalBlocks == n,
+            s"Expected $n block(s) but got $totalBlocks (header: ${doc.header.isDefined}, blocks: ${doc.blocks.length})"
         )
     }
 
@@ -55,20 +63,29 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     // -----------------------------------------------------------------------
 
     Then("""^block (\d+) is a level (\d+) heading with title "(.+)"$""") { (idx: Int, level: Int, title: String) =>
-        val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
-        val block = doc.blocks(idx - 1)
-        block match
-            case Heading(l, inlines) =>
-                assert(l == level, s"Expected heading level $level but got $l")
-                val text = inlinesToText(inlines)
-                assert(text == title, s"Expected title '$title' but got '$text'")
-            case Section(l, inlines, _) =>
-                val actualLevel = l + 1 // Section level is ASG-style (== is level 1), heading level is parser-style (== is level 2)
-                assert(actualLevel == level, s"Expected heading level $level but got $actualLevel")
-                val text = inlinesToText(inlines)
-                assert(text == title, s"Expected title '$title' but got '$text'")
-            case other =>
-                throw new AssertionError(s"Expected Heading/Section at block $idx but got: $other")
+        val doc = result.getOrElse(throw new AssertionError("No parsed document available"))
+        // For level-1 headings, check the document header (if block 1 and header exists)
+        if (idx == 1 && doc.header.isDefined && level == 1) {
+            val header = doc.header.get
+            val text   = inlinesToText(header.title)
+            assert(text == title, s"Expected title '$title' but got '$text'")
+        } else {
+            // Adjust index: if header exists, block indices shift by 1
+            val blockIdx = if doc.header.isDefined then idx - 2 else idx - 1
+            val block    = doc.blocks(blockIdx)
+            block match
+                case Heading(l, inlines) =>
+                    assert(l == level, s"Expected heading level $level but got $l")
+                    val text = inlinesToText(inlines)
+                    assert(text == title, s"Expected title '$title' but got '$text'")
+                case Section(l, inlines, _) =>
+                    val actualLevel = l + 1
+                    assert(actualLevel == level, s"Expected heading level $level but got $actualLevel")
+                    val text = inlinesToText(inlines)
+                    assert(text == title, s"Expected title '$title' but got '$text'")
+                case other =>
+                    throw new AssertionError(s"Expected Heading/Section at block $idx but got: $other")
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -76,8 +93,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     // -----------------------------------------------------------------------
 
     Then("""^block (\d+) is a paragraph containing the text "(.+)"$""") { (idx: Int, expected: String) =>
-        val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
-        val block = doc.blocks(idx - 1)
+        val block = getBlock(idx)
         block match
             case Paragraph(inlines) =>
                 val text = inlinesToText(inlines)
@@ -112,8 +128,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     // -----------------------------------------------------------------------
 
     Then("""^block (\d+) is an unordered list with (\d+) items?$""") { (idx: Int, n: Int) =>
-        val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
-        val block = doc.blocks(idx - 1)
+        val block = getBlock(idx)
         block match
             case UnorderedList(items) =>
                 assert(
@@ -125,8 +140,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     }
 
     Then("""^block (\d+) is an ordered list with (\d+) items?$""") { (idx: Int, n: Int) =>
-        val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
-        val block = doc.blocks(idx - 1)
+        val block = getBlock(idx)
         block match
             case OrderedList(items) =>
                 assert(
@@ -167,8 +181,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     private def assertContainsInlineSpan(idx: Int, kind: String, expected: String)(
         extract: PartialFunction[Inline, String]
     ): Unit =
-        val doc   = result.getOrElse(throw new AssertionError("No parsed document available"))
-        val block = doc.blocks(idx - 1)
+        val block = getBlock(idx)
         block match
             case Paragraph(inlines) =>
                 val found = inlines.collectFirst(extract)

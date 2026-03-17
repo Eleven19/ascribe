@@ -9,9 +9,23 @@ object AstToAsg:
 
     /** Convert an AST Document to an ASG Document. */
     def convert(doc: ast.Document): asg.Document =
+        val header = doc.header.map(convertHeader)
+        val attributes = doc.header.map { h =>
+            h.attributes.map((k, v) => (k, Some(v))).toMap
+        }
         asg.Document(
+            attributes = attributes,
+            header = header,
             blocks = Chunk.from(doc.blocks.map(convertBlock)),
             location = contentLocation(doc.span.start, lastContentPos(doc))
+        )
+
+    private def convertHeader(h: ast.DocumentHeader): asg.Header =
+        val titleInlines = h.title.map(convertInline)
+        val headerLoc    = contentLocation(h.span.start, lastContentPos(h))
+        asg.Header(
+            title = Some(Chunk.from(titleInlines)),
+            location = Some(headerLoc)
         )
 
     private def convertBlock(block: ast.Block): asg.Block = block match
@@ -35,23 +49,29 @@ object AstToAsg:
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
         case ast.ListingBlock(delimiter, content) =>
-            val loc = contentLocation(block.span.start, lastContentPos(block))
+            // Block location spans from opening delimiter to closing delimiter
+            val blockLoc = inclusiveLocation(block.span)
             // Content location: lines inside the delimiters
-            val contentStart = ast.Position(block.span.start.line + 1, 1)
-            val contentEnd   = lastContentPos(block)
+            val contentStartLine = block.span.start.line + 1
+            val contentLines     = content.split("\n", -1)
+            val lastLineLen      = contentLines.last.length
+            val contentEndLine   = contentStartLine + contentLines.length - 1
+            val contentLoc = asg.Location(
+                asg.Position(contentStartLine, 1),
+                asg.Position(contentEndLine, lastLineLen)
+            )
             asg.Listing(
                 form = Some("delimited"),
                 delimiter = Some(delimiter),
-                inlines = Chunk(
-                    asg.Text(
-                        content,
-                        asg.Location(
-                            asg.Position(contentStart.line, contentStart.col),
-                            asg.Position(contentEnd.line, contentEnd.col - 1)
-                        )
-                    )
-                ),
-                location = loc
+                inlines = Chunk(asg.Text(content, contentLoc)),
+                location = blockLoc
+            )
+        case ast.SidebarBlock(delimiter, blocks) =>
+            asg.Sidebar(
+                form = "delimited",
+                delimiter = delimiter,
+                blocks = Chunk.from(blocks.map(convertBlock)),
+                location = inclusiveLocation(block.span)
             )
         case ast.UnorderedList(items) =>
             asg.List(
@@ -125,11 +145,21 @@ object AstToAsg:
       * deepest last child to avoid positions that include consumed newlines.
       */
     private def lastContentPos(node: ast.AstNode): ast.Position = node match
-        case d: ast.Document       => d.blocks.lastOption.map(lastContentPos).getOrElse(d.span.end)
+        case d: ast.Document =>
+            d.blocks.lastOption
+                .map(lastContentPos)
+                .orElse(d.header.map(lastContentPos))
+                .getOrElse(d.span.end)
+        case dh: ast.DocumentHeader =>
+            dh.attributes.lastOption
+                .map((_, v) => dh.span.end) // attributes extend span
+                .orElse(dh.title.lastOption.map(lastContentPos))
+                .getOrElse(dh.span.end)
         case h: ast.Heading        => h.title.lastOption.map(lastContentPos).getOrElse(h.span.end)
         case s: ast.Section        => s.blocks.lastOption.map(lastContentPos).getOrElse(lastContentPos(s))
         case p: ast.Paragraph      => p.content.lastOption.map(lastContentPos).getOrElse(p.span.end)
         case lb: ast.ListingBlock  => lb.span.end // listing block span includes closing delimiter
+        case sb: ast.SidebarBlock  => sb.span.end // sidebar block span includes closing delimiter
         case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
         case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
         case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)

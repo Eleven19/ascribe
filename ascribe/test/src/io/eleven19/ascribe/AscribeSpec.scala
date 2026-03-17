@@ -11,7 +11,7 @@ object AscribeSpec extends ZIOSpecDefault:
         test("parses a simple heading document") {
             Ascribe.parse("= Hello World\n") match
                 case Success(doc) =>
-                    assertTrue(doc == document(heading(1, text("Hello World"))))
+                    assertTrue(doc == documentWithHeader(documentHeader(text("Hello World"))))
                 case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
         },
         test("parses a paragraph") {

@@ -3,7 +3,7 @@ package io.eleven19.ascribe.parser
 import parsley.Parsley
 import parsley.Parsley.{atomic, notFollowedBy}
 import parsley.character.{char, string}
-import parsley.combinator.{many, manyTill, some}
+import parsley.combinator.{many, manyTill, option, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
@@ -15,6 +15,7 @@ import io.eleven19.ascribe.ast.{
     ListingBlock,
     OrderedList,
     Paragraph,
+    SidebarBlock,
     Span as AstSpan,
     UnorderedList,
     mkSpan
@@ -104,12 +105,31 @@ object BlockParser:
     /** Parses a delimited listing block: `----` open, verbatim content, `----` close. */
     val listingBlock: Parsley[Block] =
         (pos <~> (atomic(string("----")) <* eolOrEof) *>
-            manyTill(rawLine, atomic(string("----") <* eolOrEof)) <~> pos)
+            manyTill(rawLine, atomic(string("----"))) <~> pos <* eolOrEof)
             .map { case ((s, lines), e) =>
                 val content = lines.mkString("\n").stripSuffix("\n")
                 ListingBlock("----", content)(mkSpan(s, e))
             }
             .label("listing block")
+
+    /** Parses a delimited sidebar block: `****` open, nested blocks, `****` close. */
+    val sidebarBlock: Parsley[Block] =
+        (pos <~> (atomic(string("****")) <* eolOrEof) *>
+            manyTill(
+                sidebarInnerBlock,
+                atomic(string("****"))
+            ) <~> pos <* eolOrEof)
+            .map { case ((s, blocks), e) =>
+                SidebarBlock("****", blocks)(mkSpan(s, e))
+            }
+            .label("sidebar block")
+
+    /** Blocks allowed inside a sidebar (same as top-level blocks except delimited blocks). */
+    private lazy val sidebarInnerBlock: Parsley[Block] =
+        option(some(blankLine)).void *> (heading | unorderedList | orderedList | paragraph)
+
+    /** One or more consecutive blank lines. */
+    private val blankLine: Parsley[Unit] = (hspaces *> eol).void
 
     // -----------------------------------------------------------------------
     // Paragraphs
@@ -123,7 +143,8 @@ object BlockParser:
         notFollowedBy(headingLevel *> char(' ')) *>
             notFollowedBy(char('*') *> char(' ')) *>
             notFollowedBy(char('.') *> char(' ')) *>
-            notFollowedBy(string("----"))
+            notFollowedBy(string("----")) *>
+            notFollowedBy(string("****"))
 
     /** Parses a single non-empty, non-block-start line as a list of inline elements. */
     private val paragraphLine: Parsley[InlineContent] =

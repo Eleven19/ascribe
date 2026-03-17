@@ -17,4 +17,7 @@ object TestHelpers:
   def paragraph(inlines: Inline*): Paragraph = Paragraph(inlines.toList)(u)
   def unorderedList(items: ListItem*): UnorderedList = UnorderedList(items.toList)(u)
   def orderedList(items: ListItem*): OrderedList = OrderedList(items.toList)(u)
+  def documentHeader(title: Inline*): DocumentHeader = DocumentHeader(title.toList, Nil)(u)
+  def documentWithHeader(header: DocumentHeader, blocks: Block*): Document =
+      Document(Some(header), blocks.toList)(u)
   def document(blocks: Block*): Document = Document(blocks.toList)(u)
