@@ -1,11 +1,11 @@
-package io.github.eleven19.ascribe.parser
+package io.eleven19.ascribe.parser
 
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.github.eleven19.ascribe.TestHelpers.*
-import io.github.eleven19.ascribe.ast.Inline
-import io.github.eleven19.ascribe.parser.InlineParser.lineContent
+import io.eleven19.ascribe.TestHelpers.*
+import io.eleven19.ascribe.ast.Inline
+import io.eleven19.ascribe.parser.InlineParser.lineContent
 
 object InlineParserSpec extends ZIOSpecDefault:
     private def parse(input: String) = lineContent.parse(input)

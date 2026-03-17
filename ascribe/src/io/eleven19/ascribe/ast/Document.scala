@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe.ast
+package io.eleven19.ascribe.ast
 
 /** A list of inline elements forming the content of a single line. */
 type InlineContent = List[Inline]

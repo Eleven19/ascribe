@@ -1,6 +1,6 @@
-package io.github.eleven19.ascribe
+package io.eleven19.ascribe
 
-import io.github.eleven19.ascribe.ast.*
+import io.eleven19.ascribe.ast.*
 
 /** Convenience constructors for building AST nodes in tests without specifying positions. */
 object TestHelpers:

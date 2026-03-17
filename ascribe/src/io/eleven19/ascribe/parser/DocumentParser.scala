@@ -1,17 +1,17 @@
-package io.github.eleven19.ascribe.parser
+package io.eleven19.ascribe.parser
 
 import parsley.Parsley
 import parsley.Parsley.eof
 import parsley.combinator.{option, sepEndBy, some}
 
-import io.github.eleven19.ascribe.ast.Document
-import io.github.eleven19.ascribe.lexer.AsciiDocLexer.blankLine
-import io.github.eleven19.ascribe.parser.BlockParser.*
+import io.eleven19.ascribe.ast.Document
+import io.eleven19.ascribe.lexer.AsciiDocLexer.blankLine
+import io.eleven19.ascribe.parser.BlockParser.*
 
 /** Top-level parser for a complete AsciiDoc document.
   *
-  * A document is a sequence of [[io.github.eleven19.ascribe.ast.Block]] elements separated (and optionally terminated)
-  * by blank lines. Leading blank lines are tolerated and silently discarded.
+  * A document is a sequence of [[io.eleven19.ascribe.ast.Block]] elements separated (and optionally terminated) by
+  * blank lines. Leading blank lines are tolerated and silently discarded.
   *
   * {{{
   * val result = DocumentParser.document.parse(source)
@@ -32,7 +32,7 @@ object DocumentParser:
       *   3. [[orderedList]] -- distinguished by leading `. `
       *   4. [[paragraph]] -- everything else (last resort)
       */
-    private val block: Parsley[io.github.eleven19.ascribe.ast.Block] =
+    private val block: Parsley[io.eleven19.ascribe.ast.Block] =
         heading | unorderedList | orderedList | paragraph
 
     /** Parses a complete AsciiDoc document from start to end of input. The Document bridge constructor captures

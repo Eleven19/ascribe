@@ -1,10 +1,10 @@
-package io.github.eleven19.ascribe.parser
+package io.eleven19.ascribe.parser
 
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.github.eleven19.ascribe.TestHelpers.*
-import io.github.eleven19.ascribe.parser.DocumentParser.document as parseDocument
+import io.eleven19.ascribe.TestHelpers.*
+import io.eleven19.ascribe.parser.DocumentParser.document as parseDocument
 
 object DocumentParserSpec extends ZIOSpecDefault:
     private def parse(input: String) = parseDocument.parse(input)

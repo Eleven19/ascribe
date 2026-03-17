@@ -1,9 +1,9 @@
-package io.github.eleven19.ascribe
+package io.eleven19.ascribe
 
 import io.cucumber.scala.{EN, ScalaDsl}
 import parsley.{Failure, Success}
 
-import io.github.eleven19.ascribe.ast.*
+import io.eleven19.ascribe.ast.*
 
 /** Cucumber step definitions for the AsciiDoc parser integration tests. */
 class AsciiDocParserSteps extends ScalaDsl with EN:

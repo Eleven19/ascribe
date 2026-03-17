@@ -1,9 +1,9 @@
-package io.github.eleven19.ascribe
+package io.eleven19.ascribe
 
 import parsley.Result
 
-import io.github.eleven19.ascribe.ast.Document
-import io.github.eleven19.ascribe.parser.DocumentParser
+import io.eleven19.ascribe.ast.Document
+import io.eleven19.ascribe.parser.DocumentParser
 
 /** Public API for the Ascribe AsciiDoc parser.
   *
