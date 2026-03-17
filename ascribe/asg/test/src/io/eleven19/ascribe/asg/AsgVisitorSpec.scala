@@ -162,6 +162,20 @@ class AsgVisitorSpec extends FunSuite:
     assertEquals(values, Chunk("hello", "world"))
   }
 
+  test("collectPostOrder returns values in post-order") {
+    val t1 = Text("a", loc)
+    val t2 = Text("b", loc)
+    val para = Paragraph(inlines = Chunk(t1, t2), location = loc)
+    val doc = Document(blocks = Chunk(para), location = loc)
+
+    val preOrder = doc.collect { case t: Text => t.value }
+    val postOrder = doc.collectPostOrder { case t: Text => t.value }
+    // Text nodes are leaves, so both orders find the same values
+    // but in reversed sibling order for post-order (right-to-left)
+    assertEquals(preOrder, Chunk("a", "b"))
+    assertEquals(postOrder, Chunk("b", "a"))
+  }
+
   test("count returns total number of nodes") {
     val para = Paragraph(inlines = Chunk(Text("a", loc), Text("b", loc)), location = loc)
     val doc = Document(blocks = Chunk(para), location = loc)

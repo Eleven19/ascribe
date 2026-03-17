@@ -167,6 +167,14 @@ object AsgVisitor:
         }
         Chunk.from(buf)
 
+    /** Collect values from all nodes in the tree that match a partial function (post-order). */
+    def collectPostOrder[B](node: Node)(pf: PartialFunction[Node, B]): Chunk[B] =
+        val buf = ArrayBuffer.empty[B]
+        foldRight(node)(()) { (n, _) =>
+            if pf.isDefinedAt(n) then buf += pf(n)
+        }
+        Chunk.from(buf)
+
     /** Count all nodes in the tree. */
     def count(node: Node): Int =
         foldLeft(node)(0)((n, _) => n + 1)
@@ -189,8 +197,11 @@ extension (node: Node)
     /** Return all direct child nodes. */
     def children: Chunk[Node] = AsgVisitor.children(node)
 
-    /** Collect values from all descendant nodes matching a partial function. */
+    /** Collect values from all descendant nodes matching a partial function (pre-order). */
     def collect[B](pf: PartialFunction[Node, B]): Chunk[B] = AsgVisitor.collect(node)(pf)
+
+    /** Collect values from all descendant nodes matching a partial function (post-order). */
+    def collectPostOrder[B](pf: PartialFunction[Node, B]): Chunk[B] = AsgVisitor.collectPostOrder(node)(pf)
 
     /** Count all nodes in this subtree. */
     def count: Int = AsgVisitor.count(node)
