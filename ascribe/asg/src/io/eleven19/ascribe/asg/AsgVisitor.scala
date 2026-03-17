@@ -2,6 +2,7 @@ package io.eleven19.ascribe.asg
 
 import zio.blocks.chunk.Chunk
 import scala.collection.mutable.ArrayBuffer
+import scala.util.control.TailCalls.*
 
 /** Visitor trait for ASG nodes. Each method has a default that delegates up the type hierarchy, so you only need to
   * override the methods you care about.
@@ -52,9 +53,8 @@ trait AsgVisitor[A]:
 
 /** Utilities for visiting and folding over ASG trees.
   *
-  * Note: traversal uses structural recursion bounded by document nesting depth, which is safe for real-world AsciiDoc
-  * (typically &lt; 20 levels). For programmatically-generated ASGs with extreme nesting, consider an iterative
-  * approach.
+  * Traversal uses trampolining (`scala.util.control.TailCalls`) for stack safety, so arbitrarily deep ASG trees can be
+  * processed without risk of stack overflow.
   */
 object AsgVisitor:
 
@@ -127,10 +127,17 @@ object AsgVisitor:
             case _: CharRef => Chunk.empty
             case _: Raw     => Chunk.empty
 
-    /** Pre-order fold over all nodes in the tree. Visits each node before its children. */
+    /** Pre-order fold over all nodes in the tree. Visits each node before its children. Stack-safe via trampolining. */
     def fold[A](node: Node)(init: A)(f: (A, Node) => A): A =
-        val acc = f(init, node)
-        children(node).foldLeft(acc)((a, child) => fold(child)(a)(f))
+        def go(n: Node, acc: A): TailRec[A] =
+            val newAcc = f(acc, n)
+            val kids   = children(n)
+            if kids.isEmpty then done(newAcc)
+            else
+                kids.foldLeft(done(newAcc)) { (tailAcc, child) =>
+                    tailAcc.flatMap(a => tailcall(go(child, a)))
+                }
+        go(node, init).result
 
     /** Collect values from all nodes in the tree that match a partial function (pre-order). */
     def collect[B](node: Node)(pf: PartialFunction[Node, B]): Chunk[B] =

@@ -167,3 +167,16 @@ class AsgVisitorSpec extends FunSuite:
     val doc = Document(blocks = Chunk(para), location = loc)
     assertEquals(doc.count, 4) // doc + para + 2 texts
   }
+
+  test("fold is stack-safe for deeply nested trees") {
+    // Build a tree 10,000 levels deep — would overflow the stack without trampolining
+    val depth = 10000
+    var node: Block = Paragraph(inlines = Chunk(Text("leaf", loc)), location = loc)
+    for _ <- 1 to depth do
+      node = Quote(form = "quote", delimiter = "____", blocks = Chunk(node), location = loc)
+    val doc = Document(blocks = Chunk(node), location = loc)
+
+    val count = doc.count
+    // doc(1) + depth Quote nodes + paragraph(1) + text(1)
+    assertEquals(count, depth + 3)
+  }
