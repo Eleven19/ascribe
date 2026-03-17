@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe.lexer
+package io.eleven19.ascribe.lexer
 
 import parsley.Parsley
 import parsley.Parsley.eof

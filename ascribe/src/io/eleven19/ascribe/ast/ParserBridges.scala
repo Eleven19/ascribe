@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe.ast
+package io.eleven19.ascribe.ast
 
 import parsley.Parsley
 import parsley.position.pos

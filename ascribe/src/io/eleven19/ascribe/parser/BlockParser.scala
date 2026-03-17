@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe.parser
+package io.eleven19.ascribe.parser
 
 import parsley.Parsley
 import parsley.Parsley.{atomic, notFollowedBy}
@@ -6,9 +6,9 @@ import parsley.character.{char, string}
 import parsley.combinator.some
 import parsley.errors.combinator.ErrorMethods
 
-import io.github.eleven19.ascribe.ast.{Block, Heading, InlineContent, ListItem, OrderedList, Paragraph, UnorderedList}
-import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
-import io.github.eleven19.ascribe.parser.InlineParser.*
+import io.eleven19.ascribe.ast.{Block, Heading, InlineContent, ListItem, OrderedList, Paragraph, UnorderedList}
+import io.eleven19.ascribe.lexer.AsciiDocLexer.*
+import io.eleven19.ascribe.parser.InlineParser.*
 
 /** Parsers for block-level AsciiDoc elements.
   *

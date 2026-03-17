@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe.parser
+package io.eleven19.ascribe.parser
 
 import parsley.Parsley
 import parsley.Parsley.atomic
@@ -7,8 +7,8 @@ import parsley.combinator.{many, manyTill}
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
-import io.github.eleven19.ascribe.ast.{Bold, Inline, InlineContent, Italic, Mono, Span, Text, mkSpan}
-import io.github.eleven19.ascribe.lexer.AsciiDocLexer.*
+import io.eleven19.ascribe.ast.{Bold, Inline, InlineContent, Italic, Mono, Span, Text, mkSpan}
+import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 
 /** Parsers for inline AsciiDoc elements.
   *

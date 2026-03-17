@@ -1,7 +1,7 @@
 package io.eleven19.ascribe.bridge
 
 import zio.blocks.chunk.Chunk
-import io.github.eleven19.ascribe.ast
+import io.eleven19.ascribe.ast
 import io.eleven19.ascribe.asg
 
 /** Converts parsed AST documents to ASG format. */

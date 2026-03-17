@@ -2,7 +2,7 @@ package io.eleven19.ascribe.bridge
 
 import zio.blocks.chunk.Chunk
 import munit.FunSuite
-import io.github.eleven19.ascribe.{ast}
+import io.eleven19.ascribe.{ast}
 import io.eleven19.ascribe.{asg}
 
 class AstToAsgSpec extends FunSuite:

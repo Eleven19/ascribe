@@ -1,9 +1,9 @@
-package io.github.eleven19.ascribe
+package io.eleven19.ascribe
 
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.github.eleven19.ascribe.TestHelpers.*
+import io.eleven19.ascribe.TestHelpers.*
 
 object AscribeSpec extends ZIOSpecDefault:
 

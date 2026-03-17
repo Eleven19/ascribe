@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe.ast
+package io.eleven19.ascribe.ast
 
 /** A source position identified by line and column (both 1-based, as returned by Parsley's `pos`). */
 case class Position(line: Int, col: Int)

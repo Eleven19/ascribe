@@ -1,4 +1,4 @@
-package io.github.eleven19.ascribe
+package io.eleven19.ascribe
 
 import org.junit.platform.suite.api.*
 
