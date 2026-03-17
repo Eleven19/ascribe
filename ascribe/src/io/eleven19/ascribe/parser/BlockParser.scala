@@ -3,10 +3,22 @@ package io.eleven19.ascribe.parser
 import parsley.Parsley
 import parsley.Parsley.{atomic, notFollowedBy}
 import parsley.character.{char, string}
-import parsley.combinator.some
+import parsley.combinator.{many, manyTill, some}
 import parsley.errors.combinator.ErrorMethods
+import parsley.position.pos
 
-import io.eleven19.ascribe.ast.{Block, Heading, InlineContent, ListItem, OrderedList, Paragraph, UnorderedList}
+import io.eleven19.ascribe.ast.{
+    Block,
+    Heading,
+    InlineContent,
+    ListItem,
+    ListingBlock,
+    OrderedList,
+    Paragraph,
+    Span as AstSpan,
+    UnorderedList,
+    mkSpan
+}
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 import io.eleven19.ascribe.parser.InlineParser.*
 
@@ -82,6 +94,24 @@ object BlockParser:
             .label("ordered list")
 
     // -----------------------------------------------------------------------
+    // Delimited blocks
+    // -----------------------------------------------------------------------
+
+    /** Parses a line of text (any chars until newline), returning the content without the newline. */
+    private val rawLine: Parsley[String] =
+        many(nonEolChar).map(_.mkString) <* eolOrEof
+
+    /** Parses a delimited listing block: `----` open, verbatim content, `----` close. */
+    val listingBlock: Parsley[Block] =
+        (pos <~> (atomic(string("----")) <* eolOrEof) *>
+            manyTill(rawLine, atomic(string("----") <* eolOrEof)) <~> pos)
+            .map { case ((s, lines), e) =>
+                val content = lines.mkString("\n").stripSuffix("\n")
+                ListingBlock("----", content)(mkSpan(s, e))
+            }
+            .label("listing block")
+
+    // -----------------------------------------------------------------------
     // Paragraphs
     // -----------------------------------------------------------------------
 
@@ -92,7 +122,8 @@ object BlockParser:
     private val notBlockStart: Parsley[Unit] =
         notFollowedBy(headingLevel *> char(' ')) *>
             notFollowedBy(char('*') *> char(' ')) *>
-            notFollowedBy(char('.') *> char(' '))
+            notFollowedBy(char('.') *> char(' ')) *>
+            notFollowedBy(string("----"))
 
     /** Parses a single non-empty, non-block-start line as a list of inline elements. */
     private val paragraphLine: Parsley[InlineContent] =

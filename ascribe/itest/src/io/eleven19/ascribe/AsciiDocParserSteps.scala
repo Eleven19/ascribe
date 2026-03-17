@@ -62,8 +62,13 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
                 assert(l == level, s"Expected heading level $level but got $l")
                 val text = inlinesToText(inlines)
                 assert(text == title, s"Expected title '$title' but got '$text'")
+            case Section(l, inlines, _) =>
+                val actualLevel = l + 1 // Section level is ASG-style (== is level 1), heading level is parser-style (== is level 2)
+                assert(actualLevel == level, s"Expected heading level $level but got $actualLevel")
+                val text = inlinesToText(inlines)
+                assert(text == title, s"Expected title '$title' but got '$text'")
             case other =>
-                throw new AssertionError(s"Expected Heading at block $idx but got: $other")
+                throw new AssertionError(s"Expected Heading/Section at block $idx but got: $other")
     }
 
     // -----------------------------------------------------------------------

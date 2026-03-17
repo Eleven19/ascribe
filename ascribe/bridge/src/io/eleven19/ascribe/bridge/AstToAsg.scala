@@ -21,11 +21,37 @@ object AstToAsg:
                 title = Some(Chunk.from(title.map(convertInline))),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
+        case ast.Section(level, title, blocks) =>
+            asg.Section(
+                level = level,
+                title = Some(Chunk.from(title.map(convertInline))),
+                blocks = Chunk.from(blocks.map(convertBlock)),
+                location = contentLocation(block.span.start, lastContentPos(block))
+            )
         case ast.Paragraph(content) =>
             val converted = mergeAdjacentTexts(content.map(convertInline))
             asg.Paragraph(
                 inlines = Chunk.from(converted),
                 location = contentLocation(block.span.start, lastContentPos(block))
+            )
+        case ast.ListingBlock(delimiter, content) =>
+            val loc = contentLocation(block.span.start, lastContentPos(block))
+            // Content location: lines inside the delimiters
+            val contentStart = ast.Position(block.span.start.line + 1, 1)
+            val contentEnd   = lastContentPos(block)
+            asg.Listing(
+                form = Some("delimited"),
+                delimiter = Some(delimiter),
+                inlines = Chunk(
+                    asg.Text(
+                        content,
+                        asg.Location(
+                            asg.Position(contentStart.line, contentStart.col),
+                            asg.Position(contentEnd.line, contentEnd.col - 1)
+                        )
+                    )
+                ),
+                location = loc
             )
         case ast.UnorderedList(items) =>
             asg.List(
@@ -56,6 +82,13 @@ object AstToAsg:
             asg.Span(
                 variant = "strong",
                 form = "unconstrained",
+                inlines = Chunk.from(content.map(convertInline)),
+                location = inclusiveLocation(inline.span)
+            )
+        case ast.ConstrainedBold(content) =>
+            asg.Span(
+                variant = "strong",
+                form = "constrained",
                 inlines = Chunk.from(content.map(convertInline)),
                 location = inclusiveLocation(inline.span)
             )
@@ -94,7 +127,9 @@ object AstToAsg:
     private def lastContentPos(node: ast.AstNode): ast.Position = node match
         case d: ast.Document       => d.blocks.lastOption.map(lastContentPos).getOrElse(d.span.end)
         case h: ast.Heading        => h.title.lastOption.map(lastContentPos).getOrElse(h.span.end)
+        case s: ast.Section        => s.blocks.lastOption.map(lastContentPos).getOrElse(lastContentPos(s))
         case p: ast.Paragraph      => p.content.lastOption.map(lastContentPos).getOrElse(p.span.end)
+        case lb: ast.ListingBlock  => lb.span.end // listing block span includes closing delimiter
         case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
         case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
         case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)

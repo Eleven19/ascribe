@@ -22,15 +22,18 @@ trait AstVisitor[A]:
 
     // --- Block types ---
     def visitHeading(node: Heading): A             = visitBlock(node)
+    def visitSection(node: Section): A             = visitBlock(node)
     def visitParagraph(node: Paragraph): A         = visitBlock(node)
+    def visitListingBlock(node: ListingBlock): A   = visitBlock(node)
     def visitUnorderedList(node: UnorderedList): A = visitBlock(node)
     def visitOrderedList(node: OrderedList): A     = visitBlock(node)
 
     // --- Inline types ---
-    def visitText(node: Text): A     = visitInline(node)
-    def visitBold(node: Bold): A     = visitInline(node)
-    def visitItalic(node: Italic): A = visitInline(node)
-    def visitMono(node: Mono): A     = visitInline(node)
+    def visitText(node: Text): A                       = visitInline(node)
+    def visitBold(node: Bold): A                       = visitInline(node)
+    def visitConstrainedBold(node: ConstrainedBold): A = visitInline(node)
+    def visitItalic(node: Italic): A                   = visitInline(node)
+    def visitMono(node: Mono): A                       = visitInline(node)
 
 /** Utilities for visiting and folding over AST trees.
   *
@@ -41,29 +44,35 @@ object AstVisitor:
 
     /** Dispatch a node to the appropriate visitor method. */
     def visit[A](node: AstNode, visitor: AstVisitor[A]): A = node match
-        case n: Document      => visitor.visitDocument(n)
-        case n: Heading       => visitor.visitHeading(n)
-        case n: Paragraph     => visitor.visitParagraph(n)
-        case n: UnorderedList => visitor.visitUnorderedList(n)
-        case n: OrderedList   => visitor.visitOrderedList(n)
-        case n: Text          => visitor.visitText(n)
-        case n: Bold          => visitor.visitBold(n)
-        case n: Italic        => visitor.visitItalic(n)
-        case n: Mono          => visitor.visitMono(n)
-        case n: ListItem      => visitor.visitListItem(n)
+        case n: Document        => visitor.visitDocument(n)
+        case n: Section         => visitor.visitSection(n)
+        case n: Heading         => visitor.visitHeading(n)
+        case n: Paragraph       => visitor.visitParagraph(n)
+        case n: ListingBlock    => visitor.visitListingBlock(n)
+        case n: UnorderedList   => visitor.visitUnorderedList(n)
+        case n: OrderedList     => visitor.visitOrderedList(n)
+        case n: Text            => visitor.visitText(n)
+        case n: Bold            => visitor.visitBold(n)
+        case n: ConstrainedBold => visitor.visitConstrainedBold(n)
+        case n: Italic          => visitor.visitItalic(n)
+        case n: Mono            => visitor.visitMono(n)
+        case n: ListItem        => visitor.visitListItem(n)
 
     /** Return all direct child nodes of a node. */
     def children(node: AstNode): List[AstNode] = node match
-        case d: Document      => d.blocks
-        case h: Heading       => h.title
-        case p: Paragraph     => p.content
-        case u: UnorderedList => u.items
-        case o: OrderedList   => o.items
-        case t: Text          => Nil
-        case b: Bold          => b.content
-        case i: Italic        => i.content
-        case m: Mono          => m.content
-        case li: ListItem     => li.content
+        case d: Document         => d.blocks
+        case s: Section          => s.title ++ s.blocks
+        case h: Heading          => h.title
+        case p: Paragraph        => p.content
+        case _: ListingBlock     => Nil // verbatim content, no child nodes
+        case u: UnorderedList    => u.items
+        case o: OrderedList      => o.items
+        case t: Text             => Nil
+        case b: Bold             => b.content
+        case cb: ConstrainedBold => cb.content
+        case i: Italic           => i.content
+        case m: Mono             => m.content
+        case li: ListItem        => li.content
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.

@@ -28,6 +28,9 @@ case class Italic(content: List[Inline])(val span: Span) extends Inline derives 
 /** Monospace span, surrounded by double backticks: ``mono``. */
 case class Mono(content: List[Inline])(val span: Span) extends Inline derives CanEqual
 
+/** Constrained bold span, surrounded by single asterisks: *bold*. */
+case class ConstrainedBold(content: List[Inline])(val span: Span) extends Inline derives CanEqual
+
 object Text extends PosParserBridge1[String, Text]:
     def apply(content: String)(span: Span): Text = new Text(content)(span)
 
@@ -39,6 +42,9 @@ object Italic extends PosParserBridge1[List[Inline], Italic]:
 
 object Mono extends PosParserBridge1[List[Inline], Mono]:
     def apply(content: List[Inline])(span: Span): Mono = new Mono(content)(span)
+
+object ConstrainedBold extends PosParserBridge1[List[Inline], ConstrainedBold]:
+    def apply(content: List[Inline])(span: Span): ConstrainedBold = new ConstrainedBold(content)(span)
 
 /** A single item in a list block. */
 case class ListItem(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
@@ -61,8 +67,14 @@ object Block:
   */
 case class Heading(level: Int, title: InlineContent)(val span: Span) extends Block derives CanEqual
 
+/** A section: a heading with nested blocks collected until the next same-or-higher-level heading. */
+case class Section(level: Int, title: InlineContent, blocks: List[Block])(val span: Span) extends Block derives CanEqual
+
 /** A paragraph of one or more lines of inline content. */
 case class Paragraph(content: InlineContent)(val span: Span) extends Block derives CanEqual
+
+/** A delimited listing block (verbatim code). */
+case class ListingBlock(delimiter: String, content: String)(val span: Span) extends Block derives CanEqual
 
 /** A bullet list (items prefixed with "* "). */
 case class UnorderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual

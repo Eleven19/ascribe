@@ -17,18 +17,18 @@ object DocumentParserSpec extends ZIOSpecDefault:
                         assertTrue(doc == document(heading(1, text("Title"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
-            test("parses a level-3 heading") {
+            test("parses a level-3 heading as section") {
                 parse("=== Section\n") match
                     case Success(doc) =>
-                        assertTrue(doc == document(heading(3, text("Section"))))
+                        assertTrue(doc == document(section(2, List(text("Section")))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
-            test("parses a heading with inline bold") {
+            test("parses a heading with inline bold as section") {
                 parse("== **Bold** Title\n") match
                     case Success(doc) =>
                         assertTrue(
                             doc == document(
-                                heading(2, bold(text("Bold")), text(" Title"))
+                                section(1, List(bold(text("Bold")), text(" Title")))
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
