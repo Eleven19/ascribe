@@ -7,7 +7,7 @@ object `package` extends ScalaModule with scalafmt.ScalafmtModule with _root_.bu
 
   def scalaVersion = "3.8.2"
 
-  def moduleDeps = Seq(build.ascribe)
+  def moduleDeps = Seq(build.ascribe, build.ascribe.asg, build.ascribe.bridge)
 
   def tckRefresh() = Task.Command {
     val syncResult = tckSync()()
