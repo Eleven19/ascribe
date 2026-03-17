@@ -3,9 +3,6 @@ package io.eleven19.ascribe.ast
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.TailCalls.*
 
-/** Union type for all AST node kinds (Document, Block, Inline, and ListItem have no common base trait). */
-type AstNode = Document | Block | Inline | ListItem
-
 /** Visitor trait for AST nodes. Each method has a default that delegates up the type hierarchy, so you only need to
   * override the methods you care about.
   *

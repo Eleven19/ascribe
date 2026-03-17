@@ -2,8 +2,6 @@ package io.eleven19.ascribe.ast
 
 import zio.test.*
 
-given CanEqual[AstNode, AstNode] = CanEqual.derived
-
 object AstVisitorSpec extends ZIOSpecDefault:
 
     private val u = Span.unknown
