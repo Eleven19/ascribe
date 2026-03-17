@@ -18,7 +18,7 @@ object AsgCodecs:
         JsonBinaryCodecDeriver
             .withDiscriminatorKind(DiscriminatorKind.Field("name"))
             .withCaseNameMapper(NameMapper.Custom(mapCaseName))
-            .withTransientDefaultValue(false)
+            .withTransientDefaultValue(true)
     )
 
     /** Encode an ASG Node to a JSON string. */

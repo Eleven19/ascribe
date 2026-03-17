@@ -113,5 +113,6 @@ class AstToAsgSpec extends FunSuite:
       scala.List(ast.Paragraph(scala.List(ast.Text("hi")(span)))(span))
     )(span)
     val asgDoc = AstToAsg.convert(astDoc)
-    assertEquals(asgDoc.location, asg.Location(asg.Position(1, 1), asg.Position(1, 10)))
+    // End position is now inclusive (col 9 = last char, not col 10 = past-end)
+    assertEquals(asgDoc.location, asg.Location(asg.Position(1, 1), asg.Position(1, 9)))
   }
