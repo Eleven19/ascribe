@@ -1,11 +1,17 @@
 package io.eleven19.ascribe.ast
 
+/** Base trait for all AST nodes. Every node carries a source span. */
+sealed trait AstNode:
+    def span: Span
+
+object AstNode:
+    given CanEqual[AstNode, AstNode] = CanEqual.derived
+
 /** A list of inline elements forming the content of a single line. */
 type InlineContent = List[Inline]
 
 /** An inline element within a paragraph, heading, or list item. */
-sealed trait Inline:
-    def span: Span
+sealed trait Inline extends AstNode
 
 object Inline:
     given CanEqual[Inline, Inline] = CanEqual.derived
@@ -35,14 +41,13 @@ object Mono extends PosParserBridge1[List[Inline], Mono]:
     def apply(content: List[Inline])(span: Span): Mono = new Mono(content)(span)
 
 /** A single item in a list block. */
-case class ListItem(content: InlineContent)(val span: Span) derives CanEqual
+case class ListItem(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
 
 object ListItem extends PosParserBridge1[InlineContent, ListItem]:
     def apply(content: InlineContent)(span: Span): ListItem = new ListItem(content)(span)
 
 /** A block-level element in an AsciiDoc document. */
-sealed trait Block:
-    def span: Span
+sealed trait Block extends AstNode
 
 object Block:
     given CanEqual[Block, Block] = CanEqual.derived
@@ -78,7 +83,7 @@ object OrderedList extends PosParserBridge1[List[ListItem], OrderedList]:
     def apply(items: List[ListItem])(span: Span): OrderedList = new OrderedList(items)(span)
 
 /** The top-level document containing an ordered sequence of blocks. */
-case class Document(blocks: List[Block])(val span: Span) derives CanEqual
+case class Document(blocks: List[Block])(val span: Span) extends AstNode derives CanEqual
 
 object Document extends PosParserBridge1[List[Block], Document]:
     def apply(blocks: List[Block])(span: Span): Document = new Document(blocks)(span)
