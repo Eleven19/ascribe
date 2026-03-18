@@ -43,6 +43,11 @@ object dsl:
     def sidebarBlock(delimiter: String, blocks: Block*): SidebarBlock =
         SidebarBlock(delimiter, blocks.toList)(u)
 
+    // --- Tables ---
+    def tableBlock(rows: TableRow*): TableBlock = TableBlock(rows.toList, "|===")(u)
+    def tableRow(cells: TableCell*): TableRow   = TableRow(cells.toList)(u)
+    def tableCell(inlines: Inline*): TableCell  = TableCell(inlines.toList)(u)
+
     // --- Lists ---
     def listItem(inlines: Inline*): ListItem           = ListItem(inlines.toList)(u)
     def unorderedList(items: ListItem*): UnorderedList = UnorderedList(items.toList)(u)

@@ -79,6 +79,15 @@ case class ListingBlock(delimiter: String, content: String)(val span: Span) exte
 /** A delimited sidebar block containing nested blocks. */
 case class SidebarBlock(delimiter: String, blocks: List[Block])(val span: Span) extends Block derives CanEqual
 
+/** A table block delimited by |===. */
+case class TableBlock(rows: List[TableRow], delimiter: String)(val span: Span) extends Block derives CanEqual
+
+/** A row in a table. */
+case class TableRow(cells: List[TableCell])(val span: Span) extends AstNode derives CanEqual
+
+/** A cell in a table row. */
+case class TableCell(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
+
 /** A bullet list (items prefixed with "* "). */
 case class UnorderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual
 
