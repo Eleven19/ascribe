@@ -1,6 +1,5 @@
 ---
 title: Ascribe
-layout: index
 ---
 
 # Ascribe

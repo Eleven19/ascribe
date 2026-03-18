@@ -27,14 +27,14 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Assemble documentation site
-        run: ./mill ascribe.docSiteAssemble
+      - name: Generate documentation site
+        run: ./mill ascribe.docJar
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: out/ascribe/docSiteAssemble.dest/site
+          path: out/ascribe/scalaDocGenerated.dest/javadoc
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

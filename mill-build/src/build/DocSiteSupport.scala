@@ -3,8 +3,39 @@ package build
 import mill.*
 import mill.scalalib.*
 
-/** Configures Scala 3 scaladoc with project metadata for API documentation. */
+/** Configures Scala 3 scaladoc to generate both API docs and the static documentation site.
+  *
+  * The `docs/` directory at the repo root contains the static site content in scaladoc's expected format (`_docs/`,
+  * `_blog/`, `sidebar.yml`). This trait filters those directories into `docResources` so scaladoc renders prose
+  * markdown pages alongside API documentation with consistent styling and navigation.
+  *
+  * Usage:
+  * {{{
+  * ./mill ascribe.docJar           # Generate docs as JAR
+  * ./mill ascribe.docSiteServe     # Build and serve locally at http://localhost:8080
+  * }}}
+  */
 trait DocSiteSupport extends ScalaModule {
+
+    /** Source reference to the docs/ directory at the workspace root. */
+    def docSiteRoot: T[PathRef] = Task.Source(Task.ctx().workspace / "docs")
+
+    /** Filter docResources to include only scaladoc-compatible content (_docs/, _blog/, _assets/, sidebar.yml).
+      * This excludes other content in docs/ (plans, specs, contributing guides) that would confuse scaladoc.
+      */
+    override def docResources = Task {
+        val root     = docSiteRoot().path
+        val filtered = Task.dest / "filtered"
+        os.makeDir.all(filtered)
+
+        val entries = Seq("_docs", "_blog", "_assets", "sidebar.yml")
+        for (name <- entries) {
+            val src = root / name
+            if (os.exists(src)) os.copy(src, filtered / name, createFolders = true)
+        }
+
+        Seq(PathRef(filtered))
+    }
 
     override def scalaDocOptions = Task {
         Seq(
@@ -16,46 +47,11 @@ trait DocSiteSupport extends ScalaModule {
             "-no-link-warnings"
         )
     }
-}
 
-/** Mixin for assembling and serving the full documentation site (API docs + prose content).
-  *
-  * Usage:
-  * {{{
-  * ./mill ascribe.docSiteAssemble   # Build the combined site
-  * ./mill ascribe.docSiteServe      # Build and serve locally at http://localhost:8080
-  * }}}
-  */
-trait DocSiteAssembly extends ScalaModule {
-
-    /** Source reference to the prose documentation directory. */
-    def docSiteContentDir: T[PathRef] = Task.Source(Task.ctx().workspace / "docs")
-
-    /** Assemble the full documentation site: API docs (scaladoc) + prose content (docs/_docs/). */
-    def docSiteAssemble: T[PathRef] = Task {
-        val apiDocs    = scalaDocGenerated().path
-        val contentDir = docSiteContentDir().path
-        val siteDir    = Task.dest / "site"
-
-        os.copy(apiDocs, siteDir, createFolders = true)
-
-        val proseDir  = contentDir / "_docs"
-        val blogDir   = contentDir / "_blog"
-        val assetsDir = contentDir / "_assets"
-        if (os.exists(proseDir)) os.copy(proseDir, siteDir / "docs", createFolders = true)
-        if (os.exists(blogDir)) os.copy(blogDir, siteDir / "blog", createFolders = true)
-        if (os.exists(assetsDir)) os.copy(assetsDir, siteDir / "assets", createFolders = true)
-
-        Task.log.info(s"Site assembled at: $siteDir")
-        PathRef(siteDir)
-    }
-
-    /** Assemble and serve locally with Python's HTTP server. */
+    /** Serve the generated documentation site locally with Python's HTTP server. */
     def docSiteServe(port: Int = 8080) = Task.Command {
-        val site = docSiteAssemble()
+        val site = scalaDocGenerated()
         Task.log.info(s"Serving at http://localhost:$port")
-        Task.log.info(s"  API docs: http://localhost:$port/index.html")
-        Task.log.info(s"  Prose:    http://localhost:$port/docs/")
         Task.log.info("Press Ctrl+C to stop.")
         os.proc("python3", "-m", "http.server", port.toString)
             .call(cwd = site.path, stdin = os.Inherit, stdout = os.Inherit, stderr = os.Inherit)
