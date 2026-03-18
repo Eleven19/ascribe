@@ -11,6 +11,22 @@ scalacOptions:
   - "-language:strictEquality"
 
 #------------------------------------
+# Scaladoc settings
+#------------------------------------
+scalaDocOptions:
+  - "-siteroot"
+  - "docs"
+  - "-project"
+  - "Ascribe"
+  - "-project-version"
+  - "0.1.0-SNAPSHOT"
+  - "-project-url"
+  - "https://github.com/Eleven19/ascribe"
+  - "-source-links:github://Eleven19/ascribe/main"
+  - "-social-links:github::https://github.com/Eleven19/ascribe"
+  - "-no-link-warnings"
+
+#------------------------------------
 # Maven dependencies
 #------------------------------------
 mvnDeps:
