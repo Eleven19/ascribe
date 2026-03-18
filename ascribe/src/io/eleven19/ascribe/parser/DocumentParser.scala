@@ -25,7 +25,7 @@ object DocumentParser:
 
     /** Recognises any one block, trying block types in priority order. */
     private val block: Parsley[Block] =
-        listingBlock | sidebarBlock | heading | unorderedList | orderedList | paragraph
+        listingBlock | sidebarBlock | tableBlock | heading | unorderedList | orderedList | paragraph
 
     /** Parses an attribute entry line: `:key: value` or `:key:` (empty value). Returns (key, value, endPos). */
     private val attributeEntry: Parsley[(String, String, (Int, Int))] =

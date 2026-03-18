@@ -43,6 +43,9 @@ trait AsgVisitor[A]:
     def visitVideo(node: Video): A           = visitBlock(node)
     def visitImage(node: Image): A           = visitBlock(node)
     def visitToc(node: Toc): A               = visitBlock(node)
+    def visitTable(node: Table): A           = visitBlock(node)
+    def visitTableRow(node: TableRow): A     = visitBlock(node)
+    def visitTableCell(node: TableCell): A   = visitBlock(node)
 
     // --- Inline types ---
     def visitSpan(node: Span): A       = visitInline(node)
@@ -83,6 +86,9 @@ object AsgVisitor:
         case n: Video      => visitor.visitVideo(n)
         case n: Image      => visitor.visitImage(n)
         case n: Toc        => visitor.visitToc(n)
+        case n: Table      => visitor.visitTable(n)
+        case n: TableRow   => visitor.visitTableRow(n)
+        case n: TableCell  => visitor.visitTableCell(n)
         case n: Span       => visitor.visitSpan(n)
         case n: Ref        => visitor.visitRef(n)
         case n: Text       => visitor.visitText(n)
@@ -116,16 +122,19 @@ object AsgVisitor:
             case di: DListItem =>
                 optInlines(di.title) ++ optInlines(di.reftext) ++
                     di.terms.flatMap(identity) ++ di.principal.getOrElse(Chunk.empty) ++ di.blocks
-            case b: Break   => optInlines(b.title) ++ optInlines(b.reftext)
-            case a: Audio   => optInlines(a.title) ++ optInlines(a.reftext)
-            case v: Video   => optInlines(v.title) ++ optInlines(v.reftext)
-            case i: Image   => optInlines(i.title) ++ optInlines(i.reftext)
-            case t: Toc     => optInlines(t.title) ++ optInlines(t.reftext)
-            case s: Span    => s.inlines
-            case r: Ref     => r.inlines
-            case _: Text    => Chunk.empty
-            case _: CharRef => Chunk.empty
-            case _: Raw     => Chunk.empty
+            case b: Break      => optInlines(b.title) ++ optInlines(b.reftext)
+            case a: Audio      => optInlines(a.title) ++ optInlines(a.reftext)
+            case v: Video      => optInlines(v.title) ++ optInlines(v.reftext)
+            case i: Image      => optInlines(i.title) ++ optInlines(i.reftext)
+            case t: Toc        => optInlines(t.title) ++ optInlines(t.reftext)
+            case t: Table      => optInlines(t.title) ++ optInlines(t.reftext) ++ t.rows
+            case tr: TableRow  => tr.cells
+            case tc: TableCell => tc.inlines
+            case s: Span       => s.inlines
+            case r: Ref        => r.inlines
+            case _: Text       => Chunk.empty
+            case _: CharRef    => Chunk.empty
+            case _: Raw        => Chunk.empty
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.

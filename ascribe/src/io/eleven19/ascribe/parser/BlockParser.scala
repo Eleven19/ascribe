@@ -2,7 +2,7 @@ package io.eleven19.ascribe.parser
 
 import parsley.Parsley
 import parsley.Parsley.{atomic, notFollowedBy}
-import parsley.character.{char, string}
+import parsley.character.{char, satisfy, string, stringOfSome}
 import parsley.combinator.{many, manyTill, option, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
@@ -17,6 +17,10 @@ import io.eleven19.ascribe.ast.{
     Paragraph,
     SidebarBlock,
     Span as AstSpan,
+    TableBlock,
+    TableCell,
+    TableRow,
+    Text,
     UnorderedList,
     mkSpan
 }
@@ -132,6 +136,57 @@ object BlockParser:
     private val blankLine: Parsley[Unit] = (hspaces *> eol).void
 
     // -----------------------------------------------------------------------
+    // Tables
+    // -----------------------------------------------------------------------
+
+    /** Content of a single table cell (everything after `| ` until next `|` or end of line). Stops consuming before
+      * trailing spaces that precede a `|` or end of line.
+      */
+    private val cellContent: Parsley[InlineContent] =
+        many(
+            boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+                Text(stringOfSome(satisfy(c => isContentChar(c) && c != '|'))) |
+                (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
+                    io.eleven19.ascribe.ast.Text(c.toString)(mkSpan(s, e)): io.eleven19.ascribe.ast.Inline
+                }
+        )
+
+    /** Trim trailing whitespace from the last Text node in a cell's inline content. */
+    private def trimCellContent(content: InlineContent): InlineContent =
+        content match
+            case init :+ (t: io.eleven19.ascribe.ast.Text) =>
+                val trimmed = t.content.stripTrailing()
+                if trimmed.isEmpty then init
+                else init :+ io.eleven19.ascribe.ast.Text(trimmed)(t.span)
+            case other => other
+
+    /** Parses a single cell: `| content`. Trims trailing whitespace from cell text. */
+    private val tableCell: Parsley[TableCell] =
+        (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
+            .map { case ((s, content), e) => TableCell(trimCellContent(content))(mkSpan(s, e)) }
+
+    /** Parses a row of cells on a single line ending with eolOrEof. */
+    private val tableRowLine: Parsley[List[TableCell]] =
+        some(tableCell).map(_.toList) <* eolOrEof
+
+    /** Parses a complete table row (possibly spanning multiple lines separated by blank lines). */
+    private val tableRow: Parsley[TableRow] =
+        (pos <~> tableRowLine <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+
+    /** Parses a table block: `|===` open, rows, `|===` close. */
+    val tableBlock: Parsley[Block] =
+        (pos <~> (atomic(string("|===")) <* eolOrEof) *>
+            option(some(blankLine)).void *>
+            manyTill(
+                tableRow <* option(some(blankLine)).void,
+                atomic(string("|==="))
+            ) <~> pos <* eolOrEof)
+            .map { case ((s, rows), e) =>
+                TableBlock(rows, "|===")(mkSpan(s, e))
+            }
+            .label("table block")
+
+    // -----------------------------------------------------------------------
     // Paragraphs
     // -----------------------------------------------------------------------
 
@@ -144,7 +199,8 @@ object BlockParser:
             notFollowedBy(char('*') *> char(' ')) *>
             notFollowedBy(char('.') *> char(' ')) *>
             notFollowedBy(string("----")) *>
-            notFollowedBy(string("****"))
+            notFollowedBy(string("****")) *>
+            notFollowedBy(string("|==="))
 
     /** Parses a single non-empty, non-block-start line as a list of inline elements. */
     private val paragraphLine: Parsley[InlineContent] =

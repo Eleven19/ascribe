@@ -48,6 +48,13 @@ object AstToAsg:
                 inlines = Chunk.from(converted),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
+        case ast.TableBlock(rows, delimiter) =>
+            asg.Table(
+                form = "delimited",
+                delimiter = delimiter,
+                rows = Chunk.from(rows.map(convertTableRow)),
+                location = inclusiveLocation(block.span)
+            )
         case ast.ListingBlock(delimiter, content) =>
             // Block location spans from opening delimiter to closing delimiter
             val blockLoc = inclusiveLocation(block.span)
@@ -93,6 +100,18 @@ object AstToAsg:
             marker = marker,
             principal = Chunk.from(mergeAdjacentTexts(item.content.map(convertInline))),
             location = contentLocation(item.span.start, lastContentPos(item))
+        )
+
+    private def convertTableRow(row: ast.TableRow): asg.TableRow =
+        asg.TableRow(
+            cells = Chunk.from(row.cells.map(convertTableCell)),
+            location = contentLocation(row.span.start, lastContentPos(row))
+        )
+
+    private def convertTableCell(cell: ast.TableCell): asg.TableCell =
+        asg.TableCell(
+            inlines = Chunk.from(cell.content.map(convertInline)),
+            location = contentLocation(cell.span.start, lastContentPos(cell))
         )
 
     private def convertInline(inline: ast.Inline): asg.Inline = inline match
@@ -160,6 +179,9 @@ object AstToAsg:
         case p: ast.Paragraph      => p.content.lastOption.map(lastContentPos).getOrElse(p.span.end)
         case lb: ast.ListingBlock  => lb.span.end // listing block span includes closing delimiter
         case sb: ast.SidebarBlock  => sb.span.end // sidebar block span includes closing delimiter
+        case tb: ast.TableBlock    => tb.span.end // table block span includes closing delimiter
+        case tr: ast.TableRow      => tr.cells.lastOption.map(lastContentPos).getOrElse(tr.span.end)
+        case tc: ast.TableCell     => tc.content.lastOption.map(lastContentPos).getOrElse(tc.span.end)
         case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
         case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
         case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)

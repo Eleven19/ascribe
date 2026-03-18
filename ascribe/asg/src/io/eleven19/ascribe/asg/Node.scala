@@ -498,6 +498,81 @@ object Break:
         location: Location
     ): Break = new Break(id, title, reftext, metadata, variant, location, "block")
 
+// --- Tables (spec-derived, no official TCK test cases yet) ---
+
+@specStatus(
+    SpecStatus.SpecDerived,
+    "Table ASG structure inferred from AsciiDoc Language spec; no TCK test cases exist yet"
+)
+case class Table private (
+    id: Option[String],
+    title: Option[Chunk[Inline]],
+    reftext: Option[Chunk[Inline]],
+    metadata: Option[BlockMetadata],
+    form: String,
+    delimiter: String,
+    rows: Chunk[Block],
+    location: Location,
+    @Modifier.rename("type") nodeType: String
+) extends Block derives Schema
+
+object Table:
+
+    def apply(
+        id: Option[String] = None,
+        title: Option[Chunk[Inline]] = None,
+        reftext: Option[Chunk[Inline]] = None,
+        metadata: Option[BlockMetadata] = None,
+        form: String = "delimited",
+        delimiter: String = "|===",
+        rows: Chunk[Block],
+        location: Location
+    ): Table = new Table(id, title, reftext, metadata, form, delimiter, rows, location, "block")
+
+@specStatus(SpecStatus.SpecDerived)
+case class TableRow private (
+    id: Option[String],
+    title: Option[Chunk[Inline]],
+    reftext: Option[Chunk[Inline]],
+    metadata: Option[BlockMetadata],
+    cells: Chunk[Block],
+    location: Location,
+    @Modifier.rename("type") nodeType: String
+) extends Block derives Schema
+
+object TableRow:
+
+    def apply(
+        id: Option[String] = None,
+        title: Option[Chunk[Inline]] = None,
+        reftext: Option[Chunk[Inline]] = None,
+        metadata: Option[BlockMetadata] = None,
+        cells: Chunk[Block],
+        location: Location
+    ): TableRow = new TableRow(id, title, reftext, metadata, cells, location, "block")
+
+@specStatus(SpecStatus.SpecDerived)
+case class TableCell private (
+    id: Option[String],
+    title: Option[Chunk[Inline]],
+    reftext: Option[Chunk[Inline]],
+    metadata: Option[BlockMetadata],
+    inlines: Chunk[Inline],
+    location: Location,
+    @Modifier.rename("type") nodeType: String
+) extends Block derives Schema
+
+object TableCell:
+
+    def apply(
+        id: Option[String] = None,
+        title: Option[Chunk[Inline]] = None,
+        reftext: Option[Chunk[Inline]] = None,
+        metadata: Option[BlockMetadata] = None,
+        inlines: Chunk[Inline] = Chunk.empty,
+        location: Location
+    ): TableCell = new TableCell(id, title, reftext, metadata, inlines, location, "block")
+
 // --- Block macros (each a concrete type with fixed name) ---
 
 case class Audio private (

@@ -58,6 +58,18 @@ object dsl:
     def sidebar(form: String, delimiter: String, blocks: Block*)(using l: Location): Sidebar =
         Sidebar(form = form, delimiter = delimiter, blocks = Chunk.from(blocks), location = l)
 
+    // --- Tables ---
+    def table(rows: Block*)(using l: Location): Table =
+        Table(rows = Chunk.from(rows), location = l)
+
+    def tableRow(cells: Block*)(using l: Location): TableRow =
+        TableRow(cells = Chunk.from(cells), location = l)
+    def tr(cells: Block*)(using l: Location): TableRow = tableRow(cells*)
+
+    def tableCell(inlines: Inline*)(using l: Location): TableCell =
+        TableCell(inlines = Chunk.from(inlines), location = l)
+    def tc(inlines: Inline*)(using l: Location): TableCell = tableCell(inlines*)
+
     // --- Lists ---
     def list(variant: String, marker: String, items: Block*)(using l: Location): List =
         List(variant = variant, marker = marker, items = Chunk.from(items), location = l)
