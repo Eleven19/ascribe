@@ -1,33 +1,9 @@
 extends: [ScalaModule, scalafmt.ScalafmtModule, _root_.build.PublishSupport]
-
-#------------------------------------
-# Scala settings
-#------------------------------------
 scalaVersion: "3.8.2"
 scalacOptions:
   - "-Wvalue-discard"
   - "-Wnonunit-statement"
   - "-Wconf:msg=(unused.*value|discarded.*value|pure.*statement):error"
   - "-language:strictEquality"
-
-#------------------------------------
-# Scaladoc settings
-#------------------------------------
-scalaDocOptions:
-  - "-siteroot"
-  - "docs"
-  - "-project"
-  - "Ascribe"
-  - "-project-version"
-  - "0.1.0-SNAPSHOT"
-  - "-project-url"
-  - "https://github.com/Eleven19/ascribe"
-  - "-source-links:github://Eleven19/ascribe/main"
-  - "-social-links:github::https://github.com/Eleven19/ascribe"
-  - "-no-link-warnings"
-
-#------------------------------------
-# Maven dependencies
-#------------------------------------
 mvnDeps:
   - com.github.j-mie6::parsley::4.6.2
