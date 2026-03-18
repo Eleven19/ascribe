@@ -27,23 +27,14 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Generate API documentation
-        run: ./mill ascribe.docJar
-      - name: Assemble site
-        run: |
-          mkdir -p _site
-          # Copy API docs as the base
-          cp -r out/ascribe/scalaDocGenerated.dest/javadoc/* _site/
-          # Copy prose documentation alongside API docs
-          cp -r docs/_docs _site/docs
-          cp -r docs/_blog _site/blog 2>/dev/null || true
-          cp -r docs/_assets _site/assets 2>/dev/null || true
+      - name: Assemble documentation site
+        run: ./mill ascribe.docSiteAssemble
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: out/ascribe/docSiteAssemble.dest/site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
