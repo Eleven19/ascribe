@@ -8,7 +8,9 @@
 [![Release](https://github.com/Eleven19/ascribe/actions/workflows/release.yml/badge.svg)](https://github.com/Eleven19/ascribe/actions/workflows/release.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.eleven19.ascribe/ascribe_3)](https://central.sonatype.com/artifact/io.eleven19.ascribe/ascribe_3)
 
-Ascribe is an asciidoc library and toolchain. We provide parsers, ASTs, and traversal tools for processing asciidocs.
+**[Documentation](https://eleven19.github.io/ascribe/)** | **[API Reference](https://eleven19.github.io/ascribe/io/eleven19/ascribe.html)** | **[Getting Started](https://eleven19.github.io/ascribe/docs/getting-started.html)**
+
+Ascribe is an AsciiDoc library and toolchain for Scala 3. We provide parsers, ASTs, an Abstract Semantic Graph (ASG), and traversal tools for processing AsciiDoc documents.
 
 As we are implementing things we should consult the [Asciidoc Language Specification](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-lang) for the authoritative spec of ASCIIDOC.
 The Asciidoc TCK (Technology Compatibility Kit) can also be found at [https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck](https://gitlab.eclipse.org/eclipse/asciidoc-lang/asciidoc-tck).

@@ -1,0 +1,20 @@
+index: index.md
+subsection:
+  - title: Getting Started
+    page: getting-started.md
+  - title: Architecture
+    page: architecture.md
+  - title: Guides
+    subsection:
+      - title: Parsing
+        page: guides/parsing.md
+      - title: ASG Model
+        page: guides/asg.md
+      - title: Visitor & Fold
+        page: guides/visitor.md
+  - title: Contributing
+    subsection:
+      - title: Development Setup
+        page: contributing/development.md
+      - title: TCK Compliance
+        page: contributing/tck.md
