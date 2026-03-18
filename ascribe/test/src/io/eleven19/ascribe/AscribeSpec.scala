@@ -3,7 +3,7 @@ package io.eleven19.ascribe
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.eleven19.ascribe.TestHelpers.*
+import io.eleven19.ascribe.ast.dsl.{*, given}
 
 object AscribeSpec extends ZIOSpecDefault:
 
@@ -11,7 +11,7 @@ object AscribeSpec extends ZIOSpecDefault:
         test("parses a simple heading document") {
             Ascribe.parse("= Hello World\n") match
                 case Success(doc) =>
-                    assertTrue(doc == documentWithHeader(documentHeader(text("Hello World"))))
+                    assertTrue(doc == document(documentHeader(text("Hello World"))))
                 case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
         },
         test("parses a paragraph") {

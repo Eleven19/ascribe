@@ -3,7 +3,7 @@ package io.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.eleven19.ascribe.TestHelpers.*
+import io.eleven19.ascribe.ast.dsl.{*, given}
 import io.eleven19.ascribe.ast.Inline
 import io.eleven19.ascribe.parser.InlineParser.lineContent
 

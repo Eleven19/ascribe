@@ -1,0 +1,62 @@
+package io.eleven19.ascribe.ast
+
+/** ScalaTags-inspired DSL for constructing AST nodes without position boilerplate.
+  *
+  * All builders default to `Span.unknown`. Import `given` to enable implicit `String → Text` conversion.
+  *
+  * {{{
+  * import io.eleven19.ascribe.ast.dsl.{*, given}
+  *
+  * val doc = document(
+  *   section(1, List(text("Title")),
+  *     paragraph("Hello ", bold("world"), "!"),
+  *     unorderedList(listItem("item one"), listItem("item two"))
+  *   )
+  * )
+  * }}}
+  */
+object dsl:
+    private val u = Span.unknown
+
+    // --- Implicit String → Inline conversion ---
+    given Conversion[String, Text] = s => Text(s)(u)
+
+    // --- Inlines ---
+    def text(s: String): Text                              = Text(s)(u)
+    def bold(inlines: Inline*): Bold                       = Bold(inlines.toList)(u)
+    def constrainedBold(inlines: Inline*): ConstrainedBold = ConstrainedBold(inlines.toList)(u)
+    def italic(inlines: Inline*): Italic                   = Italic(inlines.toList)(u)
+    def mono(inlines: Inline*): Mono                       = Mono(inlines.toList)(u)
+
+    // --- Blocks ---
+    def paragraph(inlines: Inline*): Paragraph = Paragraph(inlines.toList)(u)
+
+    def heading(level: Int, inlines: Inline*): Heading =
+        Heading(level, inlines.toList)(u)
+
+    def section(level: Int, title: scala.List[Inline], blocks: Block*): Section =
+        Section(level, title, blocks.toList)(u)
+
+    def listingBlock(delimiter: String, content: String): ListingBlock =
+        ListingBlock(delimiter, content)(u)
+
+    def sidebarBlock(delimiter: String, blocks: Block*): SidebarBlock =
+        SidebarBlock(delimiter, blocks.toList)(u)
+
+    // --- Lists ---
+    def listItem(inlines: Inline*): ListItem           = ListItem(inlines.toList)(u)
+    def unorderedList(items: ListItem*): UnorderedList = UnorderedList(items.toList)(u)
+    def orderedList(items: ListItem*): OrderedList     = OrderedList(items.toList)(u)
+
+    // --- Document ---
+    def documentHeader(title: Inline*): DocumentHeader =
+        DocumentHeader(title.toList, Nil)(u)
+
+    def documentHeader(title: scala.List[Inline], attrs: scala.List[(String, String)]): DocumentHeader =
+        DocumentHeader(title, attrs)(u)
+
+    def document(blocks: Block*): Document =
+        Document(blocks.toList)(u)
+
+    def document(header: DocumentHeader, blocks: Block*): Document =
+        Document(Some(header), blocks.toList)(u)
