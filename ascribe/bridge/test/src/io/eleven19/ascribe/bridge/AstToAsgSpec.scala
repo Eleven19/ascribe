@@ -4,25 +4,9 @@ import zio.blocks.chunk.Chunk
 import munit.FunSuite
 import io.eleven19.ascribe.{ast}
 import io.eleven19.ascribe.{asg}
+import io.eleven19.ascribe.ast.dsl.{*, given}
 
 class AstToAsgSpec extends FunSuite:
-
-  private val u = ast.Span.unknown
-
-  // Convenience constructors using Span.unknown
-  private def text(s: String): ast.Text = ast.Text(s)(u)
-  private def bold(inlines: ast.Inline*): ast.Bold = ast.Bold(inlines.toList)(u)
-  private def italic(inlines: ast.Inline*): ast.Italic = ast.Italic(inlines.toList)(u)
-  private def mono(inlines: ast.Inline*): ast.Mono = ast.Mono(inlines.toList)(u)
-  private def listItem(inlines: ast.Inline*): ast.ListItem = ast.ListItem(inlines.toList)(u)
-  private def heading(level: Int, inlines: ast.Inline*): ast.Heading =
-    ast.Heading(level, inlines.toList)(u)
-  private def paragraph(inlines: ast.Inline*): ast.Paragraph = ast.Paragraph(inlines.toList)(u)
-  private def unorderedList(items: ast.ListItem*): ast.UnorderedList =
-    ast.UnorderedList(items.toList)(u)
-  private def orderedList(items: ast.ListItem*): ast.OrderedList =
-    ast.OrderedList(items.toList)(u)
-  private def document(blocks: ast.Block*): ast.Document = ast.Document(blocks.toList)(u)
 
   test("converts empty document") {
     val astDoc = document()

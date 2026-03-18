@@ -3,7 +3,7 @@ package io.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.eleven19.ascribe.TestHelpers.*
+import io.eleven19.ascribe.ast.dsl.{*, given}
 import io.eleven19.ascribe.parser.DocumentParser.document as parseDocument
 
 object DocumentParserSpec extends ZIOSpecDefault:
@@ -14,7 +14,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
             test("parses a level-1 heading as document header") {
                 parse("= Title\n") match
                     case Success(doc) =>
-                        assertTrue(doc == documentWithHeader(documentHeader(text("Title"))))
+                        assertTrue(doc == document(documentHeader(text("Title"))))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses a level-3 heading as section") {
@@ -93,7 +93,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse("= Title\n\nIntroduction text.\n") match
                     case Success(doc) =>
                         assertTrue(
-                            doc == documentWithHeader(
+                            doc == document(
                                 documentHeader(text("Title")),
                                 paragraph(text("Introduction text."))
                             )
@@ -105,7 +105,7 @@ object DocumentParserSpec extends ZIOSpecDefault:
                 parse(input) match
                     case Success(doc) =>
                         assertTrue(
-                            doc == documentWithHeader(
+                            doc == document(
                                 documentHeader(text("Guide")),
                                 paragraph(text("Read the steps:")),
                                 unorderedList(
