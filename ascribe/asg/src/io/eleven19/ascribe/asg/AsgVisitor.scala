@@ -131,7 +131,7 @@ object AsgVisitor:
                 optInlines(t.title) ++ optInlines(t.reftext) ++ t.header.getOrElse(Chunk.empty) ++ t.rows ++ t.footer
                     .getOrElse(Chunk.empty)
             case tr: TableRow  => tr.cells
-            case tc: TableCell => tc.inlines
+            case tc: TableCell => if tc.blocks.nonEmpty then tc.blocks else tc.inlines
             case s: Span       => s.inlines
             case r: Ref        => r.inlines
             case _: Text       => Chunk.empty

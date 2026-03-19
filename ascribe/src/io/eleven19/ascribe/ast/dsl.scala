@@ -75,7 +75,8 @@ object dsl:
         TableBlock(rows.toList, "|===", TableFormat.PSV, Some(attrs), Some(title))(u)
 
     def tableRow(cells: TableCell*): TableRow  = TableRow(cells.toList)(u)
-    def tableCell(inlines: Inline*): TableCell = TableCell(inlines.toList)(u)
+    def tableCell(inlines: Inline*): TableCell = TableCell(CellContent.Inlines(inlines.toList))(u)
+    def blockCell(blocks: Block*): TableCell   = TableCell(CellContent.Blocks(blocks.toList))(u)
 
     // --- Lists ---
     def listItem(inlines: Inline*): ListItem           = ListItem(inlines.toList)(u)

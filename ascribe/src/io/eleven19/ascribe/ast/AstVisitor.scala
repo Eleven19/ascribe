@@ -74,18 +74,21 @@ object AstVisitor:
 
     /** Return all direct child nodes of a node. */
     def children(node: AstNode): List[AstNode] = node match
-        case d: Document         => d.header.toList ++ d.blocks
-        case dh: DocumentHeader  => dh.title
-        case s: Section          => s.title ++ s.blocks
-        case h: Heading          => h.title
-        case p: Paragraph        => p.content
-        case _: ListingBlock     => Nil // verbatim content, no child nodes
-        case sb: SidebarBlock    => sb.blocks
-        case u: UnorderedList    => u.items
-        case o: OrderedList      => o.items
-        case tb: TableBlock      => tb.title.toList ++ tb.attributes.toList ++ tb.rows
-        case tr: TableRow        => tr.cells
-        case tc: TableCell       => tc.content
+        case d: Document        => d.header.toList ++ d.blocks
+        case dh: DocumentHeader => dh.title
+        case s: Section         => s.title ++ s.blocks
+        case h: Heading         => h.title
+        case p: Paragraph       => p.content
+        case _: ListingBlock    => Nil // verbatim content, no child nodes
+        case sb: SidebarBlock   => sb.blocks
+        case u: UnorderedList   => u.items
+        case o: OrderedList     => o.items
+        case tb: TableBlock     => tb.title.toList ++ tb.attributes.toList ++ tb.rows
+        case tr: TableRow       => tr.cells
+        case tc: TableCell =>
+            tc.content match
+                case CellContent.Inlines(content) => content
+                case CellContent.Blocks(blocks)   => blocks
         case _: AttributeList    => Nil
         case bt: BlockTitle      => bt.content
         case t: Text             => Nil

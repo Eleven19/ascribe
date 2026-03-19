@@ -167,14 +167,26 @@ object AstToAsg:
     private def convertTableCell(cell: ast.TableCell, colStyle: Option[asg.CellStyle]): asg.TableCell =
         // Cell specifier style overrides column style
         val effectiveStyle = cell.style.map(_.value).flatMap(asg.CellStyle.fromChar).orElse(colStyle)
-        asg.TableCell(
-            style = effectiveStyle,
-            colSpan = cell.colSpan.map(f => asg.ColSpan(f.value)),
-            rowSpan = cell.rowSpan.map(f => asg.RowSpan(f.value)),
-            dupCount = cell.dupFactor.map(f => asg.DupCount(f.value)),
-            inlines = Chunk.from(cell.content.map(convertInline)),
-            location = contentLocation(cell.span.start, lastContentPos(cell))
-        )
+        val loc            = contentLocation(cell.span.start, lastContentPos(cell))
+        cell.content match
+            case ast.CellContent.Inlines(content) =>
+                asg.TableCell(
+                    style = effectiveStyle,
+                    colSpan = cell.colSpan.map(f => asg.ColSpan(f.value)),
+                    rowSpan = cell.rowSpan.map(f => asg.RowSpan(f.value)),
+                    dupCount = cell.dupFactor.map(f => asg.DupCount(f.value)),
+                    inlines = Chunk.from(content.map(convertInline)),
+                    location = loc
+                )
+            case ast.CellContent.Blocks(blocks) =>
+                asg.TableCell.withBlocks(
+                    style = effectiveStyle,
+                    colSpan = cell.colSpan.map(f => asg.ColSpan(f.value)),
+                    rowSpan = cell.rowSpan.map(f => asg.RowSpan(f.value)),
+                    dupCount = cell.dupFactor.map(f => asg.DupCount(f.value)),
+                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    location = loc
+                )
 
     private def convertInline(inline: ast.Inline): asg.Inline = inline match
         case ast.Text(content) =>
@@ -245,7 +257,10 @@ object AstToAsg:
         case al: ast.AttributeList => al.span.end
         case bt: ast.BlockTitle    => bt.content.lastOption.map(lastContentPos).getOrElse(bt.span.end)
         case tr: ast.TableRow      => tr.cells.lastOption.map(lastContentPos).getOrElse(tr.span.end)
-        case tc: ast.TableCell     => tc.content.lastOption.map(lastContentPos).getOrElse(tc.span.end)
+        case tc: ast.TableCell =>
+            tc.content match
+                case ast.CellContent.Inlines(content) => content.lastOption.map(lastContentPos).getOrElse(tc.span.end)
+                case ast.CellContent.Blocks(blocks)   => blocks.lastOption.map(lastContentPos).getOrElse(tc.span.end)
         case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
         case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
         case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)
