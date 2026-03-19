@@ -59,6 +59,26 @@ object dsl:
         Sidebar(form = form, delimiter = delimiter, blocks = Chunk.from(blocks), location = l)
 
     // --- Tables ---
+    def table(
+        columns: Option[Chunk[ColumnSpec]] = None,
+        header: Option[Chunk[Block]] = None,
+        footer: Option[Chunk[Block]] = None,
+        frame: Option[String] = None,
+        grid: Option[String] = None,
+        stripes: Option[String] = None,
+        rows: Block*
+    )(using l: Location): Table =
+        Table(
+            columns = columns,
+            header = header,
+            rows = Chunk.from(rows),
+            footer = footer,
+            frame = frame,
+            grid = grid,
+            stripes = stripes,
+            location = l
+        )
+
     def table(rows: Block*)(using l: Location): Table =
         Table(rows = Chunk.from(rows), location = l)
 
