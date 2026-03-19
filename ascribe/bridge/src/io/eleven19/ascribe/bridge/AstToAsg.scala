@@ -48,11 +48,53 @@ object AstToAsg:
                 inlines = Chunk.from(converted),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
-        case ast.TableBlock(rows, delimiter) =>
+        case tb @ ast.TableBlock(rows, delimiter, attrsOpt, titleOpt, hasBlankAfterFirst) =>
+            val options = attrsOpt.toList.flatMap(_.options).map(_.value)
+            val named = attrsOpt.map(_.named.map((k, v) => (k.value, v.value))).getOrElse(Map.empty)
+
+            val columns = named.get("cols").map(ColsParser.parse)
+
+            val hasHeader = if options.contains("noheader") then false
+                else if options.contains("header") then true
+                else hasBlankAfterFirst
+
+            val hasFooter = options.contains("footer")
+
+            val allRows = rows.map(convertTableRow)
+            val (headerRow, bodyStart) = if hasHeader && allRows.nonEmpty then
+                (Some(Chunk.from(allRows.head.cells.toList.map(c => c: asg.Block))), allRows.tail)
+            else (None, allRows)
+            val (bodyRows, footerRow) = if hasFooter && bodyStart.nonEmpty then
+                (bodyStart.init, Some(Chunk.from(bodyStart.last.cells.toList.map(c => c: asg.Block))))
+            else (bodyStart, None)
+
+            val title = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+
+            val validFrames = Set("all", "ends", "sides", "none")
+            val validGrids = Set("all", "cols", "rows", "none")
+            val validStripes = Set("none", "even", "odd", "hover", "all")
+            val frame = named.get("frame").filter(validFrames.contains)
+            val grid = named.get("grid").filter(validGrids.contains)
+            val stripes = named.get("stripes").filter(validStripes.contains)
+
+            val metadata = attrsOpt.map(al => asg.BlockMetadata(
+                attributes = al.named.map((k, v) => (k.value, v.value)),
+                options = Chunk.from(al.options.map(_.value)),
+                roles = Chunk.from(al.roles.map(_.value))
+            ))
+
             asg.Table(
+                title = title,
+                metadata = metadata,
                 form = "delimited",
                 delimiter = delimiter,
-                rows = Chunk.from(rows.map(convertTableRow)),
+                columns = columns,
+                header = headerRow,
+                rows = Chunk.from(bodyRows.map(r => r: asg.Block)),
+                footer = footerRow,
+                frame = frame,
+                grid = grid,
+                stripes = stripes,
                 location = inclusiveLocation(block.span)
             )
         case ast.ListingBlock(delimiter, content) =>
@@ -180,6 +222,8 @@ object AstToAsg:
         case lb: ast.ListingBlock  => lb.span.end // listing block span includes closing delimiter
         case sb: ast.SidebarBlock  => sb.span.end // sidebar block span includes closing delimiter
         case tb: ast.TableBlock    => tb.span.end // table block span includes closing delimiter
+        case al: ast.AttributeList => al.span.end
+        case bt: ast.BlockTitle    => bt.content.lastOption.map(lastContentPos).getOrElse(bt.span.end)
         case tr: ast.TableRow      => tr.cells.lastOption.map(lastContentPos).getOrElse(tr.span.end)
         case tc: ast.TableCell     => tc.content.lastOption.map(lastContentPos).getOrElse(tc.span.end)
         case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
