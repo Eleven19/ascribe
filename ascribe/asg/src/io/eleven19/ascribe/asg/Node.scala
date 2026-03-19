@@ -511,7 +511,13 @@ case class Table private (
     metadata: Option[BlockMetadata],
     form: String,
     delimiter: String,
+    columns: Option[Chunk[ColumnSpec]],
+    header: Option[Chunk[Block]],
     rows: Chunk[Block],
+    footer: Option[Chunk[Block]],
+    frame: Option[String],
+    grid: Option[String],
+    stripes: Option[String],
     location: Location,
     @Modifier.rename("type") nodeType: String
 ) extends Block derives Schema
@@ -525,9 +531,15 @@ object Table:
         metadata: Option[BlockMetadata] = None,
         form: String = "delimited",
         delimiter: String = "|===",
+        columns: Option[Chunk[ColumnSpec]] = None,
+        header: Option[Chunk[Block]] = None,
         rows: Chunk[Block],
+        footer: Option[Chunk[Block]] = None,
+        frame: Option[String] = None,
+        grid: Option[String] = None,
+        stripes: Option[String] = None,
         location: Location
-    ): Table = new Table(id, title, reftext, metadata, form, delimiter, rows, location, "block")
+    ): Table = new Table(id, title, reftext, metadata, form, delimiter, columns, header, rows, footer, frame, grid, stripes, location, "block")
 
 @specStatus(SpecStatus.SpecDerived)
 case class TableRow private (
