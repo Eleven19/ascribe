@@ -1,0 +1,65 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "quote",
+      "form": "delimited",
+      "delimiter": "____",
+      "blocks": [
+        {
+          "name": "paragraph",
+          "inlines": [
+            {
+              "name": "text",
+              "value": "A wise person once said this.",
+              "location": [
+                {
+                  "line": 2,
+                  "col": 1
+                },
+                {
+                  "line": 2,
+                  "col": 29
+                }
+              ],
+              "type": "string"
+            }
+          ],
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 29
+            }
+          ],
+          "type": "block"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 3,
+          "col": 4
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 3,
+      "col": 4
+    }
+  ],
+  "type": "block"
+}

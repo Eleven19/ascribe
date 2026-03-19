@@ -1,0 +1,114 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "example",
+      "form": "delimited",
+      "delimiter": "====",
+      "blocks": [
+        {
+          "name": "paragraph",
+          "inlines": [
+            {
+              "name": "text",
+              "value": "Outer example.",
+              "location": [
+                {
+                  "line": 2,
+                  "col": 1
+                },
+                {
+                  "line": 2,
+                  "col": 14
+                }
+              ],
+              "type": "string"
+            }
+          ],
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 14
+            }
+          ],
+          "type": "block"
+        },
+        {
+          "name": "example",
+          "form": "delimited",
+          "delimiter": "======",
+          "blocks": [
+            {
+              "name": "paragraph",
+              "inlines": [
+                {
+                  "name": "text",
+                  "value": "Inner nested example.",
+                  "location": [
+                    {
+                      "line": 5,
+                      "col": 1
+                    },
+                    {
+                      "line": 5,
+                      "col": 21
+                    }
+                  ],
+                  "type": "string"
+                }
+              ],
+              "location": [
+                {
+                  "line": 5,
+                  "col": 1
+                },
+                {
+                  "line": 5,
+                  "col": 21
+                }
+              ],
+              "type": "block"
+            }
+          ],
+          "location": [
+            {
+              "line": 4,
+              "col": 1
+            },
+            {
+              "line": 6,
+              "col": 6
+            }
+          ],
+          "type": "block"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 7,
+          "col": 4
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 7,
+      "col": 4
+    }
+  ],
+  "type": "block"
+}
