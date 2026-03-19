@@ -30,3 +30,6 @@ Feature: Block - Table
       | cell-styles           | ascribe/tck-runner/test/resources/tests/block/table/cell-styles-input.adoc           | ascribe/tck-runner/test/resources/tests/block/table/cell-styles-output.json            |
       | span-columns          | ascribe/tck-runner/test/resources/tests/block/table/span-columns-input.adoc          | ascribe/tck-runner/test/resources/tests/block/table/span-columns-output.json           |
       | span-rows             | ascribe/tck-runner/test/resources/tests/block/table/span-rows-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/span-rows-output.json              |
+      | dup-cells             | ascribe/tck-runner/test/resources/tests/block/table/dup-cells-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/dup-cells-output.json              |
+      | csv-basic             | ascribe/tck-runner/test/resources/tests/block/table/csv-basic-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/csv-basic-output.json              |
+      | dsv-basic             | ascribe/tck-runner/test/resources/tests/block/table/dsv-basic-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/dsv-basic-output.json              |

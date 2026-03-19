@@ -48,7 +48,7 @@ object AstToAsg:
                 inlines = Chunk.from(converted),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
-        case tb @ ast.TableBlock(rows, delimiter, attrsOpt, titleOpt, hasBlankAfterFirst) =>
+        case tb @ ast.TableBlock(rows, delimiter, _, attrsOpt, titleOpt, hasBlankAfterFirst) =>
             val options = attrsOpt.toList.flatMap(_.options).map(_.value)
             val named   = attrsOpt.map(_.named.map((k, v) => (k.value, v.value))).getOrElse(Map.empty)
 
@@ -171,6 +171,7 @@ object AstToAsg:
             style = effectiveStyle,
             colSpan = cell.colSpan.map(f => asg.ColSpan(f.value)),
             rowSpan = cell.rowSpan.map(f => asg.RowSpan(f.value)),
+            dupCount = cell.dupFactor.map(f => asg.DupCount(f.value)),
             inlines = Chunk.from(cell.content.map(convertInline)),
             location = contentLocation(cell.span.start, lastContentPos(cell))
         )

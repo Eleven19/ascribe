@@ -40,6 +40,14 @@ object RowSpan:
     given Schema[RowSpan]                 = summon[Schema[Int]].transform[RowSpan](identity, identity)
     extension (r: RowSpan) def value: Int = r
 
+/** Duplication count — number of times a cell is duplicated. */
+opaque type DupCount = Int
+
+object DupCount:
+    def apply(n: Int): DupCount            = n
+    given Schema[DupCount]                 = summon[Schema[Int]].transform[DupCount](identity, identity)
+    extension (d: DupCount) def value: Int = d
+
 case class ColumnSpec(
     width: Option[Int] = None,
     halign: Option[HAlign] = None,

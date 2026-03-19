@@ -22,6 +22,7 @@ import io.eleven19.ascribe.ast.{
     Span as AstSpan,
     TableBlock,
     TableCell,
+    TableFormat,
     TableRow,
     Text,
     UnorderedList,
@@ -241,31 +242,46 @@ object BlockParser:
                 else init :+ io.eleven19.ascribe.ast.Text(trimmed)(t.span)
             case other => other
 
-    import CellSpecifier.{StyleOperator, ColSpanFactor, RowSpanFactor}
+    import CellSpecifier.{ColSpanFactor, DupFactor, RowSpanFactor, StyleOperator}
 
-    /** Parsed cell specifier: optional span factors and style operator. */
+    /** Parsed cell specifier: optional span/duplication factors and style operator. */
     private case class CellSpec(
         colSpan: Option[ColSpanFactor] = None,
         rowSpan: Option[RowSpanFactor] = None,
+        dupFactor: Option[DupFactor] = None,
         style: Option[StyleOperator] = None
     )
 
-    /** Parses a cell specifier prefix: `[colSpan][.rowSpan]+[style]` before `|`. Examples: `2+|`, `.3+|`, `2.3+|`,
-      * `s|`, `2+s|`, `.2+e|`
+    /** Parses a cell specifier prefix before `|`.
+      *   - Span: `2+|`, `.3+|`, `2.3+|`, `2+s|`
+      *   - Duplication: `3*|`, `3*s|`
+      *   - Style only: `s|`
       */
     private val cellSpecifier: Parsley[CellSpec] = atomic {
         import parsley.character.digit
-        val digits    = some(digit).map(_.mkString.toInt)
-        val colFactor = option(digits.map(ColSpanFactor(_)))
-        val rowFactor = option(char('.') *> digits.map(RowSpanFactor(_)))
-        val spanOp    = char('+')
-        val styleOp   = option(satisfy(c => "adehilms".contains(c)).map(StyleOperator(_)))
+        val digits  = some(digit).map(_.mkString.toInt)
+        val styleOp = option(satisfy(c => "adehilms".contains(c)).map(StyleOperator(_)))
 
-        (colFactor <~> rowFactor <* spanOp <~> styleOp <* char('|')).map { case ((col, row), sty) =>
-            CellSpec(col, row, sty)
-        } | (styleOp.filter(_.isDefined) <* char('|')).map { sty =>
-            CellSpec(style = sty)
+        // Span: [col][.row]+[style]|
+        val spanSpec = atomic {
+            val colFactor = option(digits.map(ColSpanFactor(_)))
+            val rowFactor = option(char('.') *> digits.map(RowSpanFactor(_)))
+            (colFactor <~> rowFactor <* char('+') <~> styleOp <* char('|')).map { case ((col, row), sty) =>
+                CellSpec(colSpan = col, rowSpan = row, style = sty)
+            }
         }
+
+        // Duplication: <n>*[style]|
+        val dupSpec = atomic(
+            (digits.map(DupFactor(_)) <* char('*') <~> styleOp <* char('|')).map { case (dup, sty) =>
+                CellSpec(dupFactor = Some(dup), style = sty)
+            }
+        )
+
+        // Style only: <style>|
+        val styleSpec = atomic((styleOp.filter(_.isDefined) <* char('|')).map(sty => CellSpec(style = sty)))
+
+        spanSpec | dupSpec | styleSpec
     }
 
     /** Parses a single cell with optional specifier: `[spec]| content` or plain `| content`. */
@@ -273,7 +289,9 @@ object BlockParser:
         val specifiedCell =
             (pos <~> cellSpecifier <~> option(char(' ')).void <~> cellContent <~> pos)
                 .map { case ((((s, spec), _), content), e) =>
-                    TableCell(trimCellContent(content), spec.style, spec.colSpan, spec.rowSpan)(mkSpan(s, e))
+                    TableCell(trimCellContent(content), spec.style, spec.colSpan, spec.rowSpan, spec.dupFactor)(
+                        mkSpan(s, e)
+                    )
                 }
         val plainCell =
             (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
@@ -310,16 +328,82 @@ object BlockParser:
                     atomic(string("|===")).map(_ => (List(firstRow), false))
         }
 
-    /** Parses a table block: optional title and attributes, then `|===` open, rows, `|===` close. */
+    // --- CSV/DSV data format parsers ---
+
+    /** Parses a CSV row: comma-separated values with optional double-quote enclosing. */
+    private def csvRow(sep: Char): Parsley[List[TableCell]] =
+        val unquoted = stringOfSome(satisfy(c => c != sep && c != '"' && c != '\n' && c != '\r'))
+        val quoted   = char('"') *> many(satisfy(_ != '"') | (char('"') *> char('"'))).map(_.mkString) <* char('"')
+        val cellVal  = option(quoted | unquoted).map(_.getOrElse("").trim)
+        val cell = (pos <~> cellVal <~> pos).map { case ((s, v), e) =>
+            val content: InlineContent =
+                if v.isEmpty then Nil
+                else scala.List(io.eleven19.ascribe.ast.Text(v)(mkSpan(s, e)))
+            TableCell(content)(mkSpan(s, e))
+        }
+        (cell <~> many(char(sep) *> cell)).map { case (first, rest) => first :: rest } <* eolOrEof
+
+    /** Parses a DSV row: separator-separated values with backslash escaping. */
+    private def dsvRow(sep: Char): Parsley[List[TableCell]] =
+        val escaped = char('\\') *> satisfy(_ => true)
+        val cellVal = many(escaped | satisfy(c => c != sep && c != '\n' && c != '\r')).map(_.mkString.trim)
+        val cell = (pos <~> cellVal <~> pos).map { case ((s, v), e) =>
+            val content: InlineContent =
+                if v.isEmpty then Nil
+                else scala.List(io.eleven19.ascribe.ast.Text(v)(mkSpan(s, e)))
+            TableCell(content)(mkSpan(s, e))
+        }
+        (cell <~> many(char(sep) *> cell)).map { case (first, rest) => first :: rest } <* eolOrEof
+
+    /** Parses data-format table rows (CSV/DSV/TSV) until closing delimiter. */
+    private def dataTableRows(sep: Char, useCsv: Boolean, closingDelim: String): Parsley[List[TableRow]] =
+        val rowParser = if useCsv then csvRow(sep) else dsvRow(sep)
+        val row       = (pos <~> rowParser <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+        manyTill(
+            (row <* option(some(blankLine)).void) | (blankLine.map(_ => null)),
+            atomic(string(closingDelim))
+        ).map(_.filter(_ != null))
+
+    /** Parses a table block: PSV (`|===`), CSV (`,===`), or DSV (`:===`). */
     val tableBlock: Parsley[Block] =
-        (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
-            (atomic(string("|===")) <* eolOrEof) *>
-            option(some(blankLine)).void *>
-            tableRowsWithBlankTracking <~> pos <* eolOrEof)
-            .map { case ((((s, title), attrs), (rows, hasBlankAfterFirst)), e) =>
-                TableBlock(rows, "|===", attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
-            }
-            .label("table block")
+        val psvTable =
+            (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                (atomic(string("|===")) <* eolOrEof) *>
+                option(some(blankLine)).void *>
+                tableRowsWithBlankTracking <~> pos <* eolOrEof)
+                .map { case ((((s, title), attrs), (rows, hasBlankAfterFirst)), e) =>
+                    val format = attrs
+                        .map(_.named.map((k, v) => (k.value, v.value)))
+                        .getOrElse(Map.empty)
+                        .get("format") match
+                        case Some("csv") => TableFormat.CSV
+                        case Some("tsv") => TableFormat.TSV
+                        case Some("dsv") => TableFormat.DSV
+                        case _           => TableFormat.PSV
+                    // If format is CSV/DSV/TSV with |=== delimiter, re-parse would be needed
+                    // For now, PSV parsing is used when |=== is the delimiter
+                    TableBlock(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
+                }
+
+        val csvTable =
+            (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                (atomic(string(",===")) <* eolOrEof) *>
+                option(some(blankLine)).void *>
+                dataTableRows(',', true, ",===") <~> pos <* eolOrEof)
+                .map { case ((((s, title), attrs), rows), e) =>
+                    TableBlock(rows, ",===", TableFormat.CSV, attrs, title)(mkSpan(s, e))
+                }
+
+        val dsvTable =
+            (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                (atomic(string(":===")) <* eolOrEof) *>
+                option(some(blankLine)).void *>
+                dataTableRows(':', false, ":===") <~> pos <* eolOrEof)
+                .map { case ((((s, title), attrs), rows), e) =>
+                    TableBlock(rows, ":===", TableFormat.DSV, attrs, title)(mkSpan(s, e))
+                }
+
+        (psvTable | csvTable | dsvTable).label("table block")
 
     // -----------------------------------------------------------------------
     // Paragraphs
@@ -338,7 +422,9 @@ object BlockParser:
             notFollowedBy(char('[') *> satisfy(c => c != '\n' && c != '\r')) *>
             notFollowedBy(string("----")) *>
             notFollowedBy(string("****")) *>
-            notFollowedBy(string("|==="))
+            notFollowedBy(string("|===")) *>
+            notFollowedBy(string(",===")) *>
+            notFollowedBy(string(":==="))
 
     /** Parses a single non-empty, non-block-start line as a list of inline elements. */
     private val paragraphLine: Parsley[InlineContent] =
