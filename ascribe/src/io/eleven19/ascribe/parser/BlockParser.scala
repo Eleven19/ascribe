@@ -240,10 +240,19 @@ object BlockParser:
                 else init :+ io.eleven19.ascribe.ast.Text(trimmed)(t.span)
             case other => other
 
-    /** Parses a single cell: `| content`. Trims trailing whitespace from cell text. */
+    /** Parses a single cell: `| content` or `<style>| content` where style is one of a/d/e/h/l/m/s. */
     private val tableCell: Parsley[TableCell] =
-        (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
-            .map { case ((s, content), e) => TableCell(trimCellContent(content))(mkSpan(s, e)) }
+        val styledCell = atomic(
+            pos <~> satisfy(c => "adehilms".contains(c)) <~> char('|') <~> option(
+                char(' ')
+            ).void <~> cellContent <~> pos
+        ).map { case (((((s, style), _), _), content), e) =>
+            TableCell(trimCellContent(content), Some(style))(mkSpan(s, e))
+        }
+        val plainCell =
+            (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
+                .map { case ((s, content), e) => TableCell(trimCellContent(content))(mkSpan(s, e)) }
+        styledCell | plainCell
 
     /** Parses a row of cells on a single line ending with eolOrEof. */
     private val tableRowLine: Parsley[List[TableCell]] =

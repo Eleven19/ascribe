@@ -61,10 +61,16 @@ object AstToAsg:
 
             val hasFooter = options.contains("footer")
 
-            val allRows = rows.map(convertTableRow)
+            val colSpecs = columns.getOrElse(Chunk.empty)
+            val allRows  = rows.map(convertTableRow(_, colSpecs))
             val (headerRow, bodyStart) =
                 if hasHeader && allRows.nonEmpty then
-                    (Some(Chunk.from(allRows.head.cells.toList.map(c => c: asg.Block))), allRows.tail)
+                    // Header row ignores style operators per spec
+                    val headerCells = allRows.head.cells.toList.map { c =>
+                        val cell = c.asInstanceOf[asg.TableCell]
+                        asg.TableCell(style = None, inlines = cell.inlines, location = cell.location): asg.Block
+                    }
+                    (Some(Chunk.from(headerCells)), allRows.tail)
                 else (None, allRows)
             val (bodyRows, footerRow) =
                 if hasFooter && bodyStart.nonEmpty then
@@ -149,14 +155,20 @@ object AstToAsg:
             location = contentLocation(item.span.start, lastContentPos(item))
         )
 
-    private def convertTableRow(row: ast.TableRow): asg.TableRow =
+    private def convertTableRow(row: ast.TableRow, colSpecs: Chunk[asg.ColumnSpec]): asg.TableRow =
         asg.TableRow(
-            cells = Chunk.from(row.cells.map(convertTableCell)),
+            cells = Chunk.from(row.cells.zipWithIndex.map { (cell, idx) =>
+                val colStyle = colSpecs.lift(idx).flatMap(_.style)
+                convertTableCell(cell, colStyle)
+            }),
             location = contentLocation(row.span.start, lastContentPos(row))
         )
 
-    private def convertTableCell(cell: ast.TableCell): asg.TableCell =
+    private def convertTableCell(cell: ast.TableCell, colStyle: Option[asg.CellStyle]): asg.TableCell =
+        // Cell specifier style overrides column style
+        val effectiveStyle = cell.style.flatMap(asg.CellStyle.fromChar).orElse(colStyle)
         asg.TableCell(
+            style = effectiveStyle,
             inlines = Chunk.from(cell.content.map(convertInline)),
             location = contentLocation(cell.span.start, lastContentPos(cell))
         )

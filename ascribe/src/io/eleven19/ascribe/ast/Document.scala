@@ -132,8 +132,9 @@ case class TableBlock(
 /** A row in a table. */
 case class TableRow(cells: List[TableCell])(val span: Span) extends AstNode derives CanEqual
 
-/** A cell in a table row. */
-case class TableCell(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
+/** A cell in a table row. The style is an optional single-char specifier prefix (e.g., 's' for strong). */
+case class TableCell(content: InlineContent, style: Option[Char] = None)(val span: Span) extends AstNode
+    derives CanEqual
 
 /** A bullet list (items prefixed with "* "). */
 case class UnorderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual
