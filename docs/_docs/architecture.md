@@ -56,6 +56,10 @@ AstNode
   |     +-- SidebarBlock (delimiter, blocks)
   |     +-- UnorderedList (items: List[ListItem])
   |     +-- OrderedList (items: List[ListItem])
+  |     +-- TableBlock (attributes: AttributeList, title: Option[BlockTitle], rows: List[TableRow], format: TableFormat)
+  +-- TableRow (cells: List[TableCell])
+  +-- TableCell (content: CellContent)   -- CellContent = Inlines | Blocks
+  +-- AttributeList, BlockTitle, TableFormat
   +-- Inline
   |     +-- Text (content: String)
   |     +-- Bold (content: List[Inline])
@@ -78,6 +82,8 @@ Node (sealed trait)
   |     +-- Section, Heading, Paragraph, Listing, Literal, Pass, Stem, Verse
   |     +-- Sidebar, Example, Admonition, Open, Quote
   |     +-- List, DList, ListItem, DListItem
+  |     +-- Table (cols, rows), TableRow (cells), TableCell (style, colspan, rowspan, content)
+  |     +-- ColumnSpec, CellStyle, ColSpan, RowSpan, DupCount
   |     +-- Break, Audio, Video, Image, Toc
   +-- Inline (sealed trait)
         +-- Span (variant, form, inlines) -- formatting spans

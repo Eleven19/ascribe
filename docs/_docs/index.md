@@ -9,10 +9,11 @@ Ascribe is a Scala 3 AsciiDoc parser that produces a type-safe Abstract Semantic
 ## Key Features
 
 - **Parsley-based parser** -- Combinatorial parsing with clean error messages, position tracking, and atomic backtracking.
-- **Full ASG type hierarchy** -- Sealed trait hierarchy covering blocks (Section, Paragraph, Listing, Sidebar, List, ...) and inlines (Text, Span, Ref, CharRef, Raw).
+- **Full ASG type hierarchy** -- Sealed trait hierarchy covering blocks (Section, Paragraph, Listing, Sidebar, List, Table, ...) and inlines (Text, Span, Ref, CharRef, Raw).
+- **Table support** -- Full AsciiDoc table parsing including PSV, CSV, and DSV formats, column specs, cell specifiers (style, spanning, duplication), header/footer rows, frame/grid/stripes attributes, and nested tables.
 - **Schema-derived JSON codecs** -- Automatic JSON encoding/decoding via `zio-blocks-schema` with `DiscriminatorKind.Field("name")`, matching the official AsciiDoc TCK format.
 - **Stack-safe visitor and fold** -- Trampolined tree traversals (`foldLeft`, `foldRight`, `collect`, `count`) on both AST and ASG, with hierarchical visitor traits.
-- **TCK compliance** -- All 13 AsciiDoc Technology Compatibility Kit test cases passing.
+- **TCK compliance** -- 78 test scenarios passing (22 official TCK + 28 custom table + 28 other).
 
 ## Quick Links
 

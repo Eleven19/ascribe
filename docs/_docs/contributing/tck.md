@@ -34,7 +34,9 @@ For inline-only tests, the expected JSON is an array rather than an object. In t
 
 ## Current Status
 
-**13 out of 13 test cases passing.**
+**78 out of 78 test scenarios passing**, including 22 official TCK test cases and 28 custom table test scenarios.
+
+Custom table tests live in `ascribe/tck-runner/test/resources/custom-tests/tables/` and cover PSV, CSV, and DSV formats, column specs, cell specifiers, header/footer rows, and nested tables.
 
 ## Test Runner Implementation
 
