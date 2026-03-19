@@ -1,0 +1,5 @@
+[cols="3*"]
+|===
+2+|Spans 2 cols |Col 3
+|A |B |C
+|===

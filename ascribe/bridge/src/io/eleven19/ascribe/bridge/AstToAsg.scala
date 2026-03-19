@@ -166,9 +166,11 @@ object AstToAsg:
 
     private def convertTableCell(cell: ast.TableCell, colStyle: Option[asg.CellStyle]): asg.TableCell =
         // Cell specifier style overrides column style
-        val effectiveStyle = cell.style.flatMap(asg.CellStyle.fromChar).orElse(colStyle)
+        val effectiveStyle = cell.style.map(_.value).flatMap(asg.CellStyle.fromChar).orElse(colStyle)
         asg.TableCell(
             style = effectiveStyle,
+            colSpan = cell.colSpan.map(_.value),
+            rowSpan = cell.rowSpan.map(_.value),
             inlines = Chunk.from(cell.content.map(convertInline)),
             location = contentLocation(cell.span.start, lastContentPos(cell))
         )
