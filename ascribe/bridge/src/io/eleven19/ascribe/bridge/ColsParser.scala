@@ -1,7 +1,7 @@
 package io.eleven19.ascribe.bridge
 
 import zio.blocks.chunk.Chunk
-import io.eleven19.ascribe.asg.{ColumnSpec, HAlign, VAlign}
+import io.eleven19.ascribe.asg.{CellStyle, ColumnSpec, HAlign, VAlign}
 
 object ColsParser:
 
@@ -20,10 +20,11 @@ object ColsParser:
                 List(parseSpec(entry))
 
     private def parseSpec(s: String): ColumnSpec =
-        var remaining              = s
-        var halign: Option[HAlign] = None
-        var valign: Option[VAlign] = None
-        var width: Option[Int]     = None
+        var remaining                = s
+        var halign: Option[HAlign]   = None
+        var valign: Option[VAlign]   = None
+        var width: Option[Int]       = None
+        var style: Option[CellStyle] = None
 
         if remaining.startsWith("<") then
             halign = Some(HAlign.Left); remaining = remaining.drop(1)
@@ -39,6 +40,14 @@ object ColsParser:
         else if remaining.startsWith(".>") then
             valign = Some(VAlign.Bottom); remaining = remaining.drop(2)
 
+        // Style operator is always last character (a/d/e/h/l/m/s)
+        if remaining.nonEmpty then
+            CellStyle.fromChar(remaining.last) match
+                case Some(s) =>
+                    style = Some(s)
+                    remaining = remaining.dropRight(1)
+                case None => ()
+
         if remaining.nonEmpty && remaining.forall(_.isDigit) then width = Some(remaining.toInt)
 
-        ColumnSpec(width, halign, valign)
+        ColumnSpec(width, halign, valign, style)

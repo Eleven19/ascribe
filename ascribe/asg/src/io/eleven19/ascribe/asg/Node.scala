@@ -585,6 +585,7 @@ case class TableCell private (
     title: Option[Chunk[Inline]],
     reftext: Option[Chunk[Inline]],
     metadata: Option[BlockMetadata],
+    style: Option[CellStyle],
     inlines: Chunk[Inline],
     location: Location,
     @Modifier.rename("type") nodeType: String
@@ -597,9 +598,10 @@ object TableCell:
         title: Option[Chunk[Inline]] = None,
         reftext: Option[Chunk[Inline]] = None,
         metadata: Option[BlockMetadata] = None,
+        style: Option[CellStyle] = None,
         inlines: Chunk[Inline] = Chunk.empty,
         location: Location
-    ): TableCell = new TableCell(id, title, reftext, metadata, inlines, location, "block")
+    ): TableCell = new TableCell(id, title, reftext, metadata, style, inlines, location, "block")
 
 // --- Block macros (each a concrete type with fixed name) ---
 

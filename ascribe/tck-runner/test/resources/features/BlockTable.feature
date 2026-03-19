@@ -26,3 +26,5 @@ Feature: Block - Table
       | cols-multiplier-align | ascribe/tck-runner/test/resources/tests/block/table/cols-multiplier-align-input.adoc | ascribe/tck-runner/test/resources/tests/block/table/cols-multiplier-align-output.json  |
       | stacked-attrs         | ascribe/tck-runner/test/resources/tests/block/table/stacked-attrs-input.adoc         | ascribe/tck-runner/test/resources/tests/block/table/stacked-attrs-output.json          |
       | full-attrs            | ascribe/tck-runner/test/resources/tests/block/table/full-attrs-input.adoc            | ascribe/tck-runner/test/resources/tests/block/table/full-attrs-output.json             |
+      | cols-styles           | ascribe/tck-runner/test/resources/tests/block/table/cols-styles-input.adoc           | ascribe/tck-runner/test/resources/tests/block/table/cols-styles-output.json            |
+      | cell-styles           | ascribe/tck-runner/test/resources/tests/block/table/cell-styles-input.adoc           | ascribe/tck-runner/test/resources/tests/block/table/cell-styles-output.json            |
