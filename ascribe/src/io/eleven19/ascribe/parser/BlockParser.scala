@@ -1,14 +1,16 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.{atomic, notFollowedBy}
+import parsley.Parsley.{atomic, notFollowedBy, pure}
 import parsley.character.{char, satisfy, string, stringOfSome}
-import parsley.combinator.{many, manyTill, option, some}
+import parsley.combinator.{many, manyTill, option, sepEndBy, some}
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
 import io.eleven19.ascribe.ast.{
+    AttributeList,
     Block,
+    BlockTitle,
     Heading,
     InlineContent,
     ListItem,
@@ -24,6 +26,7 @@ import io.eleven19.ascribe.ast.{
     UnorderedList,
     mkSpan
 }
+import io.eleven19.ascribe.ast.AttributeList.{AttributeName, AttributeValue, OptionName, RoleName}
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 import io.eleven19.ascribe.parser.InlineParser.*
 
@@ -136,6 +139,75 @@ object BlockParser:
     private val blankLine: Parsley[Unit] = (hspaces *> eol).void
 
     // -----------------------------------------------------------------------
+    // Attribute lists
+    // -----------------------------------------------------------------------
+
+    /** ADT for individual entries within an attribute list. */
+    private enum AttrEntry:
+        case Named(key: AttributeName, value: AttributeValue)
+        case Opt(name: OptionName)
+        case Role(name: RoleName)
+        case Positional(value: AttributeValue)
+
+    /** Parses a double-quoted string value (content between `"` delimiters). */
+    private val quotedValue: Parsley[String] =
+        char('"') *> stringOfSome(satisfy(c => c != '"' && c != '\n' && c != '\r')) <* char('"')
+
+    /** Parses an unquoted attribute value (stops at `,`, `]`, `"`, newline, and shorthand prefixes). */
+    private val unquotedValue: Parsley[String] =
+        stringOfSome(satisfy(c => c != ',' && c != ']' && c != '"' && c != '\n' && c != '\r' && c != '%' && c != '#' && c != '.'))
+
+    /** Characters that delimit shorthand entries in an attribute list. */
+    private val shorthandChars = Set(',', ']', '%', '#', '.', '\n', '\r')
+
+    /** Parses a single attribute entry: option (`%name`), id shorthand (`#id`), role shorthand (`.role`),
+      * named (`key=value`), or positional (bare value).
+      */
+    private val attrEntry: Parsley[AttrEntry] =
+        (char('%') *> stringOfSome(satisfy(c => !shorthandChars(c))))
+            .map(s => AttrEntry.Opt(OptionName(s.trim))) |
+        (char('#') *> stringOfSome(satisfy(c => !shorthandChars(c))))
+            .map(s => AttrEntry.Named(AttributeName("id"), AttributeValue(s.trim))) |
+        (char('.') *> notFollowedBy(char('.')) *> stringOfSome(satisfy(c => !shorthandChars(c))))
+            .map(s => AttrEntry.Role(RoleName(s.trim))) |
+        atomic((unquotedValue <* char('=')) <~> (quotedValue | unquotedValue))
+            .map { case (k, v) => AttrEntry.Named(AttributeName(k.trim), AttributeValue(v.trim)) } |
+        (quotedValue | unquotedValue)
+            .map(s => AttrEntry.Positional(AttributeValue(s.trim)))
+
+    /** Parses a single attribute list line: `[key=value, %option, .role]`. */
+    val attributeListLine: Parsley[AttributeList] =
+        (pos <~> (char('[') *> sepEndBy(attrEntry, char(',') *> option(char(' ')).void) <* char(']') <* eolOrEof) <~> pos)
+            .map { case ((s, entries), e) =>
+                val positional = entries.collect { case AttrEntry.Positional(v) => v }.toList
+                val named = entries.collect { case AttrEntry.Named(k, v) => (k, v) }.toMap
+                val options = entries.collect { case AttrEntry.Opt(o) => o }.toList
+                val roles = entries.collect { case AttrEntry.Role(r) => r }.toList
+                AttributeList(positional, named, options, roles)(mkSpan(s, e))
+            }
+            .label("attribute list")
+
+    /** Parses zero or more attribute list lines and merges them into a single optional [[AttributeList]]. */
+    val attributeLists: Parsley[Option[AttributeList]] =
+        many(attributeListLine).map {
+            case Nil => None
+            case first :: rest =>
+                Some(rest.foldLeft(first)((acc, al) =>
+                    AttributeList.merge(acc, al)(io.eleven19.ascribe.ast.Span(acc.span.start, al.span.end))
+                ))
+        }
+
+    // -----------------------------------------------------------------------
+    // Block title
+    // -----------------------------------------------------------------------
+
+    /** Parses a block title line: `.TitleText` (dot followed by non-dot, non-space content). */
+    val blockTitle: Parsley[BlockTitle] =
+        (pos <~> (char('.') *> notFollowedBy(char('.')) *> notFollowedBy(char(' ')) *> lineContent) <~> pos <* eolOrEof)
+            .map { case ((s, content), e) => BlockTitle(content)(mkSpan(s, e)) }
+            .label("block title")
+
+    // -----------------------------------------------------------------------
     // Tables
     // -----------------------------------------------------------------------
 
@@ -173,16 +245,36 @@ object BlockParser:
     private val tableRow: Parsley[TableRow] =
         (pos <~> tableRowLine <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
 
-    /** Parses a table block: `|===` open, rows, `|===` close. */
+    /** Parses table rows while tracking whether a blank line appears after the first row.
+      *
+      * This information is needed for implicit header row detection in AsciiDoc tables.
+      */
+    private val tableRowsWithBlankTracking: Parsley[(List[TableRow], Boolean)] =
+        option(tableRow).flatMap {
+            case None =>
+                atomic(string("|===")).map(_ => (Nil, false))
+            case Some(firstRow) =>
+                val blankThenMore = some(blankLine).void *>
+                    manyTill(
+                        tableRow <* option(some(blankLine)).void,
+                        atomic(string("|==="))
+                    ).map(rest => (firstRow :: rest, true))
+                val noBlankMore = manyTill(
+                    tableRow <* option(some(blankLine)).void,
+                    atomic(string("|==="))
+                ).map(rest => (firstRow :: rest, false))
+                blankThenMore | noBlankMore |
+                    atomic(string("|===")).map(_ => (List(firstRow), false))
+        }
+
+    /** Parses a table block: optional title and attributes, then `|===` open, rows, `|===` close. */
     val tableBlock: Parsley[Block] =
-        (pos <~> (atomic(string("|===")) <* eolOrEof) *>
+        (pos <~> option(blockTitle) <~> attributeLists <~>
+            (atomic(string("|===")) <* eolOrEof) *>
             option(some(blankLine)).void *>
-            manyTill(
-                tableRow <* option(some(blankLine)).void,
-                atomic(string("|==="))
-            ) <~> pos <* eolOrEof)
-            .map { case ((s, rows), e) =>
-                TableBlock(rows, "|===")(mkSpan(s, e))
+            tableRowsWithBlankTracking <~> pos <* eolOrEof)
+            .map { case ((((s, title), attrs), (rows, hasBlankAfterFirst)), e) =>
+                TableBlock(rows, "|===", attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
             }
             .label("table block")
 
@@ -192,12 +284,15 @@ object BlockParser:
 
     /** Negative lookahead for any block-starting prefix.
       *
-      * Prevents [[paragraphLine]] from consuming lines that belong to a heading or list.
+      * Prevents [[paragraphLine]] from consuming lines that belong to a heading, list, block title,
+      * attribute list, or delimited block.
       */
     private val notBlockStart: Parsley[Unit] =
         notFollowedBy(headingLevel *> char(' ')) *>
             notFollowedBy(char('*') *> char(' ')) *>
             notFollowedBy(char('.') *> char(' ')) *>
+            notFollowedBy(char('.') *> satisfy(c => c != '.' && c != ' ' && c != '\n' && c != '\r')) *>
+            notFollowedBy(char('[') *> satisfy(c => c != '\n' && c != '\r')) *>
             notFollowedBy(string("----")) *>
             notFollowedBy(string("****")) *>
             notFollowedBy(string("|==="))
