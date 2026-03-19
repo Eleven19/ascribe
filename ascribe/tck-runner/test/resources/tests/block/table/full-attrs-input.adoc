@@ -1,0 +1,7 @@
+.Complete Table
+[%header%footer,cols="<1,^2,>3",frame=ends,grid=rows,stripes=even]
+|===
+| Left | Center | Right
+| A | B | C
+| F1 | F2 | F3
+|===

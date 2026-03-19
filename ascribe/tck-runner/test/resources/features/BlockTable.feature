@@ -21,3 +21,8 @@ Feature: Block - Table
       | header-noheader   | ascribe/tck-runner/test/resources/tests/block/table/header-noheader-input.adoc   | ascribe/tck-runner/test/resources/tests/block/table/header-noheader-output.json    |
       | footer            | ascribe/tck-runner/test/resources/tests/block/table/footer-input.adoc            | ascribe/tck-runner/test/resources/tests/block/table/footer-output.json             |
       | header-footer     | ascribe/tck-runner/test/resources/tests/block/table/header-footer-input.adoc     | ascribe/tck-runner/test/resources/tests/block/table/header-footer-output.json      |
+      | frame-grid            | ascribe/tck-runner/test/resources/tests/block/table/frame-grid-input.adoc            | ascribe/tck-runner/test/resources/tests/block/table/frame-grid-output.json             |
+      | stripes               | ascribe/tck-runner/test/resources/tests/block/table/stripes-input.adoc               | ascribe/tck-runner/test/resources/tests/block/table/stripes-output.json                |
+      | cols-multiplier-align | ascribe/tck-runner/test/resources/tests/block/table/cols-multiplier-align-input.adoc | ascribe/tck-runner/test/resources/tests/block/table/cols-multiplier-align-output.json  |
+      | stacked-attrs         | ascribe/tck-runner/test/resources/tests/block/table/stacked-attrs-input.adoc         | ascribe/tck-runner/test/resources/tests/block/table/stacked-attrs-output.json          |
+      | full-attrs            | ascribe/tck-runner/test/resources/tests/block/table/full-attrs-input.adoc            | ascribe/tck-runner/test/resources/tests/block/table/full-attrs-output.json             |

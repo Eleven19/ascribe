@@ -1,0 +1,379 @@
+{
+    "name": "document",
+    "blocks": [
+        {
+            "name": "table",
+            "title": [
+                {
+                    "name": "text",
+                    "value": "Complete Table",
+                    "location": [
+                        {
+                            "line": 1,
+                            "col": 2
+                        },
+                        {
+                            "line": 1,
+                            "col": 15
+                        }
+                    ],
+                    "type": "string"
+                }
+            ],
+            "metadata": {
+                "attributes": {
+                    "cols": "<1,^2,>3",
+                    "frame": "ends",
+                    "grid": "rows",
+                    "stripes": "even"
+                },
+                "options": [
+                    "header",
+                    "footer"
+                ]
+            },
+            "form": "delimited",
+            "delimiter": "|===",
+            "columns": [
+                {
+                    "width": 1,
+                    "halign": "left"
+                },
+                {
+                    "width": 2,
+                    "halign": "center"
+                },
+                {
+                    "width": 3,
+                    "halign": "right"
+                }
+            ],
+            "header": [
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "Left",
+                            "location": [
+                                {
+                                    "line": 4,
+                                    "col": 3
+                                },
+                                {
+                                    "line": 4,
+                                    "col": 7
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 4,
+                            "col": 1
+                        },
+                        {
+                            "line": 4,
+                            "col": 7
+                        }
+                    ],
+                    "type": "block"
+                },
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "Center",
+                            "location": [
+                                {
+                                    "line": 4,
+                                    "col": 10
+                                },
+                                {
+                                    "line": 4,
+                                    "col": 16
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 4,
+                            "col": 8
+                        },
+                        {
+                            "line": 4,
+                            "col": 16
+                        }
+                    ],
+                    "type": "block"
+                },
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "Right",
+                            "location": [
+                                {
+                                    "line": 4,
+                                    "col": 19
+                                },
+                                {
+                                    "line": 4,
+                                    "col": 23
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 4,
+                            "col": 17
+                        },
+                        {
+                            "line": 4,
+                            "col": 23
+                        }
+                    ],
+                    "type": "block"
+                }
+            ],
+            "rows": [
+                {
+                    "name": "tableRow",
+                    "cells": [
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "A",
+                                    "location": [
+                                        {
+                                            "line": 5,
+                                            "col": 3
+                                        },
+                                        {
+                                            "line": 5,
+                                            "col": 4
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 5,
+                                    "col": 1
+                                },
+                                {
+                                    "line": 5,
+                                    "col": 4
+                                }
+                            ],
+                            "type": "block"
+                        },
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "B",
+                                    "location": [
+                                        {
+                                            "line": 5,
+                                            "col": 7
+                                        },
+                                        {
+                                            "line": 5,
+                                            "col": 8
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 5,
+                                    "col": 5
+                                },
+                                {
+                                    "line": 5,
+                                    "col": 8
+                                }
+                            ],
+                            "type": "block"
+                        },
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "C",
+                                    "location": [
+                                        {
+                                            "line": 5,
+                                            "col": 11
+                                        },
+                                        {
+                                            "line": 5,
+                                            "col": 11
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 5,
+                                    "col": 9
+                                },
+                                {
+                                    "line": 5,
+                                    "col": 11
+                                }
+                            ],
+                            "type": "block"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 5,
+                            "col": 1
+                        },
+                        {
+                            "line": 5,
+                            "col": 11
+                        }
+                    ],
+                    "type": "block"
+                }
+            ],
+            "footer": [
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "F1",
+                            "location": [
+                                {
+                                    "line": 6,
+                                    "col": 3
+                                },
+                                {
+                                    "line": 6,
+                                    "col": 5
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 6,
+                            "col": 1
+                        },
+                        {
+                            "line": 6,
+                            "col": 5
+                        }
+                    ],
+                    "type": "block"
+                },
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "F2",
+                            "location": [
+                                {
+                                    "line": 6,
+                                    "col": 8
+                                },
+                                {
+                                    "line": 6,
+                                    "col": 10
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 6,
+                            "col": 6
+                        },
+                        {
+                            "line": 6,
+                            "col": 10
+                        }
+                    ],
+                    "type": "block"
+                },
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "F3",
+                            "location": [
+                                {
+                                    "line": 6,
+                                    "col": 13
+                                },
+                                {
+                                    "line": 6,
+                                    "col": 14
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 6,
+                            "col": 11
+                        },
+                        {
+                            "line": 6,
+                            "col": 14
+                        }
+                    ],
+                    "type": "block"
+                }
+            ],
+            "frame": "ends",
+            "grid": "rows",
+            "stripes": "even",
+            "location": [
+                {
+                    "line": 1,
+                    "col": 1
+                },
+                {
+                    "line": 7,
+                    "col": 4
+                }
+            ],
+            "type": "block"
+        }
+    ],
+    "location": [
+        {
+            "line": 1,
+            "col": 1
+        },
+        {
+            "line": 7,
+            "col": 4
+        }
+    ],
+    "type": "block"
+}

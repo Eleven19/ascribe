@@ -1,0 +1,5 @@
+[frame=ends,grid=rows]
+|===
+| A | B
+| C | D
+|===
