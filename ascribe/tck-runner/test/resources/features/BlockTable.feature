@@ -11,3 +11,8 @@ Feature: Block - Table
       | single-column | ascribe/tck-runner/test/resources/tests/block/table/single-column-input.adoc     | ascribe/tck-runner/test/resources/tests/block/table/single-column-output.json      |
       | inline-markup | ascribe/tck-runner/test/resources/tests/block/table/inline-markup-input.adoc     | ascribe/tck-runner/test/resources/tests/block/table/inline-markup-output.json      |
       | empty-cells   | ascribe/tck-runner/test/resources/tests/block/table/empty-cells-input.adoc       | ascribe/tck-runner/test/resources/tests/block/table/empty-cells-output.json        |
+      | cols-equal     | ascribe/tck-runner/test/resources/tests/block/table/cols-equal-input.adoc        | ascribe/tck-runner/test/resources/tests/block/table/cols-equal-output.json         |
+      | cols-widths    | ascribe/tck-runner/test/resources/tests/block/table/cols-widths-input.adoc       | ascribe/tck-runner/test/resources/tests/block/table/cols-widths-output.json        |
+      | cols-alignment | ascribe/tck-runner/test/resources/tests/block/table/cols-alignment-input.adoc    | ascribe/tck-runner/test/resources/tests/block/table/cols-alignment-output.json     |
+      | cols-valign    | ascribe/tck-runner/test/resources/tests/block/table/cols-valign-input.adoc       | ascribe/tck-runner/test/resources/tests/block/table/cols-valign-output.json        |
+      | cols-mixed     | ascribe/tck-runner/test/resources/tests/block/table/cols-mixed-input.adoc        | ascribe/tck-runner/test/resources/tests/block/table/cols-mixed-output.json         |

@@ -155,7 +155,7 @@ object BlockParser:
 
     /** Parses an unquoted attribute value (stops at `,`, `]`, `"`, newline, and shorthand prefixes). */
     private val unquotedValue: Parsley[String] =
-        stringOfSome(satisfy(c => c != ',' && c != ']' && c != '"' && c != '\n' && c != '\r' && c != '%' && c != '#' && c != '.'))
+        stringOfSome(satisfy(c => c != ',' && c != ']' && c != '"' && c != '=' && c != '\n' && c != '\r' && c != '%' && c != '#' && c != '.'))
 
     /** Characters that delimit shorthand entries in an attribute list. */
     private val shorthandChars = Set(',', ']', '%', '#', '.', '\n', '\r')
