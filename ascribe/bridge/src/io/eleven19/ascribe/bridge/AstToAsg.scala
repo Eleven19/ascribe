@@ -108,7 +108,7 @@ object AstToAsg:
                 stripes = stripes,
                 location = inclusiveLocation(block.span)
             )
-        case ast.ListingBlock(delimiter, content) =>
+        case ast.ListingBlock(delimiter, content, attrsOpt, titleOpt) =>
             // Block location spans from opening delimiter to closing delimiter
             val blockLoc = inclusiveLocation(block.span)
             // Content location: lines inside the delimiters
@@ -120,18 +120,137 @@ object AstToAsg:
                 asg.Position(contentStartLine, 1),
                 asg.Position(contentEndLine, lastLineLen)
             )
+            // Extract source style and language from attribute list
+            val positional = attrsOpt.toList.flatMap(_.positional).map(_.value)
+            val named      = attrsOpt.map(_.named.map((k, v) => (k.value, v.value))).getOrElse(Map.empty)
+            val style      = positional.headOption.orElse(named.get("style"))
+            val language   = positional.lift(1).orElse(named.get("language"))
+            val title      = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            val metadata = attrsOpt.map { al =>
+                val attrs = al.named.map((k, v) => (k.value, v.value)) ++
+                    style.map("style" -> _) ++
+                    language.map("language" -> _)
+                asg.BlockMetadata(
+                    attributes = attrs,
+                    options = Chunk.from(al.options.map(_.value)),
+                    roles = Chunk.from(al.roles.map(_.value))
+                )
+            }
             asg.Listing(
+                title = title,
+                metadata = metadata,
                 form = Some("delimited"),
                 delimiter = Some(delimiter),
                 inlines = Chunk(asg.Text(content, contentLoc)),
                 location = blockLoc
             )
-        case ast.SidebarBlock(delimiter, blocks) =>
+        case ast.SidebarBlock(delimiter, blocks, _, _) =>
             asg.Sidebar(
                 form = "delimited",
                 delimiter = delimiter,
                 blocks = Chunk.from(blocks.map(convertBlock)),
                 location = inclusiveLocation(block.span)
+            )
+        case ast.ExampleBlock(delimiter, blocks, attrsOpt, titleOpt) =>
+            val positional = attrsOpt.toList.flatMap(_.positional).map(_.value)
+            val style      = positional.headOption
+            val title      = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            // Admonition masquerading: [NOTE], [TIP], [WARNING], etc. on example block
+            val admonitionVariants = Set("NOTE", "TIP", "WARNING", "CAUTION", "IMPORTANT")
+            if style.exists(admonitionVariants.contains) then
+                asg.Admonition(
+                    title = title,
+                    form = "delimited",
+                    delimiter = delimiter,
+                    variant = style.get.toLowerCase,
+                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    location = inclusiveLocation(block.span)
+                )
+            else
+                asg.Example(
+                    title = title,
+                    form = "delimited",
+                    delimiter = delimiter,
+                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    location = inclusiveLocation(block.span)
+                )
+        case ast.QuoteBlock(delimiter, blocks, attrsOpt, titleOpt) =>
+            val positional = attrsOpt.toList.flatMap(_.positional).map(_.value)
+            val style      = positional.headOption
+            val title      = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            // Verse masquerading: [verse] on quote block
+            if style.contains("verse") then
+                val verbatimContent = blocks.flatMap {
+                    case ast.Paragraph(content) => content.map(convertInline)
+                    case _                      => Nil
+                }
+                asg.Verse(
+                    title = title,
+                    form = Some("delimited"),
+                    delimiter = Some(delimiter),
+                    inlines = Chunk.from(verbatimContent),
+                    location = inclusiveLocation(block.span)
+                )
+            else
+                asg.Quote(
+                    title = title,
+                    form = "delimited",
+                    delimiter = delimiter,
+                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    location = inclusiveLocation(block.span)
+                )
+        case ast.LiteralBlock(delimiter, content, _, titleOpt) =>
+            val blockLoc         = inclusiveLocation(block.span)
+            val contentStartLine = block.span.start.line + 1
+            val contentLines     = content.split("\n", -1)
+            val lastLineLen      = contentLines.last.length
+            val contentEndLine   = contentStartLine + contentLines.length - 1
+            val contentLoc = asg.Location(
+                asg.Position(contentStartLine, 1),
+                asg.Position(contentEndLine, lastLineLen)
+            )
+            val title = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            asg.Literal(
+                title = title,
+                form = Some("delimited"),
+                delimiter = Some(delimiter),
+                inlines = Chunk(asg.Text(content, contentLoc)),
+                location = blockLoc
+            )
+        case ast.OpenBlock(delimiter, blocks, _, titleOpt) =>
+            val title = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            asg.Open(
+                title = title,
+                form = "delimited",
+                delimiter = delimiter,
+                blocks = Chunk.from(blocks.map(convertBlock)),
+                location = inclusiveLocation(block.span)
+            )
+        case _: ast.CommentBlock =>
+            // Comment blocks are not preserved in the ASG per spec.
+            // Return an empty pass block as placeholder (will be filtered by caller if needed).
+            asg.Pass(
+                form = Some("delimited"),
+                delimiter = Some("////"),
+                location = inclusiveLocation(block.span)
+            )
+        case ast.PassBlock(delimiter, content, _, titleOpt) =>
+            val blockLoc         = inclusiveLocation(block.span)
+            val contentStartLine = block.span.start.line + 1
+            val contentLines     = content.split("\n", -1)
+            val lastLineLen      = contentLines.last.length
+            val contentEndLine   = contentStartLine + contentLines.length - 1
+            val contentLoc = asg.Location(
+                asg.Position(contentStartLine, 1),
+                asg.Position(contentEndLine, lastLineLen)
+            )
+            val title = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            asg.Pass(
+                title = title,
+                form = Some("delimited"),
+                delimiter = Some(delimiter),
+                inlines = Chunk(asg.Raw(content, contentLoc)),
+                location = blockLoc
             )
         case ast.UnorderedList(items) =>
             asg.List(
@@ -252,7 +371,13 @@ object AstToAsg:
         case s: ast.Section        => s.blocks.lastOption.map(lastContentPos).getOrElse(lastContentPos(s))
         case p: ast.Paragraph      => p.content.lastOption.map(lastContentPos).getOrElse(p.span.end)
         case lb: ast.ListingBlock  => lb.span.end // listing block span includes closing delimiter
+        case _: ast.LiteralBlock   => node.span.end
         case sb: ast.SidebarBlock  => sb.span.end // sidebar block span includes closing delimiter
+        case _: ast.ExampleBlock   => node.span.end
+        case _: ast.QuoteBlock     => node.span.end
+        case _: ast.OpenBlock      => node.span.end
+        case _: ast.CommentBlock   => node.span.end
+        case _: ast.PassBlock      => node.span.end
         case tb: ast.TableBlock    => tb.span.end // table block span includes closing delimiter
         case al: ast.AttributeList => al.span.end
         case bt: ast.BlockTitle    => bt.content.lastOption.map(lastContentPos).getOrElse(bt.span.end)

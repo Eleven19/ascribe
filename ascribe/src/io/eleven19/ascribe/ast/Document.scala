@@ -73,11 +73,75 @@ case class Section(level: Int, title: InlineContent, blocks: List[Block])(val sp
 /** A paragraph of one or more lines of inline content. */
 case class Paragraph(content: InlineContent)(val span: Span) extends Block derives CanEqual
 
-/** A delimited listing block (verbatim code). */
-case class ListingBlock(delimiter: String, content: String)(val span: Span) extends Block derives CanEqual
+/** A delimited listing block (verbatim code). May have attributes like `[source,ruby]`. */
+case class ListingBlock(
+    delimiter: String,
+    content: String,
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
 
 /** A delimited sidebar block containing nested blocks. */
-case class SidebarBlock(delimiter: String, blocks: List[Block])(val span: Span) extends Block derives CanEqual
+case class SidebarBlock(
+    delimiter: String,
+    blocks: List[Block],
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
+
+/** A delimited example block containing nested blocks. */
+case class ExampleBlock(
+    delimiter: String,
+    blocks: List[Block],
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
+
+/** A delimited quote block containing nested blocks. Can be repurposed as verse via `[verse]` style. */
+case class QuoteBlock(
+    delimiter: String,
+    blocks: List[Block],
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
+
+/** A delimited literal block (verbatim content). */
+case class LiteralBlock(
+    delimiter: String,
+    content: String,
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
+
+/** A delimited open block containing nested blocks. Uses `--` as delimiter (fixed 2-char). */
+case class OpenBlock(
+    delimiter: String,
+    blocks: List[Block],
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
+
+/** A delimited comment block (content is discarded from parsed output). */
+case class CommentBlock(
+    delimiter: String,
+    content: String
+)(val span: Span)
+    extends Block derives CanEqual
+
+/** A delimited passthrough block (raw content, no substitutions). */
+case class PassBlock(
+    delimiter: String,
+    content: String,
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
 
 object AttributeList:
     opaque type AttributeName  = String

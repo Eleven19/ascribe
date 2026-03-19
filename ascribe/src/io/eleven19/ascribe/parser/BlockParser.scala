@@ -13,12 +13,18 @@ import io.eleven19.ascribe.ast.{
     BlockTitle,
     CellContent,
     CellSpecifier,
+    CommentBlock,
+    ExampleBlock,
     Heading,
     InlineContent,
     ListItem,
     ListingBlock,
+    LiteralBlock,
+    OpenBlock,
     OrderedList,
     Paragraph,
+    PassBlock,
+    QuoteBlock,
     SidebarBlock,
     Span as AstSpan,
     TableBlock,
@@ -112,34 +118,179 @@ object BlockParser:
     private val rawLine: Parsley[String] =
         many(nonEolChar).map(_.mkString) <* eolOrEof
 
-    /** Parses a delimited listing block: `----` open, verbatim content, `----` close. */
-    val listingBlock: Parsley[Block] =
-        (pos <~> (atomic(string("----")) <* eolOrEof) *>
-            manyTill(rawLine, atomic(string("----"))) <~> pos <* eolOrEof)
-            .map { case ((s, lines), e) =>
-                val content = lines.mkString("\n").stripSuffix("\n")
-                ListingBlock("----", content)(mkSpan(s, e))
-            }
-            .label("listing block")
-
-    /** Parses a delimited sidebar block: `****` open, nested blocks, `****` close. */
-    val sidebarBlock: Parsley[Block] =
-        (pos <~> (atomic(string("****")) <* eolOrEof) *>
-            manyTill(
-                sidebarInnerBlock,
-                atomic(string("****"))
-            ) <~> pos <* eolOrEof)
-            .map { case ((s, blocks), e) =>
-                SidebarBlock("****", blocks)(mkSpan(s, e))
-            }
-            .label("sidebar block")
-
-    /** Blocks allowed inside a sidebar (same as top-level blocks except delimited blocks). */
-    private lazy val sidebarInnerBlock: Parsley[Block] =
-        option(some(blankLine)).void *> (heading | unorderedList | orderedList | paragraph)
-
     /** One or more consecutive blank lines. */
     private val blankLine: Parsley[Unit] = (hspaces *> eol).void
+
+    // -----------------------------------------------------------------------
+    // Generic delimited block parsers (variable-length fences)
+    // -----------------------------------------------------------------------
+
+    /** Parses a delimiter line: 'minLen' or more repetitions of 'delimChar', alone on a line. Returns the matched
+      * delimiter string.
+      */
+    private def delimiterLine(delimChar: Char, minLen: Int): Parsley[String] =
+        some(char(delimChar)).map(_.mkString).filter(_.length >= minLen) <* eolOrEof
+
+    /** Parses a verbatim delimited block (listing, literal, comment, passthrough). Content lines are collected as raw
+      * strings; no inline parsing. The closing delimiter must match the opening delimiter exactly.
+      */
+    private def verbatimDelimitedBlock[B <: Block](
+        delimChar: Char,
+        minLen: Int,
+        build: (String, String, Option[AttributeList], Option[BlockTitle], AstSpan) => B
+    ): Parsley[Block] =
+        val withAttrs = atomic(
+            pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                delimiterLine(delimChar, minLen)
+        ).flatMap { case (((s, title), attrs), delim) =>
+            (manyTill(rawLine, atomic(string(delim))) <~> pos <* eolOrEof)
+                .map { case (lines, e) =>
+                    val content = lines.mkString("\n").stripSuffix("\n")
+                    build(delim, content, attrs, title, mkSpan(s, e))
+                }
+        }
+        val plain = atomic(
+            pos <~> delimiterLine(delimChar, minLen)
+        ).flatMap { case (s, delim) =>
+            (manyTill(rawLine, atomic(string(delim))) <~> pos <* eolOrEof)
+                .map { case (lines, e) =>
+                    val content = lines.mkString("\n").stripSuffix("\n")
+                    build(delim, content, None, None, mkSpan(s, e))
+                }
+        }
+        withAttrs | plain
+
+    /** Parses a compound delimited block (sidebar, example, quote, open). Content is recursively parsed as blocks. The
+      * closing delimiter must match the opening delimiter exactly.
+      */
+    private def compoundDelimitedBlock[B <: Block](
+        delimChar: Char,
+        minLen: Int,
+        build: (String, List[Block], Option[AttributeList], Option[BlockTitle], AstSpan) => B
+    ): Parsley[Block] =
+        val withAttrs = atomic(
+            pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                delimiterLine(delimChar, minLen)
+        ).flatMap { case (((s, title), attrs), delim) =>
+            (manyTill(
+                compoundInnerBlock(delim),
+                atomic(string(delim))
+            ) <~> pos <* eolOrEof)
+                .map { case (blocks, e) =>
+                    build(delim, blocks, attrs, title, mkSpan(s, e))
+                }
+        }
+        val plain = atomic(
+            pos <~> delimiterLine(delimChar, minLen)
+        ).flatMap { case (s, delim) =>
+            (manyTill(
+                compoundInnerBlock(delim),
+                atomic(string(delim))
+            ) <~> pos <* eolOrEof)
+                .map { case (blocks, e) =>
+                    build(delim, blocks, None, None, mkSpan(s, e))
+                }
+        }
+        withAttrs | plain
+
+    /** Blocks allowed inside a compound delimited block. Includes all delimited blocks (for nesting) plus headings,
+      * lists, and paragraphs.
+      */
+    private def compoundInnerBlock(parentDelim: String): Parsley[Block] =
+        option(some(blankLine)).void *>
+            (listingBlock | literalBlock | commentBlock | passBlock |
+                sidebarBlock | exampleBlock | quoteBlock | openBlock |
+                heading | unorderedList | orderedList | paragraph)
+
+    // -----------------------------------------------------------------------
+    // Concrete delimited block parsers
+    // -----------------------------------------------------------------------
+
+    /** Listing block: `----` (4+ dashes), verbatim content. */
+    val listingBlock: Parsley[Block] =
+        verbatimDelimitedBlock(
+            '-',
+            4,
+            (delim, content, attrs, title, span) => ListingBlock(delim, content, attrs, title)(span)
+        ).label("listing block")
+
+    /** Literal block: `....` (4+ dots), verbatim content. */
+    val literalBlock: Parsley[Block] =
+        verbatimDelimitedBlock(
+            '.',
+            4,
+            (delim, content, attrs, title, span) => LiteralBlock(delim, content, attrs, title)(span)
+        ).label("literal block")
+
+    /** Comment block: `////` (4+ slashes), content is discarded. */
+    val commentBlock: Parsley[Block] =
+        verbatimDelimitedBlock(
+            '/',
+            4,
+            (delim, content, _, _, span) => CommentBlock(delim, content)(span)
+        ).label("comment block")
+
+    /** Passthrough block: `++++` (4+ pluses), raw content. */
+    val passBlock: Parsley[Block] =
+        verbatimDelimitedBlock(
+            '+',
+            4,
+            (delim, content, attrs, title, span) => PassBlock(delim, content, attrs, title)(span)
+        ).label("passthrough block")
+
+    /** Sidebar block: `****` (4+ asterisks), compound content. */
+    val sidebarBlock: Parsley[Block] =
+        compoundDelimitedBlock(
+            '*',
+            4,
+            (delim, blocks, attrs, title, span) => SidebarBlock(delim, blocks, attrs, title)(span)
+        ).label("sidebar block")
+
+    /** Example block: `====` (4+ equals signs), compound content. Can be repurposed as admonition via
+      * `[NOTE]`/`[TIP]`/etc. style.
+      */
+    val exampleBlock: Parsley[Block] =
+        compoundDelimitedBlock(
+            '=',
+            4,
+            (delim, blocks, attrs, title, span) => ExampleBlock(delim, blocks, attrs, title)(span)
+        ).label("example block")
+
+    /** Quote block: `____` (4+ underscores), compound content. Can be repurposed as verse via `[verse]` style.
+      */
+    val quoteBlock: Parsley[Block] =
+        compoundDelimitedBlock(
+            '_',
+            4,
+            (delim, blocks, attrs, title, span) => QuoteBlock(delim, blocks, attrs, title)(span)
+        ).label("quote block")
+
+    /** Open block: `--` (exactly 2 dashes, not 3+), compound content. Fixed length per spec. */
+    val openBlock: Parsley[Block] =
+        val withAttrs = atomic(
+            pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                (string("--") <* notFollowedBy(char('-')) <* eolOrEof)
+        ).flatMap { case (((s, title), attrs), _) =>
+            (manyTill(
+                compoundInnerBlock("--"),
+                atomic(string("--") <* notFollowedBy(char('-')) <* eolOrEof)
+            ) <~> pos)
+                .map { case (blocks, e) =>
+                    OpenBlock("--", blocks, attrs, title)(mkSpan(s, e))
+                }
+        }
+        val plain = atomic(
+            pos <~> (string("--") <* notFollowedBy(char('-')) <* eolOrEof)
+        ).flatMap { case (s, _) =>
+            (manyTill(
+                compoundInnerBlock("--"),
+                atomic(string("--") <* notFollowedBy(char('-')) <* eolOrEof)
+            ) <~> pos)
+                .map { case (blocks, e) =>
+                    OpenBlock("--", blocks, None, None)(mkSpan(s, e))
+                }
+        }
+        (withAttrs | plain).label("open block")
 
     // -----------------------------------------------------------------------
     // Attribute lists
@@ -418,12 +569,13 @@ object BlockParser:
 
     /** Parses block content within an a-style cell. Stops when it sees `|` at start of line or `|===`. */
     private val aCellBlock: Parsley[Block] =
-        nestedTableBlock | listingBlock | sidebarBlock |
+        nestedTableBlock | listingBlock | literalBlock | commentBlock | passBlock |
+            sidebarBlock | exampleBlock | quoteBlock | openBlock |
             unorderedList | orderedList |
             // Paragraph: lines that don't start with |, !, delimiters
             (pos <~> some(
                 notFollowedBy(char('|')) *> notFollowedBy(string("!===")) *>
-                    notFollowedBy(string("----")) *> notFollowedBy(string("****")) *>
+                    notBlockStart *>
                     some(inlineElement) <* eolOrEof
             ).map(_.toList.flatten) <~> pos)
                 .map { case ((s, content), e) => Paragraph(content)(mkSpan(s, e)) }
@@ -539,8 +691,14 @@ object BlockParser:
             notFollowedBy(char('.') *> char(' ')) *>
             notFollowedBy(char('.') *> satisfy(c => c != '.' && c != ' ' && c != '\n' && c != '\r')) *>
             notFollowedBy(char('[') *> satisfy(c => c != '\n' && c != '\r')) *>
-            notFollowedBy(string("----")) *>
-            notFollowedBy(string("****")) *>
+            notFollowedBy(string("----")) *>                           // listing
+            notFollowedBy(string("....")) *>                           // literal
+            notFollowedBy(string("****")) *>                           // sidebar
+            notFollowedBy(string("====")) *>                           // example
+            notFollowedBy(string("____")) *>                           // quote
+            notFollowedBy(string("////")) *>                           // comment
+            notFollowedBy(string("++++")) *>                           // passthrough
+            notFollowedBy(string("--") <* notFollowedBy(char('-'))) *> // open block (exactly --)
             notFollowedBy(string("|===")) *>
             notFollowedBy(string("!===")) *>
             notFollowedBy(string(",===")) *>

@@ -1,0 +1,49 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "pass",
+      "form": "delimited",
+      "delimiter": "++++",
+      "inlines": [
+        {
+          "name": "raw",
+          "value": "<p>Raw HTML</p>",
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 15
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 3,
+          "col": 4
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 3,
+      "col": 4
+    }
+  ],
+  "type": "block"
+}

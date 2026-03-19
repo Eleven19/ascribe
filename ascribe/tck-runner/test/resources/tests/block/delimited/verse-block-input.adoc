@@ -1,0 +1,5 @@
+[verse]
+____
+Roses are red,
+violets are blue.
+____
