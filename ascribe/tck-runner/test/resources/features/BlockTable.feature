@@ -15,4 +15,9 @@ Feature: Block - Table
       | cols-widths    | ascribe/tck-runner/test/resources/tests/block/table/cols-widths-input.adoc       | ascribe/tck-runner/test/resources/tests/block/table/cols-widths-output.json        |
       | cols-alignment | ascribe/tck-runner/test/resources/tests/block/table/cols-alignment-input.adoc    | ascribe/tck-runner/test/resources/tests/block/table/cols-alignment-output.json     |
       | cols-valign    | ascribe/tck-runner/test/resources/tests/block/table/cols-valign-input.adoc       | ascribe/tck-runner/test/resources/tests/block/table/cols-valign-output.json        |
-      | cols-mixed     | ascribe/tck-runner/test/resources/tests/block/table/cols-mixed-input.adoc        | ascribe/tck-runner/test/resources/tests/block/table/cols-mixed-output.json         |
+      | cols-mixed        | ascribe/tck-runner/test/resources/tests/block/table/cols-mixed-input.adoc        | ascribe/tck-runner/test/resources/tests/block/table/cols-mixed-output.json         |
+      | table-title       | ascribe/tck-runner/test/resources/tests/block/table/table-title-input.adoc       | ascribe/tck-runner/test/resources/tests/block/table/table-title-output.json        |
+      | header-explicit   | ascribe/tck-runner/test/resources/tests/block/table/header-explicit-input.adoc   | ascribe/tck-runner/test/resources/tests/block/table/header-explicit-output.json    |
+      | header-noheader   | ascribe/tck-runner/test/resources/tests/block/table/header-noheader-input.adoc   | ascribe/tck-runner/test/resources/tests/block/table/header-noheader-output.json    |
+      | footer            | ascribe/tck-runner/test/resources/tests/block/table/footer-input.adoc            | ascribe/tck-runner/test/resources/tests/block/table/footer-output.json             |
+      | header-footer     | ascribe/tck-runner/test/resources/tests/block/table/header-footer-input.adoc     | ascribe/tck-runner/test/resources/tests/block/table/header-footer-output.json      |

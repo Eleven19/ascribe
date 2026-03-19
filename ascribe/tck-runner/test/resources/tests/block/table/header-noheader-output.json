@@ -1,0 +1,195 @@
+{
+    "name": "document",
+    "blocks": [
+        {
+            "name": "table",
+            "metadata": {
+                "options": [
+                    "noheader"
+                ]
+            },
+            "form": "delimited",
+            "delimiter": "|===",
+            "rows": [
+                {
+                    "name": "tableRow",
+                    "cells": [
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "Row 1a",
+                                    "location": [
+                                        {
+                                            "line": 3,
+                                            "col": 3
+                                        },
+                                        {
+                                            "line": 3,
+                                            "col": 9
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 3,
+                                    "col": 1
+                                },
+                                {
+                                    "line": 3,
+                                    "col": 9
+                                }
+                            ],
+                            "type": "block"
+                        },
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "Row 1b",
+                                    "location": [
+                                        {
+                                            "line": 3,
+                                            "col": 12
+                                        },
+                                        {
+                                            "line": 3,
+                                            "col": 17
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 3,
+                                    "col": 10
+                                },
+                                {
+                                    "line": 3,
+                                    "col": 17
+                                }
+                            ],
+                            "type": "block"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 3,
+                            "col": 1
+                        },
+                        {
+                            "line": 3,
+                            "col": 17
+                        }
+                    ],
+                    "type": "block"
+                },
+                {
+                    "name": "tableRow",
+                    "cells": [
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "Row 2a",
+                                    "location": [
+                                        {
+                                            "line": 5,
+                                            "col": 3
+                                        },
+                                        {
+                                            "line": 5,
+                                            "col": 9
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 5,
+                                    "col": 1
+                                },
+                                {
+                                    "line": 5,
+                                    "col": 9
+                                }
+                            ],
+                            "type": "block"
+                        },
+                        {
+                            "name": "tableCell",
+                            "inlines": [
+                                {
+                                    "name": "text",
+                                    "value": "Row 2b",
+                                    "location": [
+                                        {
+                                            "line": 5,
+                                            "col": 12
+                                        },
+                                        {
+                                            "line": 5,
+                                            "col": 17
+                                        }
+                                    ],
+                                    "type": "string"
+                                }
+                            ],
+                            "location": [
+                                {
+                                    "line": 5,
+                                    "col": 10
+                                },
+                                {
+                                    "line": 5,
+                                    "col": 17
+                                }
+                            ],
+                            "type": "block"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 5,
+                            "col": 1
+                        },
+                        {
+                            "line": 5,
+                            "col": 17
+                        }
+                    ],
+                    "type": "block"
+                }
+            ],
+            "location": [
+                {
+                    "line": 1,
+                    "col": 1
+                },
+                {
+                    "line": 6,
+                    "col": 4
+                }
+            ],
+            "type": "block"
+        }
+    ],
+    "location": [
+        {
+            "line": 1,
+            "col": 1
+        },
+        {
+            "line": 6,
+            "col": 4
+        }
+    ],
+    "type": "block"
+}

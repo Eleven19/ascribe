@@ -177,7 +177,7 @@ object BlockParser:
 
     /** Parses a single attribute list line: `[key=value, %option, .role]`. */
     val attributeListLine: Parsley[AttributeList] =
-        (pos <~> (char('[') *> sepEndBy(attrEntry, char(',') *> option(char(' ')).void) <* char(']') <* eolOrEof) <~> pos)
+        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(']') <* eolOrEof) <~> pos)
             .map { case ((s, entries), e) =>
                 val positional = entries.collect { case AttrEntry.Positional(v) => v }.toList
                 val named = entries.collect { case AttrEntry.Named(k, v) => (k, v) }.toMap
