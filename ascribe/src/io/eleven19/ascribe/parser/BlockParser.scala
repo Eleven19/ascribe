@@ -11,6 +11,7 @@ import io.eleven19.ascribe.ast.{
     AttributeList,
     Block,
     BlockTitle,
+    CellContent,
     CellSpecifier,
     Heading,
     InlineContent,
@@ -289,13 +290,21 @@ object BlockParser:
         val specifiedCell =
             (pos <~> cellSpecifier <~> option(char(' ')).void <~> cellContent <~> pos)
                 .map { case ((((s, spec), _), content), e) =>
-                    TableCell(trimCellContent(content), spec.style, spec.colSpan, spec.rowSpan, spec.dupFactor)(
+                    TableCell(
+                        CellContent.Inlines(trimCellContent(content)),
+                        spec.style,
+                        spec.colSpan,
+                        spec.rowSpan,
+                        spec.dupFactor
+                    )(
                         mkSpan(s, e)
                     )
                 }
         val plainCell =
             (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
-                .map { case ((s, content), e) => TableCell(trimCellContent(content))(mkSpan(s, e)) }
+                .map { case ((s, content), e) =>
+                    TableCell(CellContent.Inlines(trimCellContent(content)))(mkSpan(s, e))
+                }
         specifiedCell | plainCell
 
     /** Parses a row of cells on a single line ending with eolOrEof. */
@@ -339,7 +348,7 @@ object BlockParser:
             val content: InlineContent =
                 if v.isEmpty then Nil
                 else scala.List(io.eleven19.ascribe.ast.Text(v)(mkSpan(s, e)))
-            TableCell(content)(mkSpan(s, e))
+            TableCell(CellContent.Inlines(content))(mkSpan(s, e))
         }
         (cell <~> many(char(sep) *> cell)).map { case (first, rest) => first :: rest } <* eolOrEof
 
@@ -351,7 +360,7 @@ object BlockParser:
             val content: InlineContent =
                 if v.isEmpty then Nil
                 else scala.List(io.eleven19.ascribe.ast.Text(v)(mkSpan(s, e)))
-            TableCell(content)(mkSpan(s, e))
+            TableCell(CellContent.Inlines(content))(mkSpan(s, e))
         }
         (cell <~> many(char(sep) *> cell)).map { case (first, rest) => first :: rest } <* eolOrEof
 
@@ -363,6 +372,68 @@ object BlockParser:
             (row <* option(some(blankLine)).void) | (blankLine.map(_ => null)),
             atomic(string(closingDelim))
         ).map(_.filter(_ != null))
+
+    // --- Nested table parser (uses ! separator and !=== delimiter) ---
+
+    /** Cell content for nested tables: text that isn't `!` or newline. */
+    private val nestedCellContent: Parsley[InlineContent] =
+        many(
+            boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+                Text(stringOfSome(satisfy(c => isContentChar(c) && c != '!'))) |
+                (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
+                    io.eleven19.ascribe.ast.Text(c.toString)(mkSpan(s, e)): io.eleven19.ascribe.ast.Inline
+                }
+        )
+
+    private val nestedTableCell: Parsley[TableCell] =
+        (pos <~> (char('!') *> option(char(' ')).void *> nestedCellContent) <~> pos)
+            .map { case ((s, content), e) =>
+                TableCell(CellContent.Inlines(trimCellContent(content)))(mkSpan(s, e))
+            }
+
+    private val nestedTableRowLine: Parsley[List[TableCell]] =
+        some(nestedTableCell).map(_.toList) <* eolOrEof
+
+    private val nestedTableRow: Parsley[TableRow] =
+        (pos <~> nestedTableRowLine <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+
+    private val nestedTableRows: Parsley[List[TableRow]] =
+        manyTill(
+            nestedTableRow <* option(some(blankLine)).void,
+            atomic(string("!==="))
+        )
+
+    /** Parses a nested table block: `!===` delimiter with `!` cell separator. */
+    val nestedTableBlock: Parsley[Block] =
+        (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+            (atomic(string("!===")) <* eolOrEof) *>
+            option(some(blankLine)).void *>
+            nestedTableRows <~> pos <* eolOrEof)
+            .map { case ((((s, title), attrs), rows), e) =>
+                TableBlock(rows, "!===", TableFormat.PSV, attrs, title)(mkSpan(s, e))
+            }
+            .label("nested table block")
+
+    // --- Multi-line a-style cell block content ---
+
+    /** Parses block content within an a-style cell. Stops when it sees `|` at start of line or `|===`. */
+    private val aCellBlock: Parsley[Block] =
+        nestedTableBlock | listingBlock | sidebarBlock |
+            unorderedList | orderedList |
+            // Paragraph: lines that don't start with |, !, delimiters
+            (pos <~> some(
+                notFollowedBy(char('|')) *> notFollowedBy(string("!===")) *>
+                    notFollowedBy(string("----")) *> notFollowedBy(string("****")) *>
+                    some(inlineElement) <* eolOrEof
+            ).map(_.toList.flatten) <~> pos)
+                .map { case ((s, content), e) => Paragraph(content)(mkSpan(s, e)) }
+
+    /** Parses multi-line block content for an a-style cell, stopping at next outer `|` or `|===`. */
+    val aCellContent: Parsley[List[Block]] =
+        manyTill(
+            aCellBlock <* option(some(blankLine)).void,
+            atomic(string("|===")) | atomic(char('|') *> satisfy(c => c != '='))
+        )
 
     /** Parses a table block: PSV (`|===`), CSV (`,===`), or DSV (`:===`). */
     val tableBlock: Parsley[Block] =
@@ -423,6 +494,7 @@ object BlockParser:
             notFollowedBy(string("----")) *>
             notFollowedBy(string("****")) *>
             notFollowedBy(string("|===")) *>
+            notFollowedBy(string("!===")) *>
             notFollowedBy(string(",===")) *>
             notFollowedBy(string(":==="))
 

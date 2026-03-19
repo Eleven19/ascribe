@@ -590,12 +590,14 @@ case class TableCell private (
     rowSpan: Option[RowSpan],
     dupCount: Option[DupCount],
     inlines: Chunk[Inline],
+    blocks: Chunk[Block],
     location: Location,
     @Modifier.rename("type") nodeType: String
 ) extends Block derives Schema
 
 object TableCell:
 
+    /** Create a cell with inline content (default/d style). */
     def apply(
         id: Option[String] = None,
         title: Option[Chunk[Inline]] = None,
@@ -608,7 +610,44 @@ object TableCell:
         inlines: Chunk[Inline] = Chunk.empty,
         location: Location
     ): TableCell =
-        new TableCell(id, title, reftext, metadata, style, colSpan, rowSpan, dupCount, inlines, location, "block")
+        new TableCell(
+            id,
+            title,
+            reftext,
+            metadata,
+            style,
+            colSpan,
+            rowSpan,
+            dupCount,
+            inlines,
+            Chunk.empty,
+            location,
+            "block"
+        )
+
+    /** Create a cell with block content (a style — nested documents, tables). */
+    def withBlocks(
+        style: Option[CellStyle] = None,
+        colSpan: Option[ColSpan] = None,
+        rowSpan: Option[RowSpan] = None,
+        dupCount: Option[DupCount] = None,
+        blocks: Chunk[Block],
+        location: Location
+    ): TableCell =
+        new TableCell(
+            None,
+            None,
+            None,
+            None,
+            style,
+            colSpan,
+            rowSpan,
+            dupCount,
+            Chunk.empty,
+            blocks,
+            location,
+            "block"
+        )
 
 // --- Block macros (each a concrete type with fixed name) ---
 

@@ -33,3 +33,4 @@ Feature: Block - Table
       | dup-cells             | ascribe/tck-runner/test/resources/tests/block/table/dup-cells-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/dup-cells-output.json              |
       | csv-basic             | ascribe/tck-runner/test/resources/tests/block/table/csv-basic-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/csv-basic-output.json              |
       | dsv-basic             | ascribe/tck-runner/test/resources/tests/block/table/dsv-basic-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/dsv-basic-output.json              |
+      | nested-simple         | ascribe/tck-runner/test/resources/tests/block/table/nested-simple-input.adoc         | ascribe/tck-runner/test/resources/tests/block/table/nested-simple-output.json          |

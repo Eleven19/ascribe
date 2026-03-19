@@ -160,9 +160,14 @@ object CellSpecifier:
         def apply(n: Int): DupFactor            = n
         extension (d: DupFactor) def value: Int = d
 
+/** Cell content: either inline elements (default/d style) or block elements (a style with nested documents). */
+enum CellContent:
+    case Inlines(content: InlineContent)
+    case Blocks(blocks: scala.List[Block])
+
 /** A cell in a table row with optional specifier components (style, spanning, duplication). */
 case class TableCell(
-    content: InlineContent,
+    content: CellContent,
     style: Option[CellSpecifier.StyleOperator] = None,
     colSpan: Option[CellSpecifier.ColSpanFactor] = None,
     rowSpan: Option[CellSpecifier.RowSpanFactor] = None,
