@@ -23,9 +23,14 @@ object DocumentParser:
     /** One or more consecutive blank lines used as a block separator. */
     private val blankLines: Parsley[Unit] = some(blankLine).void
 
-    /** Recognises any one block, trying block types in priority order. */
+    /** Recognises any one block, trying block types in priority order. Delimited blocks are tried before headings since
+      * `====` could be either an example block delimiter or a heading level 4 marker (heading requires a space after
+      * the equals signs).
+      */
     private val block: Parsley[Block] =
-        listingBlock | sidebarBlock | tableBlock | heading | unorderedList | orderedList | paragraph
+        listingBlock | literalBlock | commentBlock | passBlock |
+            sidebarBlock | exampleBlock | quoteBlock | openBlock |
+            tableBlock | heading | unorderedList | orderedList | paragraph
 
     /** Parses an attribute entry line: `:key: value` or `:key:` (empty value). Returns (key, value, endPos). */
     private val attributeEntry: Parsley[(String, String, (Int, Int))] =
