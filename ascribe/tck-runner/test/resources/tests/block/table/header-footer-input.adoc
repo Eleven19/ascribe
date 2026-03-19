@@ -1,0 +1,6 @@
+[%header%footer]
+|===
+| H1 | H2
+| Body 1 | Body 2
+| F1 | F2
+|===

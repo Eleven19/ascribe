@@ -3,6 +3,12 @@
     "blocks": [
         {
             "name": "table",
+            "metadata": {
+                "options": [
+                    "header",
+                    "footer"
+                ]
+            },
             "form": "delimited",
             "delimiter": "|===",
             "header": [
@@ -11,15 +17,15 @@
                     "inlines": [
                         {
                             "name": "text",
-                            "value": "Name",
+                            "value": "H1",
                             "location": [
                                 {
-                                    "line": 2,
+                                    "line": 3,
                                     "col": 3
                                 },
                                 {
-                                    "line": 2,
-                                    "col": 7
+                                    "line": 3,
+                                    "col": 5
                                 }
                             ],
                             "type": "string"
@@ -27,12 +33,12 @@
                     ],
                     "location": [
                         {
-                            "line": 2,
+                            "line": 3,
                             "col": 1
                         },
                         {
-                            "line": 2,
-                            "col": 7
+                            "line": 3,
+                            "col": 5
                         }
                     ],
                     "type": "block"
@@ -42,15 +48,15 @@
                     "inlines": [
                         {
                             "name": "text",
-                            "value": "Age",
+                            "value": "H2",
                             "location": [
                                 {
-                                    "line": 2,
-                                    "col": 10
+                                    "line": 3,
+                                    "col": 8
                                 },
                                 {
-                                    "line": 2,
-                                    "col": 12
+                                    "line": 3,
+                                    "col": 9
                                 }
                             ],
                             "type": "string"
@@ -58,12 +64,12 @@
                     ],
                     "location": [
                         {
-                            "line": 2,
-                            "col": 8
+                            "line": 3,
+                            "col": 6
                         },
                         {
-                            "line": 2,
-                            "col": 12
+                            "line": 3,
+                            "col": 9
                         }
                     ],
                     "type": "block"
@@ -78,7 +84,7 @@
                             "inlines": [
                                 {
                                     "name": "text",
-                                    "value": "Alice",
+                                    "value": "Body 1",
                                     "location": [
                                         {
                                             "line": 4,
@@ -86,7 +92,7 @@
                                         },
                                         {
                                             "line": 4,
-                                            "col": 8
+                                            "col": 9
                                         }
                                     ],
                                     "type": "string"
@@ -99,7 +105,7 @@
                                 },
                                 {
                                     "line": 4,
-                                    "col": 8
+                                    "col": 9
                                 }
                             ],
                             "type": "block"
@@ -109,15 +115,15 @@
                             "inlines": [
                                 {
                                     "name": "text",
-                                    "value": "30",
+                                    "value": "Body 2",
                                     "location": [
                                         {
                                             "line": 4,
-                                            "col": 11
+                                            "col": 12
                                         },
                                         {
                                             "line": 4,
-                                            "col": 12
+                                            "col": 17
                                         }
                                     ],
                                     "type": "string"
@@ -126,11 +132,11 @@
                             "location": [
                                 {
                                     "line": 4,
-                                    "col": 9
+                                    "col": 10
                                 },
                                 {
                                     "line": 4,
-                                    "col": 12
+                                    "col": 17
                                 }
                             ],
                             "type": "block"
@@ -143,85 +149,71 @@
                         },
                         {
                             "line": 4,
-                            "col": 12
+                            "col": 17
+                        }
+                    ],
+                    "type": "block"
+                }
+            ],
+            "footer": [
+                {
+                    "name": "tableCell",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "F1",
+                            "location": [
+                                {
+                                    "line": 5,
+                                    "col": 3
+                                },
+                                {
+                                    "line": 5,
+                                    "col": 5
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 5,
+                            "col": 1
+                        },
+                        {
+                            "line": 5,
+                            "col": 5
                         }
                     ],
                     "type": "block"
                 },
                 {
-                    "name": "tableRow",
-                    "cells": [
+                    "name": "tableCell",
+                    "inlines": [
                         {
-                            "name": "tableCell",
-                            "inlines": [
-                                {
-                                    "name": "text",
-                                    "value": "Bob",
-                                    "location": [
-                                        {
-                                            "line": 5,
-                                            "col": 3
-                                        },
-                                        {
-                                            "line": 5,
-                                            "col": 6
-                                        }
-                                    ],
-                                    "type": "string"
-                                }
-                            ],
+                            "name": "text",
+                            "value": "F2",
                             "location": [
                                 {
                                     "line": 5,
-                                    "col": 1
+                                    "col": 8
                                 },
                                 {
                                     "line": 5,
-                                    "col": 6
+                                    "col": 9
                                 }
                             ],
-                            "type": "block"
-                        },
-                        {
-                            "name": "tableCell",
-                            "inlines": [
-                                {
-                                    "name": "text",
-                                    "value": "25",
-                                    "location": [
-                                        {
-                                            "line": 5,
-                                            "col": 9
-                                        },
-                                        {
-                                            "line": 5,
-                                            "col": 10
-                                        }
-                                    ],
-                                    "type": "string"
-                                }
-                            ],
-                            "location": [
-                                {
-                                    "line": 5,
-                                    "col": 7
-                                },
-                                {
-                                    "line": 5,
-                                    "col": 10
-                                }
-                            ],
-                            "type": "block"
+                            "type": "string"
                         }
                     ],
                     "location": [
                         {
                             "line": 5,
-                            "col": 1
+                            "col": 6
                         },
                         {
                             "line": 5,
-                            "col": 10
+                            "col": 9
                         }
                     ],
                     "type": "block"

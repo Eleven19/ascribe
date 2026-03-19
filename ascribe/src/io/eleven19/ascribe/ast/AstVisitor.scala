@@ -32,6 +32,8 @@ trait AstVisitor[A]:
     def visitTableBlock(node: TableBlock): A       = visitBlock(node)
     def visitTableRow(node: TableRow): A           = visitNode(node)
     def visitTableCell(node: TableCell): A         = visitNode(node)
+    def visitAttributeList(node: AttributeList): A = visitNode(node)
+    def visitBlockTitle(node: BlockTitle): A       = visitNode(node)
 
     // --- Inline types ---
     def visitText(node: Text): A                       = visitInline(node)
@@ -61,6 +63,8 @@ object AstVisitor:
         case n: TableBlock      => visitor.visitTableBlock(n)
         case n: TableRow        => visitor.visitTableRow(n)
         case n: TableCell       => visitor.visitTableCell(n)
+        case n: AttributeList   => visitor.visitAttributeList(n)
+        case n: BlockTitle      => visitor.visitBlockTitle(n)
         case n: Text            => visitor.visitText(n)
         case n: Bold            => visitor.visitBold(n)
         case n: ConstrainedBold => visitor.visitConstrainedBold(n)
@@ -79,9 +83,11 @@ object AstVisitor:
         case sb: SidebarBlock    => sb.blocks
         case u: UnorderedList    => u.items
         case o: OrderedList      => o.items
-        case tb: TableBlock      => tb.rows
+        case tb: TableBlock      => tb.title.toList ++ tb.attributes.toList ++ tb.rows
         case tr: TableRow        => tr.cells
         case tc: TableCell       => tc.content
+        case _: AttributeList    => Nil
+        case bt: BlockTitle      => bt.content
         case t: Text             => Nil
         case b: Bold             => b.content
         case cb: ConstrainedBold => cb.content

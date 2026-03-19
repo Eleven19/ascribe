@@ -43,10 +43,39 @@ object dsl:
     def sidebarBlock(delimiter: String, blocks: Block*): SidebarBlock =
         SidebarBlock(delimiter, blocks.toList)(u)
 
+    // --- Attribute lists and block titles ---
+    def attributeList(
+        named: (String, String)*
+    ): AttributeList = AttributeList(
+        positional = Nil,
+        named = named.map((k, v) => (AttributeList.AttributeName(k), AttributeList.AttributeValue(v))).toMap,
+        options = Nil,
+        roles = Nil
+    )(u)
+
+    def attributeList(
+        options: List[String],
+        named: Map[String, String] = Map.empty
+    ): AttributeList = AttributeList(
+        positional = Nil,
+        named = named.map((k, v) => (AttributeList.AttributeName(k), AttributeList.AttributeValue(v))),
+        options = options.map(AttributeList.OptionName(_)),
+        roles = Nil
+    )(u)
+
+    def blockTitle(inlines: Inline*): BlockTitle = BlockTitle(inlines.toList)(u)
+
     // --- Tables ---
     def tableBlock(rows: TableRow*): TableBlock = TableBlock(rows.toList, "|===")(u)
-    def tableRow(cells: TableCell*): TableRow   = TableRow(cells.toList)(u)
-    def tableCell(inlines: Inline*): TableCell  = TableCell(inlines.toList)(u)
+
+    def tableBlock(attrs: AttributeList, rows: TableRow*): TableBlock =
+        TableBlock(rows.toList, "|===", Some(attrs))(u)
+
+    def tableBlock(title: BlockTitle, attrs: AttributeList, rows: TableRow*): TableBlock =
+        TableBlock(rows.toList, "|===", Some(attrs), Some(title))(u)
+
+    def tableRow(cells: TableCell*): TableRow  = TableRow(cells.toList)(u)
+    def tableCell(inlines: Inline*): TableCell = TableCell(inlines.toList)(u)
 
     // --- Lists ---
     def listItem(inlines: Inline*): ListItem           = ListItem(inlines.toList)(u)

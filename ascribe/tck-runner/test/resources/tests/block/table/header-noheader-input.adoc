@@ -1,0 +1,6 @@
+[%noheader]
+|===
+| Row 1a | Row 1b
+
+| Row 2a | Row 2b
+|===

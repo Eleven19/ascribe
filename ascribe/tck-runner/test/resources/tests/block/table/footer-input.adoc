@@ -1,0 +1,5 @@
+[%footer]
+|===
+| Body 1 | Body 2
+| Footer 1 | Footer 2
+|===

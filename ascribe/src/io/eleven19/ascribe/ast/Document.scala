@@ -79,8 +79,55 @@ case class ListingBlock(delimiter: String, content: String)(val span: Span) exte
 /** A delimited sidebar block containing nested blocks. */
 case class SidebarBlock(delimiter: String, blocks: List[Block])(val span: Span) extends Block derives CanEqual
 
+object AttributeList:
+    opaque type AttributeName  = String
+    opaque type AttributeValue = String
+    opaque type OptionName     = String
+    opaque type RoleName       = String
+
+    object AttributeName:
+        def apply(s: String): AttributeName            = s
+        extension (n: AttributeName) def value: String = n
+
+    object AttributeValue:
+        def apply(s: String): AttributeValue            = s
+        extension (v: AttributeValue) def value: String = v
+
+    object OptionName:
+        def apply(s: String): OptionName            = s
+        extension (o: OptionName) def value: String = o
+
+    object RoleName:
+        def apply(s: String): RoleName            = s
+        extension (r: RoleName) def value: String = r
+
+    def merge(a: AttributeList, b: AttributeList)(span: Span): AttributeList =
+        AttributeList(
+            positional = a.positional ++ b.positional,
+            named = a.named ++ b.named,
+            options = a.options ++ b.options,
+            roles = a.roles ++ b.roles
+        )(span)
+
+case class AttributeList(
+    positional: List[AttributeList.AttributeValue],
+    named: Map[AttributeList.AttributeName, AttributeList.AttributeValue],
+    options: List[AttributeList.OptionName],
+    roles: List[AttributeList.RoleName]
+)(val span: Span)
+    extends AstNode derives CanEqual
+
+case class BlockTitle(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
+
 /** A table block delimited by |===. */
-case class TableBlock(rows: List[TableRow], delimiter: String)(val span: Span) extends Block derives CanEqual
+case class TableBlock(
+    rows: List[TableRow],
+    delimiter: String,
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None,
+    hasBlankAfterFirstRow: Boolean = false
+)(val span: Span)
+    extends Block derives CanEqual
 
 /** A row in a table. */
 case class TableRow(cells: List[TableCell])(val span: Span) extends AstNode derives CanEqual
