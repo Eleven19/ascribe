@@ -39,19 +39,42 @@ Phase 2 extends table support with attribute lists, column specifications, heade
 #### New AST nodes
 
 ```scala
+/** Opaque types for attribute list values — gives meaning to raw strings. */
+object AttributeList:
+    opaque type AttributeName  = String
+    opaque type AttributeValue = String
+    opaque type OptionName     = String
+    opaque type RoleName       = String
+
+    object AttributeName:
+        def apply(s: String): AttributeName = s
+        extension (n: AttributeName) def value: String = n
+
+    object AttributeValue:
+        def apply(s: String): AttributeValue = s
+        extension (v: AttributeValue) def value: String = v
+
+    object OptionName:
+        def apply(s: String): OptionName = s
+        extension (o: OptionName) def value: String = o
+
+    object RoleName:
+        def apply(s: String): RoleName = s
+        extension (r: RoleName) def value: String = r
+
 /** A parsed attribute list: [key=value, %option, .role] */
 case class AttributeList(
-    positional: List[String],
-    named: Map[String, String],
-    options: List[String],
-    roles: List[String]
+    positional: List[AttributeList.AttributeValue],
+    named: Map[AttributeList.AttributeName, AttributeList.AttributeValue],
+    options: List[AttributeList.OptionName],
+    roles: List[AttributeList.RoleName]
 )(val span: Span) extends AstNode derives CanEqual
 
 /** A block title: .Title text */
 case class BlockTitle(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
 ```
 
-`BlockTitle` content is parsed using the existing inline content parser, so titles can contain inline formatting (bold, italic, etc.) per the AsciiDoc spec.
+The opaque types prevent accidentally passing a role where an option is expected, or mixing up attribute names and values, while having zero runtime overhead. `BlockTitle` content is parsed using the existing inline content parser, so titles can contain inline formatting (bold, italic, etc.) per the AsciiDoc spec.
 
 #### Modified AST nodes
 
