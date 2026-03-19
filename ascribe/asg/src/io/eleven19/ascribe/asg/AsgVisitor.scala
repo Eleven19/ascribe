@@ -127,7 +127,7 @@ object AsgVisitor:
             case v: Video      => optInlines(v.title) ++ optInlines(v.reftext)
             case i: Image      => optInlines(i.title) ++ optInlines(i.reftext)
             case t: Toc        => optInlines(t.title) ++ optInlines(t.reftext)
-            case t: Table      => optInlines(t.title) ++ optInlines(t.reftext) ++ t.rows
+            case t: Table      => optInlines(t.title) ++ optInlines(t.reftext) ++ t.header.getOrElse(Chunk.empty) ++ t.rows ++ t.footer.getOrElse(Chunk.empty)
             case tr: TableRow  => tr.cells
             case tc: TableCell => tc.inlines
             case s: Span       => s.inlines
