@@ -1,7 +1,7 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.{atomic, notFollowedBy, pure}
+import parsley.Parsley.{atomic, lookAhead, notFollowedBy, pure}
 import parsley.character.{char, satisfy, string, stringOfSome}
 import parsley.combinator.{many, manyTill, option, sepEndBy, some}
 import parsley.errors.combinator.ErrorMethods
@@ -428,32 +428,80 @@ object BlockParser:
             ).map(_.toList.flatten) <~> pos)
                 .map { case ((s, content), e) => Paragraph(content)(mkSpan(s, e)) }
 
-    /** Parses multi-line block content for an a-style cell, stopping at next outer `|` or `|===`. */
+    /** Parses multi-line block content for an a-style cell, stopping at next outer `|` or `|===`. Uses lookAhead so the
+      * terminator is NOT consumed (the next cell or |=== will consume it).
+      */
     val aCellContent: Parsley[List[Block]] =
         manyTill(
             aCellBlock <* option(some(blankLine)).void,
-            atomic(string("|===")) | atomic(char('|') *> satisfy(c => c != '='))
+            lookAhead(atomic(string("|==="))) | lookAhead(atomic(char('|')))
         )
+
+    /** Parses a multi-line a-style cell: `|` followed by block content across multiple lines. Content continues until
+      * the next `|` at start of line or `|===`. Does not match `|===` (that's the table closing delimiter).
+      */
+    private val multiLineCell: Parsley[TableCell] =
+        (pos <~> (notFollowedBy(string("|===")) *> char('|') *> option(char(' ')).void) *> aCellContent <~> pos)
+            .map { case ((s, blocks), e) =>
+                TableCell(CellContent.Blocks(blocks))(mkSpan(s, e))
+            }
+
+    /** Parses a multi-line table row where cells start with `|` at line beginnings. Each cell may span multiple lines
+      * (for a-style block content). Stops at `|===`.
+      */
+    private val multiLineTableRow: Parsley[TableRow] =
+        (pos <~> some(multiLineCell).map(_.toList) <~> pos)
+            .map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+
+    /** Parses rows in multi-line mode (for tables with a-style columns). */
+    private val multiLineTableRows: Parsley[List[TableRow]] =
+        manyTill(
+            multiLineTableRow <* option(some(blankLine)).void,
+            atomic(string("|==="))
+        )
+
+    /** Check if an attribute list contains an a-style column. */
+    private def hasAStyleColumn(attrs: Option[AttributeList]): Boolean =
+        attrs
+            .map(_.named.map((k, v) => (k.value, v.value)))
+            .getOrElse(Map.empty)
+            .get("cols")
+            .exists(_.contains('a'))
 
     /** Parses a table block: PSV (`|===`), CSV (`,===`), or DSV (`:===`). */
     val tableBlock: Parsley[Block] =
         val psvTable =
             (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
-                (atomic(string("|===")) <* eolOrEof) *>
-                option(some(blankLine)).void *>
-                tableRowsWithBlankTracking <~> pos <* eolOrEof)
-                .map { case ((((s, title), attrs), (rows, hasBlankAfterFirst)), e) =>
-                    val format = attrs
-                        .map(_.named.map((k, v) => (k.value, v.value)))
-                        .getOrElse(Map.empty)
-                        .get("format") match
-                        case Some("csv") => TableFormat.CSV
-                        case Some("tsv") => TableFormat.TSV
-                        case Some("dsv") => TableFormat.DSV
-                        case _           => TableFormat.PSV
-                    // If format is CSV/DSV/TSV with |=== delimiter, re-parse would be needed
-                    // For now, PSV parsing is used when |=== is the delimiter
-                    TableBlock(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
+                (atomic(string("|===")) <* eolOrEof))
+                .flatMap { case (((s, title), attrs), _) =>
+                    option(some(blankLine)).void *> (
+                        if hasAStyleColumn(attrs) then
+                            // Multi-line mode for tables with a-style columns
+                            (option(tableRowLine <* some(blankLine)).map(
+                                _.map(cells => TableRow(cells)(mkSpan(s, s)))
+                            ) <~> multiLineTableRows <~> pos <* eolOrEof)
+                                .map { case ((headerRow, rows), e) =>
+                                    val allRows            = headerRow.toList ++ rows
+                                    val hasBlankAfterFirst = headerRow.isDefined
+                                    TableBlock(allRows, "|===", TableFormat.PSV, attrs, title, hasBlankAfterFirst)(
+                                        mkSpan(s, e)
+                                    )
+                                }
+                        else
+                            // Single-line mode (existing behavior)
+                            (tableRowsWithBlankTracking <~> pos <* eolOrEof)
+                                .map { case ((rows, hasBlankAfterFirst), e) =>
+                                    val format = attrs
+                                        .map(_.named.map((k, v) => (k.value, v.value)))
+                                        .getOrElse(Map.empty)
+                                        .get("format") match
+                                        case Some("csv") => TableFormat.CSV
+                                        case Some("tsv") => TableFormat.TSV
+                                        case Some("dsv") => TableFormat.DSV
+                                        case _           => TableFormat.PSV
+                                    TableBlock(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
+                                }
+                    )
                 }
 
         val csvTable =
