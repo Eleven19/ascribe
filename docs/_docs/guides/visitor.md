@@ -24,6 +24,10 @@ trait AstVisitor[A]:
 
   def visitText(node: Text): A                 = visitInline(node)
   def visitBold(node: Bold): A                 = visitInline(node)
+
+  def visitTable(node: TableBlock): A          = visitBlock(node)
+  def visitTableRow(node: TableRow): A         = visitNode(node)
+  def visitTableCell(node: TableCell): A       = visitNode(node)
   // ... etc.
 ```
 
@@ -52,9 +56,12 @@ trait AsgVisitor[A]:
   def visitInline(node: Inline): A       = visitNode(node)
 
   def visitParagraph(node: Paragraph): A = visitBlock(node)
+  def visitTable(node: Table): A         = visitBlock(node)
+  def visitTableRow(node: TableRow): A   = visitBlock(node)
+  def visitTableCell(node: TableCell): A = visitBlock(node)
   def visitSpan(node: Span): A           = visitInline(node)
   def visitText(node: Text): A           = visitInline(node)
-  // ... covers all 25+ ASG node types
+  // ... covers all 28+ ASG node types
 ```
 
 ## Fold Operations

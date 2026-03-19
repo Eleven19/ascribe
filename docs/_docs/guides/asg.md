@@ -40,6 +40,9 @@ sealed trait Inline extends Node  // all inline content
 - **Sidebar, Example, Admonition, Open, Quote** -- parent blocks with `form`, `delimiter`, `blocks`
 - **List, DList** -- ordered/unordered and description lists
 - **ListItem, DListItem** -- list entries with `marker`, `principal`
+- **Table** -- table block with `cols` (column specs), `rows` (header, body, footer groups)
+- **TableRow** -- a row containing `cells`
+- **TableCell** -- a cell with optional `style`, `colspan`, `rowspan`, and content (inlines or nested blocks)
 - **Break** -- thematic/page breaks
 - **Audio, Video, Image, Toc** -- block macros
 
@@ -50,6 +53,13 @@ sealed trait Inline extends Node  // all inline content
 - **Text** -- plain text content (`nodeType = "string"`)
 - **CharRef** -- character references (`nodeType = "string"`)
 - **Raw** -- passthrough content (`nodeType = "string"`)
+
+### Table-Related Types
+
+- **CellStyle** -- enum for cell content style: `default`, `emphasis`, `header`, `literal`, `monospace`, `strong`, `asciidoc`
+- **ColSpan**, **RowSpan** -- opaque types wrapping an `Int` for column/row spanning
+- **DupCount** -- opaque type wrapping an `Int` for cell duplication count
+- **ColumnSpec** -- column definition with width, horizontal/vertical alignment, and default style
 
 ## Schema-Derived Codecs
 

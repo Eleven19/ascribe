@@ -84,6 +84,35 @@ Sidebar content with *inline markup*.
 
 Inner content is parsed as nested blocks (headings, paragraphs, lists).
 
+### Tables
+
+Tables are delimited by `|===` and support three data formats:
+
+- **PSV** (pipe-separated values, default) -- cells delimited by `|`
+- **CSV** (comma-separated values) -- cells delimited by `,`, set via `[%format=csv]` or `[separator=,]`
+- **DSV** (delimiter-separated values) -- cells delimited by `:`, set via `[%format=dsv]` or `[separator=:]`
+
+```asciidoc
+[cols="2,1,1"]
+|===
+| Name | Role | Status
+
+| Alice
+| Developer
+| Active
+|===
+```
+
+The parser handles:
+
+- **Column specs** (`cols` attribute) -- proportional widths, alignment, and default cell styles (e.g., `cols="3*,>1,^.^1e"`)
+- **Cell specifiers** -- per-cell style, horizontal/vertical alignment, column span, row span, and duplication count (e.g., `2.3+^.>s|`)
+- **Attribute lists** -- block attributes like `[cols=..., frame=..., grid=..., stripes=...]` and block title (`.Table Title`)
+- **Header/footer rows** -- determined by the `%header`, `%footer` options or an implicit header row
+- **Nested tables** -- inner tables use `!===` delimiters with `!` as the cell separator
+
+Table parsing is implemented in `TableParser` which produces `TableBlock` AST nodes. The bridge converts these to ASG `Table`, `TableRow`, and `TableCell` nodes.
+
 ## Inline Parsers
 
 `InlineParser` (in `io.eleven19.ascribe.parser.InlineParser`) handles inline markup within headings, paragraphs, and list items:
