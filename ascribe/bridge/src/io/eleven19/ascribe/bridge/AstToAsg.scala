@@ -108,7 +108,7 @@ object AstToAsg:
                 stripes = stripes,
                 location = inclusiveLocation(block.span)
             )
-        case ast.ListingBlock(delimiter, content) =>
+        case ast.ListingBlock(delimiter, content, attrsOpt, titleOpt) =>
             // Block location spans from opening delimiter to closing delimiter
             val blockLoc = inclusiveLocation(block.span)
             // Content location: lines inside the delimiters
@@ -120,7 +120,25 @@ object AstToAsg:
                 asg.Position(contentStartLine, 1),
                 asg.Position(contentEndLine, lastLineLen)
             )
+            // Extract source style and language from attribute list
+            val positional = attrsOpt.toList.flatMap(_.positional).map(_.value)
+            val named      = attrsOpt.map(_.named.map((k, v) => (k.value, v.value))).getOrElse(Map.empty)
+            val style      = positional.headOption.orElse(named.get("style"))
+            val language   = positional.lift(1).orElse(named.get("language"))
+            val title      = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            val metadata = attrsOpt.map { al =>
+                val attrs = al.named.map((k, v) => (k.value, v.value)) ++
+                    style.map("style" -> _) ++
+                    language.map("language" -> _)
+                asg.BlockMetadata(
+                    attributes = attrs,
+                    options = Chunk.from(al.options.map(_.value)),
+                    roles = Chunk.from(al.roles.map(_.value))
+                )
+            }
             asg.Listing(
+                title = title,
+                metadata = metadata,
                 form = Some("delimited"),
                 delimiter = Some(delimiter),
                 inlines = Chunk(asg.Text(content, contentLoc)),

@@ -73,8 +73,14 @@ case class Section(level: Int, title: InlineContent, blocks: List[Block])(val sp
 /** A paragraph of one or more lines of inline content. */
 case class Paragraph(content: InlineContent)(val span: Span) extends Block derives CanEqual
 
-/** A delimited listing block (verbatim code). */
-case class ListingBlock(delimiter: String, content: String)(val span: Span) extends Block derives CanEqual
+/** A delimited listing block (verbatim code). May have attributes like `[source,ruby]`. */
+case class ListingBlock(
+    delimiter: String,
+    content: String,
+    attributes: Option[AttributeList] = None,
+    title: Option[BlockTitle] = None
+)(val span: Span)
+    extends Block derives CanEqual
 
 /** A delimited sidebar block containing nested blocks. */
 case class SidebarBlock(delimiter: String, blocks: List[Block])(val span: Span) extends Block derives CanEqual
