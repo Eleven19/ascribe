@@ -112,15 +112,28 @@ object BlockParser:
     private val rawLine: Parsley[String] =
         many(nonEolChar).map(_.mkString) <* eolOrEof
 
-    /** Parses a delimited listing block: `----` open, verbatim content, `----` close. */
+    /** Parses a delimited listing block: optional title/attributes, `----` open, verbatim content, `----` close. The
+      * title+attributes+delimiter sequence is atomic to avoid consuming attribute lines meant for other blocks.
+      */
     val listingBlock: Parsley[Block] =
-        (pos <~> (atomic(string("----")) <* eolOrEof) *>
-            manyTill(rawLine, atomic(string("----"))) <~> pos <* eolOrEof)
-            .map { case ((s, lines), e) =>
-                val content = lines.mkString("\n").stripSuffix("\n")
-                ListingBlock("----", content)(mkSpan(s, e))
-            }
-            .label("listing block")
+        val withAttrs = atomic(
+            pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
+                (string("----") <* eolOrEof)
+        ).flatMap { case (((s, title), attrs), _) =>
+            (manyTill(rawLine, atomic(string("----"))) <~> pos <* eolOrEof)
+                .map { case (lines, e) =>
+                    val content = lines.mkString("\n").stripSuffix("\n")
+                    ListingBlock("----", content, attrs, title)(mkSpan(s, e))
+                }
+        }
+        val plain =
+            (pos <~> (atomic(string("----")) <* eolOrEof) *>
+                manyTill(rawLine, atomic(string("----"))) <~> pos <* eolOrEof)
+                .map { case ((s, lines), e) =>
+                    val content = lines.mkString("\n").stripSuffix("\n")
+                    ListingBlock("----", content)(mkSpan(s, e))
+                }
+        (withAttrs | plain).label("listing block")
 
     /** Parses a delimited sidebar block: `****` open, nested blocks, `****` close. */
     val sidebarBlock: Parsley[Block] =
