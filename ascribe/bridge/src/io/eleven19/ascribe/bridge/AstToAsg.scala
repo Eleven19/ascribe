@@ -169,8 +169,8 @@ object AstToAsg:
         val effectiveStyle = cell.style.map(_.value).flatMap(asg.CellStyle.fromChar).orElse(colStyle)
         asg.TableCell(
             style = effectiveStyle,
-            colSpan = cell.colSpan.map(_.value),
-            rowSpan = cell.rowSpan.map(_.value),
+            colSpan = cell.colSpan.map(f => asg.ColSpan(f.value)),
+            rowSpan = cell.rowSpan.map(f => asg.RowSpan(f.value)),
             inlines = Chunk.from(cell.content.map(convertInline)),
             location = contentLocation(cell.span.start, lastContentPos(cell))
         )

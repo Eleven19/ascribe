@@ -24,6 +24,22 @@ object CellStyle:
         case 's' => Some(Strong)
         case _   => None
 
+/** Column span factor — number of consecutive columns a cell spans. */
+opaque type ColSpan = Int
+
+object ColSpan:
+    def apply(n: Int): ColSpan            = n
+    given Schema[ColSpan]                 = summon[Schema[Int]].transform[ColSpan](identity, identity)
+    extension (c: ColSpan) def value: Int = c
+
+/** Row span factor — number of consecutive rows a cell spans. */
+opaque type RowSpan = Int
+
+object RowSpan:
+    def apply(n: Int): RowSpan            = n
+    given Schema[RowSpan]                 = summon[Schema[Int]].transform[RowSpan](identity, identity)
+    extension (r: RowSpan) def value: Int = r
+
 case class ColumnSpec(
     width: Option[Int] = None,
     halign: Option[HAlign] = None,

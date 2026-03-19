@@ -586,8 +586,8 @@ case class TableCell private (
     reftext: Option[Chunk[Inline]],
     metadata: Option[BlockMetadata],
     style: Option[CellStyle],
-    colSpan: Option[Int],
-    rowSpan: Option[Int],
+    colSpan: Option[ColSpan],
+    rowSpan: Option[RowSpan],
     inlines: Chunk[Inline],
     location: Location,
     @Modifier.rename("type") nodeType: String
@@ -601,8 +601,8 @@ object TableCell:
         reftext: Option[Chunk[Inline]] = None,
         metadata: Option[BlockMetadata] = None,
         style: Option[CellStyle] = None,
-        colSpan: Option[Int] = None,
-        rowSpan: Option[Int] = None,
+        colSpan: Option[ColSpan] = None,
+        rowSpan: Option[RowSpan] = None,
         inlines: Chunk[Inline] = Chunk.empty,
         location: Location
     ): TableCell = new TableCell(id, title, reftext, metadata, style, colSpan, rowSpan, inlines, location, "block")
