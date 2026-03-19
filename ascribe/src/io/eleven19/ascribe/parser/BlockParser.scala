@@ -11,6 +11,7 @@ import io.eleven19.ascribe.ast.{
     AttributeList,
     Block,
     BlockTitle,
+    CellSpecifier,
     Heading,
     InlineContent,
     ListItem,
@@ -240,19 +241,44 @@ object BlockParser:
                 else init :+ io.eleven19.ascribe.ast.Text(trimmed)(t.span)
             case other => other
 
-    /** Parses a single cell: `| content` or `<style>| content` where style is one of a/d/e/h/l/m/s. */
-    private val tableCell: Parsley[TableCell] =
-        val styledCell = atomic(
-            pos <~> satisfy(c => "adehilms".contains(c)) <~> char('|') <~> option(
-                char(' ')
-            ).void <~> cellContent <~> pos
-        ).map { case (((((s, style), _), _), content), e) =>
-            TableCell(trimCellContent(content), Some(style))(mkSpan(s, e))
+    import CellSpecifier.{StyleOperator, ColSpanFactor, RowSpanFactor}
+
+    /** Parsed cell specifier: optional span factors and style operator. */
+    private case class CellSpec(
+        colSpan: Option[ColSpanFactor] = None,
+        rowSpan: Option[RowSpanFactor] = None,
+        style: Option[StyleOperator] = None
+    )
+
+    /** Parses a cell specifier prefix: `[colSpan][.rowSpan]+[style]` before `|`. Examples: `2+|`, `.3+|`, `2.3+|`,
+      * `s|`, `2+s|`, `.2+e|`
+      */
+    private val cellSpecifier: Parsley[CellSpec] = atomic {
+        import parsley.character.digit
+        val digits    = some(digit).map(_.mkString.toInt)
+        val colFactor = option(digits.map(ColSpanFactor(_)))
+        val rowFactor = option(char('.') *> digits.map(RowSpanFactor(_)))
+        val spanOp    = char('+')
+        val styleOp   = option(satisfy(c => "adehilms".contains(c)).map(StyleOperator(_)))
+
+        (colFactor <~> rowFactor <* spanOp <~> styleOp <* char('|')).map { case ((col, row), sty) =>
+            CellSpec(col, row, sty)
+        } | (styleOp.filter(_.isDefined) <* char('|')).map { sty =>
+            CellSpec(style = sty)
         }
+    }
+
+    /** Parses a single cell with optional specifier: `[spec]| content` or plain `| content`. */
+    private val tableCell: Parsley[TableCell] =
+        val specifiedCell =
+            (pos <~> cellSpecifier <~> option(char(' ')).void <~> cellContent <~> pos)
+                .map { case ((((s, spec), _), content), e) =>
+                    TableCell(trimCellContent(content), spec.style, spec.colSpan, spec.rowSpan)(mkSpan(s, e))
+                }
         val plainCell =
             (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
                 .map { case ((s, content), e) => TableCell(trimCellContent(content))(mkSpan(s, e)) }
-        styledCell | plainCell
+        specifiedCell | plainCell
 
     /** Parses a row of cells on a single line ending with eolOrEof. */
     private val tableRowLine: Parsley[List[TableCell]] =

@@ -132,9 +132,32 @@ case class TableBlock(
 /** A row in a table. */
 case class TableRow(cells: List[TableCell])(val span: Span) extends AstNode derives CanEqual
 
-/** A cell in a table row. The style is an optional single-char specifier prefix (e.g., 's' for strong). */
-case class TableCell(content: InlineContent, style: Option[Char] = None)(val span: Span) extends AstNode
-    derives CanEqual
+/** Cell specifier components parsed from the prefix before `|`. */
+object CellSpecifier:
+    opaque type StyleOperator = Char
+    opaque type ColSpanFactor = Int
+    opaque type RowSpanFactor = Int
+
+    object StyleOperator:
+        def apply(c: Char): StyleOperator            = c
+        extension (s: StyleOperator) def value: Char = s
+
+    object ColSpanFactor:
+        def apply(n: Int): ColSpanFactor            = n
+        extension (c: ColSpanFactor) def value: Int = c
+
+    object RowSpanFactor:
+        def apply(n: Int): RowSpanFactor            = n
+        extension (r: RowSpanFactor) def value: Int = r
+
+/** A cell in a table row with optional specifier components (style, column/row spanning). */
+case class TableCell(
+    content: InlineContent,
+    style: Option[CellSpecifier.StyleOperator] = None,
+    colSpan: Option[CellSpecifier.ColSpanFactor] = None,
+    rowSpan: Option[CellSpecifier.RowSpanFactor] = None
+)(val span: Span)
+    extends AstNode derives CanEqual
 
 /** A bullet list (items prefixed with "* "). */
 case class UnorderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual

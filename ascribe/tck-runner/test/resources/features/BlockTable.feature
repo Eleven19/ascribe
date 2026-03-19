@@ -28,3 +28,5 @@ Feature: Block - Table
       | full-attrs            | ascribe/tck-runner/test/resources/tests/block/table/full-attrs-input.adoc            | ascribe/tck-runner/test/resources/tests/block/table/full-attrs-output.json             |
       | cols-styles           | ascribe/tck-runner/test/resources/tests/block/table/cols-styles-input.adoc           | ascribe/tck-runner/test/resources/tests/block/table/cols-styles-output.json            |
       | cell-styles           | ascribe/tck-runner/test/resources/tests/block/table/cell-styles-input.adoc           | ascribe/tck-runner/test/resources/tests/block/table/cell-styles-output.json            |
+      | span-columns          | ascribe/tck-runner/test/resources/tests/block/table/span-columns-input.adoc          | ascribe/tck-runner/test/resources/tests/block/table/span-columns-output.json           |
+      | span-rows             | ascribe/tck-runner/test/resources/tests/block/table/span-rows-input.adoc             | ascribe/tck-runner/test/resources/tests/block/table/span-rows-output.json              |
