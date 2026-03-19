@@ -119,10 +119,15 @@ case class AttributeList(
 
 case class BlockTitle(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
 
-/** A table block delimited by |===. */
+/** Table data format. */
+enum TableFormat:
+    case PSV, CSV, DSV, TSV
+
+/** A table block. The format determines cell parsing rules and default separator. */
 case class TableBlock(
     rows: List[TableRow],
     delimiter: String,
+    format: TableFormat = TableFormat.PSV,
     attributes: Option[AttributeList] = None,
     title: Option[BlockTitle] = None,
     hasBlankAfterFirstRow: Boolean = false
@@ -137,6 +142,7 @@ object CellSpecifier:
     opaque type StyleOperator = Char
     opaque type ColSpanFactor = Int
     opaque type RowSpanFactor = Int
+    opaque type DupFactor     = Int
 
     object StyleOperator:
         def apply(c: Char): StyleOperator            = c
@@ -150,12 +156,17 @@ object CellSpecifier:
         def apply(n: Int): RowSpanFactor            = n
         extension (r: RowSpanFactor) def value: Int = r
 
-/** A cell in a table row with optional specifier components (style, column/row spanning). */
+    object DupFactor:
+        def apply(n: Int): DupFactor            = n
+        extension (d: DupFactor) def value: Int = d
+
+/** A cell in a table row with optional specifier components (style, spanning, duplication). */
 case class TableCell(
     content: InlineContent,
     style: Option[CellSpecifier.StyleOperator] = None,
     colSpan: Option[CellSpecifier.ColSpanFactor] = None,
-    rowSpan: Option[CellSpecifier.RowSpanFactor] = None
+    rowSpan: Option[CellSpecifier.RowSpanFactor] = None,
+    dupFactor: Option[CellSpecifier.DupFactor] = None
 )(val span: Span)
     extends AstNode derives CanEqual
 

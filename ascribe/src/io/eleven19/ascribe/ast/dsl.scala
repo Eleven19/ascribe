@@ -69,10 +69,10 @@ object dsl:
     def tableBlock(rows: TableRow*): TableBlock = TableBlock(rows.toList, "|===")(u)
 
     def tableBlock(attrs: AttributeList, rows: TableRow*): TableBlock =
-        TableBlock(rows.toList, "|===", Some(attrs))(u)
+        TableBlock(rows.toList, "|===", TableFormat.PSV, Some(attrs))(u)
 
     def tableBlock(title: BlockTitle, attrs: AttributeList, rows: TableRow*): TableBlock =
-        TableBlock(rows.toList, "|===", Some(attrs), Some(title))(u)
+        TableBlock(rows.toList, "|===", TableFormat.PSV, Some(attrs), Some(title))(u)
 
     def tableRow(cells: TableCell*): TableRow  = TableRow(cells.toList)(u)
     def tableCell(inlines: Inline*): TableCell = TableCell(inlines.toList)(u)
