@@ -33,7 +33,7 @@ trait AstVisitor[A]:
     def visitTableRow(node: TableRow): A           = visitNode(node)
     def visitTableCell(node: TableCell): A         = visitNode(node)
     def visitAttributeList(node: AttributeList): A = visitNode(node)
-    def visitBlockTitle(node: BlockTitle): A        = visitNode(node)
+    def visitBlockTitle(node: BlockTitle): A       = visitNode(node)
 
     // --- Inline types ---
     def visitText(node: Text): A                       = visitInline(node)

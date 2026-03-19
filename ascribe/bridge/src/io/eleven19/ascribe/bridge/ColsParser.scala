@@ -13,17 +13,17 @@ object ColsParser:
         val multiplierPattern = """^(\d+)\*(.*)$""".r
         entry match
             case multiplierPattern(nStr, rest) =>
-                val n = nStr.toInt
+                val n    = nStr.toInt
                 val spec = parseSpec(rest)
                 List.fill(n)(spec)
             case _ =>
                 List(parseSpec(entry))
 
     private def parseSpec(s: String): ColumnSpec =
-        var remaining = s
+        var remaining              = s
         var halign: Option[HAlign] = None
         var valign: Option[VAlign] = None
-        var width: Option[Int] = None
+        var width: Option[Int]     = None
 
         if remaining.startsWith("<") then
             halign = Some(HAlign.Left); remaining = remaining.drop(1)
@@ -39,7 +39,6 @@ object ColsParser:
         else if remaining.startsWith(".>") then
             valign = Some(VAlign.Bottom); remaining = remaining.drop(2)
 
-        if remaining.nonEmpty && remaining.forall(_.isDigit) then
-            width = Some(remaining.toInt)
+        if remaining.nonEmpty && remaining.forall(_.isDigit) then width = Some(remaining.toInt)
 
         ColumnSpec(width, halign, valign)

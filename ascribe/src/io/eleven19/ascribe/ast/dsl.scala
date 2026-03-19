@@ -74,8 +74,8 @@ object dsl:
     def tableBlock(title: BlockTitle, attrs: AttributeList, rows: TableRow*): TableBlock =
         TableBlock(rows.toList, "|===", Some(attrs), Some(title))(u)
 
-    def tableRow(cells: TableCell*): TableRow   = TableRow(cells.toList)(u)
-    def tableCell(inlines: Inline*): TableCell  = TableCell(inlines.toList)(u)
+    def tableRow(cells: TableCell*): TableRow  = TableRow(cells.toList)(u)
+    def tableCell(inlines: Inline*): TableCell = TableCell(inlines.toList)(u)
 
     // --- Lists ---
     def listItem(inlines: Inline*): ListItem           = ListItem(inlines.toList)(u)

@@ -539,7 +539,23 @@ object Table:
         grid: Option[String] = None,
         stripes: Option[String] = None,
         location: Location
-    ): Table = new Table(id, title, reftext, metadata, form, delimiter, columns, header, rows, footer, frame, grid, stripes, location, "block")
+    ): Table = new Table(
+        id,
+        title,
+        reftext,
+        metadata,
+        form,
+        delimiter,
+        columns,
+        header,
+        rows,
+        footer,
+        frame,
+        grid,
+        stripes,
+        location,
+        "block"
+    )
 
 @specStatus(SpecStatus.SpecDerived)
 case class TableRow private (

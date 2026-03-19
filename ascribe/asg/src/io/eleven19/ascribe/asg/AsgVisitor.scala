@@ -122,12 +122,14 @@ object AsgVisitor:
             case di: DListItem =>
                 optInlines(di.title) ++ optInlines(di.reftext) ++
                     di.terms.flatMap(identity) ++ di.principal.getOrElse(Chunk.empty) ++ di.blocks
-            case b: Break      => optInlines(b.title) ++ optInlines(b.reftext)
-            case a: Audio      => optInlines(a.title) ++ optInlines(a.reftext)
-            case v: Video      => optInlines(v.title) ++ optInlines(v.reftext)
-            case i: Image      => optInlines(i.title) ++ optInlines(i.reftext)
-            case t: Toc        => optInlines(t.title) ++ optInlines(t.reftext)
-            case t: Table      => optInlines(t.title) ++ optInlines(t.reftext) ++ t.header.getOrElse(Chunk.empty) ++ t.rows ++ t.footer.getOrElse(Chunk.empty)
+            case b: Break => optInlines(b.title) ++ optInlines(b.reftext)
+            case a: Audio => optInlines(a.title) ++ optInlines(a.reftext)
+            case v: Video => optInlines(v.title) ++ optInlines(v.reftext)
+            case i: Image => optInlines(i.title) ++ optInlines(i.reftext)
+            case t: Toc   => optInlines(t.title) ++ optInlines(t.reftext)
+            case t: Table =>
+                optInlines(t.title) ++ optInlines(t.reftext) ++ t.header.getOrElse(Chunk.empty) ++ t.rows ++ t.footer
+                    .getOrElse(Chunk.empty)
             case tr: TableRow  => tr.cells
             case tc: TableCell => tc.inlines
             case s: Span       => s.inlines

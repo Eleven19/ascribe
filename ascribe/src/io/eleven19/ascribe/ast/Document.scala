@@ -86,19 +86,19 @@ object AttributeList:
     opaque type RoleName       = String
 
     object AttributeName:
-        def apply(s: String): AttributeName       = s
+        def apply(s: String): AttributeName            = s
         extension (n: AttributeName) def value: String = n
 
     object AttributeValue:
-        def apply(s: String): AttributeValue       = s
+        def apply(s: String): AttributeValue            = s
         extension (v: AttributeValue) def value: String = v
 
     object OptionName:
-        def apply(s: String): OptionName       = s
+        def apply(s: String): OptionName            = s
         extension (o: OptionName) def value: String = o
 
     object RoleName:
-        def apply(s: String): RoleName       = s
+        def apply(s: String): RoleName            = s
         extension (r: RoleName) def value: String = r
 
     def merge(a: AttributeList, b: AttributeList)(span: Span): AttributeList =
@@ -114,7 +114,8 @@ case class AttributeList(
     named: Map[AttributeList.AttributeName, AttributeList.AttributeValue],
     options: List[AttributeList.OptionName],
     roles: List[AttributeList.RoleName]
-)(val span: Span) extends AstNode derives CanEqual
+)(val span: Span)
+    extends AstNode derives CanEqual
 
 case class BlockTitle(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
 
@@ -125,7 +126,8 @@ case class TableBlock(
     attributes: Option[AttributeList] = None,
     title: Option[BlockTitle] = None,
     hasBlankAfterFirstRow: Boolean = false
-)(val span: Span) extends Block derives CanEqual
+)(val span: Span)
+    extends Block derives CanEqual
 
 /** A row in a table. */
 case class TableRow(cells: List[TableCell])(val span: Span) extends AstNode derives CanEqual

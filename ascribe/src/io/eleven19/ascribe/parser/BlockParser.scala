@@ -155,34 +155,40 @@ object BlockParser:
 
     /** Parses an unquoted attribute value (stops at `,`, `]`, `"`, newline, and shorthand prefixes). */
     private val unquotedValue: Parsley[String] =
-        stringOfSome(satisfy(c => c != ',' && c != ']' && c != '"' && c != '=' && c != '\n' && c != '\r' && c != '%' && c != '#' && c != '.'))
+        stringOfSome(
+            satisfy(c =>
+                c != ',' && c != ']' && c != '"' && c != '=' && c != '\n' && c != '\r' && c != '%' && c != '#' && c != '.'
+            )
+        )
 
     /** Characters that delimit shorthand entries in an attribute list. */
     private val shorthandChars = Set(',', ']', '%', '#', '.', '\n', '\r')
 
-    /** Parses a single attribute entry: option (`%name`), id shorthand (`#id`), role shorthand (`.role`),
-      * named (`key=value`), or positional (bare value).
+    /** Parses a single attribute entry: option (`%name`), id shorthand (`#id`), role shorthand (`.role`), named
+      * (`key=value`), or positional (bare value).
       */
     private val attrEntry: Parsley[AttrEntry] =
         (char('%') *> stringOfSome(satisfy(c => !shorthandChars(c))))
             .map(s => AttrEntry.Opt(OptionName(s.trim))) |
-        (char('#') *> stringOfSome(satisfy(c => !shorthandChars(c))))
-            .map(s => AttrEntry.Named(AttributeName("id"), AttributeValue(s.trim))) |
-        (char('.') *> notFollowedBy(char('.')) *> stringOfSome(satisfy(c => !shorthandChars(c))))
-            .map(s => AttrEntry.Role(RoleName(s.trim))) |
-        atomic((unquotedValue <* char('=')) <~> (quotedValue | unquotedValue))
-            .map { case (k, v) => AttrEntry.Named(AttributeName(k.trim), AttributeValue(v.trim)) } |
-        (quotedValue | unquotedValue)
-            .map(s => AttrEntry.Positional(AttributeValue(s.trim)))
+            (char('#') *> stringOfSome(satisfy(c => !shorthandChars(c))))
+                .map(s => AttrEntry.Named(AttributeName("id"), AttributeValue(s.trim))) |
+            (char('.') *> notFollowedBy(char('.')) *> stringOfSome(satisfy(c => !shorthandChars(c))))
+                .map(s => AttrEntry.Role(RoleName(s.trim))) |
+            atomic((unquotedValue <* char('=')) <~> (quotedValue | unquotedValue))
+                .map { case (k, v) => AttrEntry.Named(AttributeName(k.trim), AttributeValue(v.trim)) } |
+            (quotedValue | unquotedValue)
+                .map(s => AttrEntry.Positional(AttributeValue(s.trim)))
 
     /** Parses a single attribute list line: `[key=value, %option, .role]`. */
     val attributeListLine: Parsley[AttributeList] =
-        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(']') <* eolOrEof) <~> pos)
+        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(
+            ']'
+        ) <* eolOrEof) <~> pos)
             .map { case ((s, entries), e) =>
                 val positional = entries.collect { case AttrEntry.Positional(v) => v }.toList
-                val named = entries.collect { case AttrEntry.Named(k, v) => (k, v) }.toMap
-                val options = entries.collect { case AttrEntry.Opt(o) => o }.toList
-                val roles = entries.collect { case AttrEntry.Role(r) => r }.toList
+                val named      = entries.collect { case AttrEntry.Named(k, v) => (k, v) }.toMap
+                val options    = entries.collect { case AttrEntry.Opt(o) => o }.toList
+                val roles      = entries.collect { case AttrEntry.Role(r) => r }.toList
                 AttributeList(positional, named, options, roles)(mkSpan(s, e))
             }
             .label("attribute list")
@@ -192,9 +198,11 @@ object BlockParser:
         many(attributeListLine).map {
             case Nil => None
             case first :: rest =>
-                Some(rest.foldLeft(first)((acc, al) =>
-                    AttributeList.merge(acc, al)(io.eleven19.ascribe.ast.Span(acc.span.start, al.span.end))
-                ))
+                Some(
+                    rest.foldLeft(first)((acc, al) =>
+                        AttributeList.merge(acc, al)(io.eleven19.ascribe.ast.Span(acc.span.start, al.span.end))
+                    )
+                )
         }
 
     // -----------------------------------------------------------------------
@@ -269,7 +277,7 @@ object BlockParser:
 
     /** Parses a table block: optional title and attributes, then `|===` open, rows, `|===` close. */
     val tableBlock: Parsley[Block] =
-        (pos <~> option(blockTitle) <~> attributeLists <~>
+        (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
             (atomic(string("|===")) <* eolOrEof) *>
             option(some(blankLine)).void *>
             tableRowsWithBlankTracking <~> pos <* eolOrEof)
@@ -284,8 +292,8 @@ object BlockParser:
 
     /** Negative lookahead for any block-starting prefix.
       *
-      * Prevents [[paragraphLine]] from consuming lines that belong to a heading, list, block title,
-      * attribute list, or delimited block.
+      * Prevents [[paragraphLine]] from consuming lines that belong to a heading, list, block title, attribute list, or
+      * delimited block.
       */
     private val notBlockStart: Parsley[Unit] =
         notFollowedBy(headingLevel *> char(' ')) *>
