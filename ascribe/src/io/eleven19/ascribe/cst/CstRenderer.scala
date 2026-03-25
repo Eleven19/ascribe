@@ -122,9 +122,9 @@ object CstRenderer:
     private def renderAttrString(al: CstAttributeList): String =
         val parts =
             al.positional.map(identity) ++
-            al.options.map(o => s"%$o") ++
-            al.roles.map(r => s".$r") ++
-            al.named.map((k, v) => s"$k=$v")
+                al.options.map(o => s"%$o") ++
+                al.roles.map(r => s".$r") ++
+                al.named.map((k, v) => s"$k=$v")
         parts.mkString(",")
 
     private def renderInlines(inlines: List[CstInline], sb: StringBuilder): Unit =

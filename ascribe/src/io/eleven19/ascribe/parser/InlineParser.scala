@@ -96,9 +96,7 @@ object InlineParser:
 
     /** Fallback for a single markup character that did not open a valid span. */
     val unpairedMarkupInline: Parsley[CstInline] =
-        (pos <~> unpairedMarkupChar <~> pos)
-            .map { case ((s, c), e) => CstText(c.toString)(mkSpan(s, e)) }
-            .hide
+        (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) => CstText(c.toString)(mkSpan(s, e)) }.hide
 
     /** Parses a single inline element (one of the above parsers in priority order). Unconstrained (`**`) is tried
       * before constrained (`*`) to avoid ambiguity.

@@ -101,7 +101,9 @@ object BlockParser:
             (manyTill(rawLine, atomic(string(delim))) <~> pos <* eolOrEof)
                 .map { case (lines, e) =>
                     val content = lines.mkString("\n").stripSuffix("\n")
-                    CstDelimitedBlock(kind, delim, CstVerbatimContent(content)(mkSpan(s, e)), attrs, title)(mkSpan(s, e))
+                    CstDelimitedBlock(kind, delim, CstVerbatimContent(content)(mkSpan(s, e)), attrs, title)(
+                        mkSpan(s, e)
+                    )
                 }
         }
         val plain = atomic(pos <~> delimiterLine(delimChar, minLen)).flatMap { case (s, delim) =>
@@ -145,8 +147,8 @@ object BlockParser:
         }
         withAttrs | plain
 
-    /** Blocks allowed inside a compound delimited block. Includes blank lines, comments, includes,
-      * attribute entries, all delimited blocks (for nesting), headings, lists, and paragraphs.
+    /** Blocks allowed inside a compound delimited block. Includes blank lines, comments, includes, attribute entries,
+      * all delimited blocks (for nesting), headings, lists, and paragraphs.
       */
     private def compoundInnerBlock(parentDelim: String): Parsley[CstTopLevel] =
         val delimitedBlocks =
@@ -165,14 +167,24 @@ object BlockParser:
     // Concrete delimited block parsers
     // -----------------------------------------------------------------------
 
-    val listingBlock: Parsley[CstBlock] = verbatimDelimitedBlock('-', 4, DelimitedBlockKind.Listing).label("listing block")
-    val literalBlock: Parsley[CstBlock] = verbatimDelimitedBlock('.', 4, DelimitedBlockKind.Literal).label("literal block")
-    val commentBlock: Parsley[CstBlock] = verbatimDelimitedBlock('/', 4, DelimitedBlockKind.Comment).label("comment block")
-    val passBlock:    Parsley[CstBlock] = verbatimDelimitedBlock('+', 4, DelimitedBlockKind.Pass).label("passthrough block")
+    val listingBlock: Parsley[CstBlock] =
+        verbatimDelimitedBlock('-', 4, DelimitedBlockKind.Listing).label("listing block")
 
-    val sidebarBlock: Parsley[CstBlock] = compoundDelimitedBlock('*', 4, DelimitedBlockKind.Sidebar).label("sidebar block")
-    val exampleBlock: Parsley[CstBlock] = compoundDelimitedBlock('=', 4, DelimitedBlockKind.Example).label("example block")
-    val quoteBlock:   Parsley[CstBlock] = compoundDelimitedBlock('_', 4, DelimitedBlockKind.Quote).label("quote block")
+    val literalBlock: Parsley[CstBlock] =
+        verbatimDelimitedBlock('.', 4, DelimitedBlockKind.Literal).label("literal block")
+
+    val commentBlock: Parsley[CstBlock] =
+        verbatimDelimitedBlock('/', 4, DelimitedBlockKind.Comment).label("comment block")
+
+    val passBlock: Parsley[CstBlock] =
+        verbatimDelimitedBlock('+', 4, DelimitedBlockKind.Pass).label("passthrough block")
+
+    val sidebarBlock: Parsley[CstBlock] =
+        compoundDelimitedBlock('*', 4, DelimitedBlockKind.Sidebar).label("sidebar block")
+
+    val exampleBlock: Parsley[CstBlock] =
+        compoundDelimitedBlock('=', 4, DelimitedBlockKind.Example).label("example block")
+    val quoteBlock: Parsley[CstBlock] = compoundDelimitedBlock('_', 4, DelimitedBlockKind.Quote).label("quote block")
 
     val openBlock: Parsley[CstBlock] =
         val openDelim = string("--") <* notFollowedBy(char('-'))
@@ -185,7 +197,13 @@ object BlockParser:
                 atomic(openDelim)
             ) <~> pos <* eolOrEof)
                 .map { case (children, e) =>
-                    CstDelimitedBlock(DelimitedBlockKind.Open, "--", CstNestedContent(children)(mkSpan(s, e)), attrs, title)(mkSpan(s, e))
+                    CstDelimitedBlock(
+                        DelimitedBlockKind.Open,
+                        "--",
+                        CstNestedContent(children)(mkSpan(s, e)),
+                        attrs,
+                        title
+                    )(mkSpan(s, e))
                 }
         }
         val plain = atomic(pos <~> (openDelim <* eolOrEof)).flatMap { case (s, _) =>
@@ -194,7 +212,13 @@ object BlockParser:
                 atomic(openDelim)
             ) <~> pos <* eolOrEof)
                 .map { case (children, e) =>
-                    CstDelimitedBlock(DelimitedBlockKind.Open, "--", CstNestedContent(children)(mkSpan(s, e)), None, None)(mkSpan(s, e))
+                    CstDelimitedBlock(
+                        DelimitedBlockKind.Open,
+                        "--",
+                        CstNestedContent(children)(mkSpan(s, e)),
+                        None,
+                        None
+                    )(mkSpan(s, e))
                 }
         }
         (withAttrs | plain).label("open block")
@@ -236,7 +260,9 @@ object BlockParser:
 
     /** Parses a single attribute list line: `[key=value, %option, .role]`. */
     val attributeListLine: Parsley[CstAttributeList] =
-        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(']') <* eolOrEof) <~> pos)
+        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(
+            ']'
+        ) <* eolOrEof) <~> pos)
             .map { case ((s, entries), e) =>
                 val positional = entries.collect { case AttrEntry.Positional(v) => v.value }.toList
                 val named      = entries.collect { case AttrEntry.Named(k, v) => (k.value, v.value) }.toMap
@@ -251,14 +277,16 @@ object BlockParser:
         many(attributeListLine).map {
             case Nil => None
             case first :: rest =>
-                Some(rest.foldLeft(first)((acc, al) =>
-                    CstAttributeList(
-                        acc.positional ++ al.positional,
-                        acc.named ++ al.named,
-                        acc.options ++ al.options,
-                        acc.roles ++ al.roles
-                    )(AstSpan(acc.span.start, al.span.end))
-                ))
+                Some(
+                    rest.foldLeft(first)((acc, al) =>
+                        CstAttributeList(
+                            acc.positional ++ al.positional,
+                            acc.named ++ al.named,
+                            acc.options ++ al.options,
+                            acc.roles ++ al.roles
+                        )(AstSpan(acc.span.start, al.span.end))
+                    )
+                )
         }
 
     // -----------------------------------------------------------------------
@@ -339,7 +367,9 @@ object BlockParser:
         val plainCell =
             (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
                 .map { case ((s, content), e) =>
-                    CstTableCell(CstCellInlines(trimCellContent(content))(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
+                    CstTableCell(CstCellInlines(trimCellContent(content))(mkSpan(s, e)), None, None, None, None)(
+                        mkSpan(s, e)
+                    )
                 }
         specifiedCell | plainCell
 
@@ -411,7 +441,9 @@ object BlockParser:
     private val nestedTableCell: Parsley[CstTableCell] =
         (pos <~> (char('!') *> option(char(' ')).void *> nestedCellContent) <~> pos)
             .map { case ((s, content), e) =>
-                CstTableCell(CstCellInlines(trimCellContent(content))(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
+                CstTableCell(CstCellInlines(trimCellContent(content))(mkSpan(s, e)), None, None, None, None)(
+                    mkSpan(s, e)
+                )
             }
 
     private val nestedTableRowLine: Parsley[List[CstTableCell]] =
@@ -568,7 +600,9 @@ object BlockParser:
     val attributeEntryBlock: Parsley[CstBlock] =
         atomic(
             (pos <~>
-                (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(char(' '))) <~>
+                (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(
+                    char(' ')
+                )) <~>
                 many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
                 .map { case (((s, name), value), e) => CstAttributeEntry(name, value)(mkSpan(s, e)) }
         ).label("attribute entry")
@@ -596,9 +630,9 @@ object BlockParser:
             notFollowedBy(string("!===")) *>
             notFollowedBy(string(",===")) *>
             notFollowedBy(string(":===")) *>
-            notFollowedBy(string("//")) *>                                         // line comment
-            notFollowedBy(string("include::")) *>                                   // include directive
-            notFollowedBy(char(':') *> satisfy(c => c != ':' && c != '\n'))         // attribute entry
+            notFollowedBy(string("//")) *>                                  // line comment
+            notFollowedBy(string("include::")) *>                           // include directive
+            notFollowedBy(char(':') *> satisfy(c => c != ':' && c != '\n')) // attribute entry
 
     private val cstParagraphLine: Parsley[CstParagraphLine] =
         (pos <~> (notCstBlockStart *> some(inlineElement) <* eolOrEof) <~> pos)

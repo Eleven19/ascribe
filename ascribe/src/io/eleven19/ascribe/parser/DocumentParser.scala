@@ -32,7 +32,9 @@ object DocumentParser:
     /** Parses `:key: value` lines inside a document header. */
     private val headerAttributeEntry: Parsley[CstAttributeEntry] =
         (pos <~>
-            (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(char(' '))) <~>
+            (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(
+                char(' ')
+            )) <~>
             many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
             .map { case (((s, name), value), e) => CstAttributeEntry(name, value)(mkSpan(s, e)) }
 

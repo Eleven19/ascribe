@@ -85,14 +85,16 @@ object CstLowering:
             Some(OrderedList(items.map(lowerListItem))(block.span))
 
         case CstTable(rows, delim, format, attrs, title, hasBlank) =>
-            Some(Table(
-                rows.map(lowerTableRow),
-                delim,
-                format,
-                attrs.map(lowerAttrList),
-                title.map(lowerBlockTitle),
-                hasBlank
-            )(block.span))
+            Some(
+                Table(
+                    rows.map(lowerTableRow),
+                    delim,
+                    format,
+                    attrs.map(lowerAttrList),
+                    title.map(lowerBlockTitle),
+                    hasBlank
+                )(block.span)
+            )
 
     private def lowerListItem(item: CstListItem): ListItem =
         ListItem(lowerInlines(item.content))(item.span)

@@ -12,29 +12,29 @@ import scala.util.control.TailCalls.*
 trait CstVisitor[A]:
     def visitNode(node: CstNode): A
 
-    def visitTopLevel(node: CstTopLevel): A  = visitNode(node)
-    def visitBlock(node: CstBlock): A        = visitTopLevel(node)
-    def visitInline(node: CstInline): A      = visitNode(node)
+    def visitTopLevel(node: CstTopLevel): A = visitNode(node)
+    def visitBlock(node: CstBlock): A       = visitTopLevel(node)
+    def visitInline(node: CstInline): A     = visitNode(node)
 
     def visitDocument(node: CstDocument): A             = visitNode(node)
     def visitDocumentHeader(node: CstDocumentHeader): A = visitNode(node)
 
-    def visitHeading(node: CstHeading): A              = visitBlock(node)
-    def visitParagraph(node: CstParagraph): A          = visitBlock(node)
+    def visitHeading(node: CstHeading): A               = visitBlock(node)
+    def visitParagraph(node: CstParagraph): A           = visitBlock(node)
     def visitDelimitedBlock(node: CstDelimitedBlock): A = visitBlock(node)
-    def visitList(node: CstList): A                    = visitBlock(node)
-    def visitTable(node: CstTable): A                  = visitBlock(node)
-    def visitInclude(node: CstInclude): A              = visitBlock(node)
-    def visitLineComment(node: CstLineComment): A      = visitBlock(node)
+    def visitList(node: CstList): A                     = visitBlock(node)
+    def visitTable(node: CstTable): A                   = visitBlock(node)
+    def visitInclude(node: CstInclude): A               = visitBlock(node)
+    def visitLineComment(node: CstLineComment): A       = visitBlock(node)
     def visitAttributeEntry(node: CstAttributeEntry): A = visitBlock(node)
-    def visitBlankLine(node: CstBlankLine): A          = visitTopLevel(node)
+    def visitBlankLine(node: CstBlankLine): A           = visitTopLevel(node)
 
-    def visitParagraphLine(node: CstParagraphLine): A  = visitNode(node)
-    def visitListItem(node: CstListItem): A            = visitNode(node)
-    def visitBlockTitle(node: CstBlockTitle): A        = visitNode(node)
-    def visitAttributeList(node: CstAttributeList): A  = visitNode(node)
-    def visitTableRow(node: CstTableRow): A            = visitNode(node)
-    def visitTableCell(node: CstTableCell): A          = visitNode(node)
+    def visitParagraphLine(node: CstParagraphLine): A = visitNode(node)
+    def visitListItem(node: CstListItem): A           = visitNode(node)
+    def visitBlockTitle(node: CstBlockTitle): A       = visitNode(node)
+    def visitAttributeList(node: CstAttributeList): A = visitNode(node)
+    def visitTableRow(node: CstTableRow): A           = visitNode(node)
+    def visitTableCell(node: CstTableCell): A         = visitNode(node)
 
     def visitText(node: CstText): A     = visitInline(node)
     def visitBold(node: CstBold): A     = visitInline(node)
@@ -112,9 +112,10 @@ object CstVisitor:
             val newAcc = f(acc, n)
             val kids   = children(n)
             if kids.isEmpty then done(newAcc)
-            else kids.foldLeft(done(newAcc)) { (tailAcc, child) =>
-                tailAcc.flatMap(a => tailcall(go(child, a)))
-            }
+            else
+                kids.foldLeft(done(newAcc)) { (tailAcc, child) =>
+                    tailAcc.flatMap(a => tailcall(go(child, a)))
+                }
         go(node, init).result
 
     /** Post-order right fold: visits children before their parent, accumulating right-to-left. Stack-safe via
@@ -125,9 +126,10 @@ object CstVisitor:
             val kids = children(n)
             val childResult =
                 if kids.isEmpty then done(acc)
-                else kids.foldRight(done(acc)) { (child, tailAcc) =>
-                    tailAcc.flatMap(a => tailcall(go(child, a)))
-                }
+                else
+                    kids.foldRight(done(acc)) { (child, tailAcc) =>
+                        tailAcc.flatMap(a => tailcall(go(child, a)))
+                    }
             childResult.map(a => f(n, a))
         go(node, init).result
 
@@ -137,13 +139,13 @@ object CstVisitor:
     /** Collect values from all nodes in the tree that match a partial function (pre-order). */
     def collect[B](node: CstNode)(pf: PartialFunction[CstNode, B]): List[B] =
         val buf = ArrayBuffer.empty[B]
-        foldLeft(node)(()) { (_, n) => if pf.isDefinedAt(n) then buf += pf(n) }
+        foldLeft(node)(())((_, n) => if pf.isDefinedAt(n) then buf += pf(n))
         buf.toList
 
     /** Collect values from all nodes in the tree that match a partial function (post-order). */
     def collectPostOrder[B](node: CstNode)(pf: PartialFunction[CstNode, B]): List[B] =
         val buf = ArrayBuffer.empty[B]
-        foldRight(node)(()) { (n, _) => if pf.isDefinedAt(n) then buf += pf(n) }
+        foldRight(node)(())((n, _) => if pf.isDefinedAt(n) then buf += pf(n))
         buf.toList
 
     /** Count all nodes in the tree. */
@@ -151,11 +153,11 @@ object CstVisitor:
 
 /** Extension methods for visiting and folding over CST nodes. */
 extension (node: CstNode)
-    def visit[A](visitor: CstVisitor[A]): A            = CstVisitor.visit(node, visitor)
-    def foldLeft[A](init: A)(f: (A, CstNode) => A): A  = CstVisitor.foldLeft(node)(init)(f)
-    def foldRight[A](init: A)(f: (CstNode, A) => A): A = CstVisitor.foldRight(node)(init)(f)
-    def fold[A](init: A)(f: (A, CstNode) => A): A      = CstVisitor.fold(node)(init)(f)
-    def children: List[CstNode]                        = CstVisitor.children(node)
+    def visit[A](visitor: CstVisitor[A]): A                           = CstVisitor.visit(node, visitor)
+    def foldLeft[A](init: A)(f: (A, CstNode) => A): A                 = CstVisitor.foldLeft(node)(init)(f)
+    def foldRight[A](init: A)(f: (CstNode, A) => A): A                = CstVisitor.foldRight(node)(init)(f)
+    def fold[A](init: A)(f: (A, CstNode) => A): A                     = CstVisitor.fold(node)(init)(f)
+    def children: List[CstNode]                                       = CstVisitor.children(node)
     def collect[B](pf: PartialFunction[CstNode, B]): List[B]          = CstVisitor.collect(node)(pf)
     def collectPostOrder[B](pf: PartialFunction[CstNode, B]): List[B] = CstVisitor.collectPostOrder(node)(pf)
-    def count: Int                                                     = CstVisitor.count(node)
+    def count: Int                                                    = CstVisitor.count(node)
