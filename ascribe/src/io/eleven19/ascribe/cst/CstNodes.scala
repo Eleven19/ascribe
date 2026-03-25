@@ -54,6 +54,10 @@ case class CstDelimitedBlock(
 enum DelimitedBlockKind derives CanEqual:
     case Listing, Literal, Sidebar, Example, Quote, Open, Pass, Comment
 
+// Note: CstBlockContent and CstCellContent extend CstNode rather than being
+// standalone traits as in the spec. This is an intentional improvement: it
+// allows these subtypes to be used uniformly wherever CstNode is expected
+// (e.g. in CstVisitor dispatch), without requiring a separate trait hierarchy.
 sealed trait CstBlockContent extends CstNode
 
 case class CstVerbatimContent(raw: String)(val span: Span) extends CstBlockContent derives CanEqual
@@ -92,7 +96,12 @@ case class CstLineComment(
     content: String
 )(val span: Span) extends CstBlock derives CanEqual
 
-/** Attribute entry: `:name: value` */
+/** Attribute entry: `:name: value`
+ *
+ *  Note: The AsciiDoc unset form (`:!name:`) is not represented here — `value`
+ *  is always the raw string after the trailing `:`. Representing unset/negated
+ *  entries is out of scope for this CST iteration.
+ */
 case class CstAttributeEntry(
     name: String,
     value: String
@@ -128,10 +137,16 @@ case class CstBold(
     constrained: Boolean
 )(val span: Span) extends CstInline derives CanEqual
 
+// TODO: Add `constrained: Boolean` when constrained italic (`_text_`) is added
+// to the parser. Currently only unconstrained italic (`__text__`) is supported.
+// See spec Known Limitations.
 case class CstItalic(
     content: List[CstInline]
 )(val span: Span) extends CstInline derives CanEqual
 
+// TODO: Add `constrained: Boolean` when constrained monospace (`` `text` ``) is
+// added to the parser. Currently only unconstrained mono (` ``text`` `) is
+// supported. See spec Known Limitations.
 case class CstMono(
     content: List[CstInline]
 )(val span: Span) extends CstInline derives CanEqual
