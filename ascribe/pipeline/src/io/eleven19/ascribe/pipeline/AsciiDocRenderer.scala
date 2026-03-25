@@ -1,0 +1,157 @@
+package io.eleven19.ascribe.pipeline
+
+import io.eleven19.ascribe.ast.*
+import kyo.<
+
+/** Renders AST nodes back to AsciiDoc source text.
+  *
+  * This is the inverse of parsing: given an AST Document, produce AsciiDoc that would parse back to equivalent AST.
+  * Delimiter lengths, heading levels, and markup styles are preserved from the original AST.
+  */
+object AsciiDocRenderer extends Renderer[Any]:
+
+    def render(document: Document): String < Any =
+        val sb = new StringBuilder
+        document.header.foreach { header =>
+            sb.append("= ").append(renderInlines(header.title)).append('\n'): Unit
+            header.attributes.foreach { (key, value) =>
+                sb.append(':').append(key).append(':'): Unit
+                if value.nonEmpty then { sb.append(' ').append(value): Unit }
+                sb.append('\n'): Unit
+            }
+        }
+        if document.header.isDefined && document.blocks.nonEmpty then { sb.append('\n'): Unit }
+        renderBlocks(document.blocks, sb)
+        sb.toString
+
+    /** Render a single block to AsciiDoc source. */
+    def renderBlock(block: Block): String =
+        val sb = new StringBuilder
+        renderBlockTo(block, sb)
+        sb.toString
+
+    private def renderBlocks(blocks: List[Block], sb: StringBuilder): Unit =
+        blocks.zipWithIndex.foreach { (block, idx) =>
+            if idx > 0 then { sb.append('\n'): Unit }
+            renderBlockTo(block, sb)
+        }
+
+    private def renderBlockTo(block: Block, sb: StringBuilder): Unit = block match
+        case Heading(level, title) =>
+            sb.append("=" * (level + 1)).append(' ').append(renderInlines(title)).append('\n'): Unit
+
+        case Section(level, title, blocks) =>
+            sb.append("=" * (level + 1)).append(' ').append(renderInlines(title)).append('\n'): Unit
+            if blocks.nonEmpty then
+                sb.append('\n'): Unit
+                renderBlocks(blocks, sb)
+
+        case Paragraph(content) =>
+            sb.append(renderInlines(content)).append('\n'): Unit
+
+        case Listing(delimiter, content, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n').append(content).append('\n').append(delimiter).append('\n'): Unit
+
+        case Literal(delimiter, content, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n').append(content).append('\n').append(delimiter).append('\n'): Unit
+
+        case Comment(delimiter, content) =>
+            sb.append(delimiter).append('\n').append(content).append('\n').append(delimiter).append('\n'): Unit
+
+        case Pass(delimiter, content, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n').append(content).append('\n').append(delimiter).append('\n'): Unit
+
+        case Sidebar(delimiter, blocks, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n'): Unit
+            renderBlocks(blocks, sb)
+            sb.append('\n').append(delimiter).append('\n'): Unit
+
+        case Example(delimiter, blocks, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n'): Unit
+            renderBlocks(blocks, sb)
+            sb.append('\n').append(delimiter).append('\n'): Unit
+
+        case Quote(delimiter, blocks, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n'): Unit
+            renderBlocks(blocks, sb)
+            sb.append('\n').append(delimiter).append('\n'): Unit
+
+        case Open(delimiter, blocks, attrs, title) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n'): Unit
+            renderBlocks(blocks, sb)
+            sb.append('\n').append(delimiter).append('\n'): Unit
+
+        case Table(rows, delimiter, format, attrs, title, _) =>
+            renderBlockMetadata(title, attrs, sb)
+            sb.append(delimiter).append('\n'): Unit
+            rows.foreach { row =>
+                format match
+                    case TableFormat.PSV =>
+                        row.cells.foreach { cell =>
+                            sb.append("| "): Unit
+                            cell.content match
+                                case CellContent.Inlines(inlines) => sb.append(renderInlines(inlines)): Unit
+                                case CellContent.Blocks(blocks)   => renderBlocks(blocks, sb)
+                            sb.append('\n'): Unit
+                        }
+                    case TableFormat.CSV =>
+                        sb.append(row.cells.map(renderCellContent).mkString(",")).append('\n'): Unit
+                    case TableFormat.DSV =>
+                        sb.append(row.cells.map(renderCellContent).mkString(":")).append('\n'): Unit
+                    case TableFormat.TSV =>
+                        sb.append(row.cells.map(renderCellContent).mkString("\t")).append('\n'): Unit
+                sb.append('\n'): Unit
+            }
+            sb.append(delimiter).append('\n'): Unit
+
+        case UnorderedList(items) =>
+            items.foreach { item =>
+                sb.append("* ").append(renderInlines(item.content)).append('\n'): Unit
+            }
+
+        case OrderedList(items) =>
+            items.foreach { item =>
+                sb.append(". ").append(renderInlines(item.content)).append('\n'): Unit
+            }
+
+    private def renderCellContent(cell: TableCell): String =
+        cell.content match
+            case CellContent.Inlines(inlines) => renderInlines(inlines)
+            case CellContent.Blocks(blocks)   => blocks.map(renderBlock).mkString
+
+    private def renderBlockMetadata(
+        title: Option[Title],
+        attrs: Option[AttributeList],
+        sb: StringBuilder
+    ): Unit =
+        title.foreach { t =>
+            sb.append('.').append(renderInlines(t.content)).append('\n'): Unit
+        }
+        attrs.foreach { al =>
+            sb.append('['): Unit
+            val parts = scala.collection.mutable.ListBuffer.empty[String]
+            al.positional.foreach(v => parts += v.value)
+            al.named.foreach((k, v) => parts += s"${k.value}=${v.value}")
+            al.options.foreach(o => parts += s"%${o.value}")
+            al.roles.foreach(r => parts += s".${r.value}")
+            sb.append(parts.mkString(",")).append(']').append('\n'): Unit
+        }
+
+    /** Render a list of inline elements to AsciiDoc source. */
+    def renderInlines(inlines: List[Inline]): String =
+        inlines.map(renderInline).mkString
+
+    /** Render a single inline element to AsciiDoc source. */
+    def renderInline(inline: Inline): String = inline match
+        case Text(content)            => content
+        case Bold(content)            => s"**${renderInlines(content)}**"
+        case ConstrainedBold(content) => s"*${renderInlines(content)}*"
+        case Italic(content)          => s"__${renderInlines(content)}__"
+        case Mono(content)            => s"``${renderInlines(content)}``"
