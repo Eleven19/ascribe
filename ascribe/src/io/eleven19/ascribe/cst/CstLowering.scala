@@ -2,7 +2,6 @@ package io.eleven19.ascribe.cst
 
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.ast.AttributeList.{AttributeName, AttributeValue, OptionName, RoleName}
-import io.eleven19.ascribe.parser.DocumentParser
 
 /** Lowers a `CstDocument` to the AST `Document` representation.
   *
@@ -25,7 +24,7 @@ object CstLowering:
         val blocks = cst.content
             .collect { case b: CstBlock => b }
             .flatMap(lowerBlock)
-        val restructured = DocumentParser.restructure(blocks)
+        val restructured = restructure(blocks)
         Document(header, restructured)(cst.span)
 
     private def lowerHeader(h: CstDocumentHeader): DocumentHeader =
@@ -110,7 +109,7 @@ object CstLowering:
                 CellContent.Blocks(blocks)
         TableCell(
             content,
-            cell.style.map(s => CellSpecifier.StyleOperator(s.charAt(0))),
+            cell.style.flatMap(s => s.headOption.map(CellSpecifier.StyleOperator(_))),
             cell.colSpan.map(CellSpecifier.ColSpanFactor(_)),
             cell.rowSpan.map(CellSpecifier.RowSpanFactor(_)),
             cell.dupFactor.map(CellSpecifier.DupFactor(_))
@@ -136,3 +135,20 @@ object CstLowering:
         case CstBold(content, true)  => ConstrainedBold(lowerInlines(content))(inline.span)
         case CstItalic(content)      => Italic(lowerInlines(content))(inline.span)
         case CstMono(content)        => Mono(lowerInlines(content))(inline.span)
+
+    private def restructure(blocks: List[Block]): List[Block] =
+        blocks match
+            case Nil => Nil
+            case (h: Heading) :: rest if h.level >= 2 =>
+                val sectionLevel = h.level - 1
+                val (nested, remaining) = rest.span {
+                    case hh: Heading if hh.level <= h.level => false
+                    case _                                  => true
+                }
+                val sectionSpan = nested.lastOption.map(_.span).getOrElse(h.span)
+                val section = Section(sectionLevel, h.title, restructure(nested))(
+                    Span(h.span.start, sectionSpan.end)
+                )
+                section :: restructure(remaining)
+            case head :: rest =>
+                head :: restructure(rest)

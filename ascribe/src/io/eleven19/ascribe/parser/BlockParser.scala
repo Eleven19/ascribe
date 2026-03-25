@@ -576,7 +576,7 @@ object BlockParser:
     val lineCommentBlock: Parsley[CstBlock] =
         atomic(
             (pos <~> (string("//") *> many(nonEolChar).map(_.mkString)) <~> pos <* eolOrEof)
-                .map { case ((s, content), e) => CstLineComment(content.stripLeading())(mkSpan(s, e)) }
+                .map { case ((s, content), e) => CstLineComment(content.stripPrefix(" "))(mkSpan(s, e)) }
         ).label("line comment")
 
     /** Parses an `include::target[attrs]` directive as a [[CstInclude]] node. */

@@ -38,3 +38,7 @@ object Ascribe:
       */
     def parseCst(source: String): Result[String, CstDocument] =
         DocumentParser.document.parse(source)
+
+extension (cst: CstDocument)
+    /** Lowers this CST to its [[ast.Document]] representation. */
+    def toAst: ast.Document = CstLowering.toAst(cst)

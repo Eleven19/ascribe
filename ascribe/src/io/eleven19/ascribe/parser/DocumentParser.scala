@@ -6,7 +6,7 @@ import parsley.character.{char, satisfy, string, stringOfSome}
 import parsley.combinator.option
 import parsley.position.pos
 
-import io.eleven19.ascribe.ast.{Block, Heading, Section, Span, mkSpan}
+import io.eleven19.ascribe.ast.mkSpan
 import io.eleven19.ascribe.cst.*
 import io.eleven19.ascribe.lexer.AsciiDocLexer.{blankLine, eolOrEof, nonEolChar}
 import io.eleven19.ascribe.parser.BlockParser.*
@@ -59,24 +59,3 @@ object DocumentParser:
             .map { case (((s, header), content), e) =>
                 CstDocument(header, content)(mkSpan(s, e))
             }
-
-    /** Exposed for [[io.eleven19.ascribe.cst.CstLowering]]. Restructures a flat list of blocks into Section nodes.
-      *
-      * Level-1 headings are NOT restructured; headings of level 2+ are wrapped into [[Section]] containers.
-      */
-    private[ascribe] def restructure(blocks: List[Block]): List[Block] =
-        blocks match
-            case Nil => Nil
-            case (h: Heading) :: rest if h.level >= 2 =>
-                val sectionLevel = h.level - 1
-                val (nested, remaining) = rest.span {
-                    case hh: Heading if hh.level <= h.level => false
-                    case _                                  => true
-                }
-                val sectionSpan = nested.lastOption.map(_.span).getOrElse(h.span)
-                val section = Section(sectionLevel, h.title, restructure(nested))(
-                    Span(h.span.start, sectionSpan.end)
-                )
-                section :: restructure(remaining)
-            case head :: rest =>
-                head :: restructure(rest)

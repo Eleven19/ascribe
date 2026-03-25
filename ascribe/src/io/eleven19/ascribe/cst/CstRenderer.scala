@@ -108,8 +108,10 @@ object CstRenderer:
     private def renderAttributeEntry(e: CstAttributeEntry, sb: StringBuilder): Unit =
         sb.append(':')
         sb.append(e.name)
-        sb.append(": ")
-        sb.append(e.value)
+        sb.append(':')
+        if e.value.nonEmpty then
+            sb.append(' ')
+            sb.append(e.value)
         sb.append('\n')
 
     private def renderAttributeList(al: CstAttributeList, sb: StringBuilder): Unit =

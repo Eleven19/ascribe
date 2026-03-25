@@ -41,6 +41,11 @@ trait CstVisitor[A]:
     def visitItalic(node: CstItalic): A = visitInline(node)
     def visitMono(node: CstMono): A     = visitInline(node)
 
+    def visitVerbatimContent(node: CstVerbatimContent): A = visitNode(node)
+    def visitNestedContent(node: CstNestedContent): A     = visitNode(node)
+    def visitCellInlines(node: CstCellInlines): A         = visitNode(node)
+    def visitCellBlocks(node: CstCellBlocks): A           = visitNode(node)
+
 /** Utilities for visiting and folding over CST trees.
   *
   * Traversal uses trampolining (`scala.util.control.TailCalls`) for stack safety, so arbitrarily deep CST trees can be
@@ -71,10 +76,10 @@ object CstVisitor:
         case n: CstBold            => visitor.visitBold(n)
         case n: CstItalic          => visitor.visitItalic(n)
         case n: CstMono            => visitor.visitMono(n)
-        case n: CstVerbatimContent => visitor.visitNode(n)
-        case n: CstNestedContent   => visitor.visitNode(n)
-        case n: CstCellInlines     => visitor.visitNode(n)
-        case n: CstCellBlocks      => visitor.visitNode(n)
+        case n: CstVerbatimContent => visitor.visitVerbatimContent(n)
+        case n: CstNestedContent   => visitor.visitNestedContent(n)
+        case n: CstCellInlines     => visitor.visitCellInlines(n)
+        case n: CstCellBlocks      => visitor.visitCellBlocks(n)
 
     /** Return all direct child nodes of a node. */
     def children(node: CstNode): List[CstNode] = node match

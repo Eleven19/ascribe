@@ -61,23 +61,35 @@ object IncludeResolver:
         maxDepth: Int,
         depth: Int
     ): List[CstTopLevel] < (Sync & Abort[PipelineError]) =
-        val isOptional = inc.attributes.positional.exists(_.contains("optional")) ||
-            inc.attributes.named.get("opts").exists(_.contains("optional"))
+        val isOptional =
+            inc.attributes.positional.exists { raw =>
+                raw.split(",").map(_.trim).exists { token =>
+                    if token.contains("=") then
+                        val kv = token.split("=", 2)
+                        kv(0).trim == "opts" && kv(1).trim.split(",").map(_.trim).contains("optional")
+                    else token == "optional"
+                }
+            } ||
+                inc.attributes.named.get("opts").exists(v => v.split(",").map(_.trim).contains("optional"))
         val targetPath = Path(baseDir.toJava.resolve(inc.target).toString)
         if depth >= maxDepth then
-            Abort.fail(PipelineError.ParseError(
-                s"Include depth limit ($maxDepth) exceeded for: ${inc.target}",
-                None
-            ))
+            Abort.fail(
+                PipelineError.ParseError(
+                    s"Include depth limit ($maxDepth) exceeded for: ${inc.target}",
+                    None
+                )
+            )
         else
             targetPath.exists.flatMap { exists =>
                 if !exists then
                     if isOptional then List.empty[CstTopLevel]
                     else
-                        Abort.fail(PipelineError.ParseError(
-                            s"Include file not found: ${inc.target}",
-                            None
-                        ))
+                        Abort.fail(
+                            PipelineError.ParseError(
+                                s"Include file not found: ${inc.target}",
+                                None
+                            )
+                        )
                 else
                     val parentDir = Path(targetPath.toJava.getParent.toString)
                     targetPath.read.flatMap { content =>
@@ -85,9 +97,11 @@ object IncludeResolver:
                             case Success(includedCst) =>
                                 resolveContent(includedCst.content, parentDir, maxDepth, depth + 1)
                             case Failure(msg) =>
-                                Abort.fail(PipelineError.ParseError(
-                                    s"Failed to parse include file ${inc.target}: $msg",
-                                    None
-                                ))
+                                Abort.fail(
+                                    PipelineError.ParseError(
+                                        s"Failed to parse include file ${inc.target}: $msg",
+                                        None
+                                    )
+                                )
                     }
             }

@@ -32,19 +32,13 @@ object FileSource:
             def read: DocumentTree < (Sync & Abort[PipelineError]) =
                 val docPath   = DocumentPath.fromString(file.toJava.getFileName.toString)
                 val parentDir = Path(file.toJava.getParent.toString)
-                file.read.map { rawContent =>
-                    parseCstOrAbort(rawContent, docPath).map { cst =>
+                file.read.flatMap { rawContent =>
+                    parseCstOrAbort(rawContent, docPath).flatMap { cst =>
                         IncludeResolver.resolve(cst, parentDir).map { resolved =>
                             DocumentTree.single(docPath, CstLowering.toAst(resolved))
                         }
                     }
                 }
-
-    private def parseOrAbort(content: String, docPath: DocumentPath): Document < Abort[PipelineError] =
-        Ascribe.parse(content) match
-            case parsley.Success(doc) => doc
-            case parsley.Failure(msg) =>
-                Abort.fail(PipelineError.ParseError(msg.toString, Some(docPath)))
 
     private def parseCstOrAbort(content: String, docPath: DocumentPath): CstDocument < Abort[PipelineError] =
         Ascribe.parseCst(content) match
@@ -71,9 +65,9 @@ object FileSource:
                 val relativePath = baseDir.toJava.relativize(head.toJava).toString
                 val docPath      = DocumentPath.fromString(relativePath)
                 val parentDir    = Path(head.toJava.getParent.toString)
-                head.read.map { rawContent =>
+                head.read.flatMap { rawContent =>
                     parseCstOrAbort(rawContent, docPath).flatMap { cst =>
-                        IncludeResolver.resolve(cst, parentDir).map { resolved =>
+                        IncludeResolver.resolve(cst, parentDir).flatMap { resolved =>
                             readPathList(baseDir, tail, (docPath, CstLowering.toAst(resolved)) :: acc)
                         }
                     }
