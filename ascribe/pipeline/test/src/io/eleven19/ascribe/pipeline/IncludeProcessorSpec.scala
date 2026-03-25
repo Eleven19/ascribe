@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.pipeline
 
-import kyo.{<, IO, Abort, Path, Result, Sync, direct, now}
+import kyo.{<, IO, Abort, Path, Result, Sync, Resource, direct, now}
 import kyo.test.KyoSpecDefault
 import io.eleven19.ascribe.ast.*
 
@@ -25,10 +25,10 @@ object IncludeProcessorSpec extends KyoSpecDefault:
         test("resolves basic include directive") {
             direct {
                 val tmpDir = makeTempDir.now
+                Resource.ensure(cleanup(tmpDir)).now
                 writeFile(tmpDir, "partial.adoc", "Included content.\n").now
                 val source = "Before.\n\ninclude::partial.adoc[]\n\nAfter.\n"
                 val result = Abort.run[PipelineError](IncludeProcessor.process(source, tmpDir)).now
-                cleanup(tmpDir).now
                 result match
                     case Result.Success(text) =>
                         zio.test.assertTrue(
@@ -42,11 +42,11 @@ object IncludeProcessorSpec extends KyoSpecDefault:
         test("resolves nested includes") {
             direct {
                 val tmpDir = makeTempDir.now
+                Resource.ensure(cleanup(tmpDir)).now
                 writeFile(tmpDir, "inner.adoc", "Inner content.\n").now
                 writeFile(tmpDir, "outer.adoc", "Outer start.\n\ninclude::inner.adoc[]\n\nOuter end.\n").now
                 val source = "Doc start.\n\ninclude::outer.adoc[]\n\nDoc end.\n"
                 val result = Abort.run[PipelineError](IncludeProcessor.process(source, tmpDir)).now
-                cleanup(tmpDir).now
                 result match
                     case Result.Success(text) =>
                         zio.test.assertTrue(
@@ -62,20 +62,20 @@ object IncludeProcessorSpec extends KyoSpecDefault:
         test("fails on missing include file") {
             direct {
                 val tmpDir = makeTempDir.now
+                Resource.ensure(cleanup(tmpDir)).now
                 val source = "include::missing.adoc[]\n"
                 val result = Abort.run[PipelineError](
                     IncludeProcessor.process(source, tmpDir)
                 ).now
-                cleanup(tmpDir).now
                 zio.test.assertTrue(!result.isSuccess)
             }
         },
         test("optional include silently skips missing file") {
             direct {
                 val tmpDir = makeTempDir.now
+                Resource.ensure(cleanup(tmpDir)).now
                 val source = "Before.\n\ninclude::missing.adoc[opts=optional]\n\nAfter.\n"
                 val result = Abort.run[PipelineError](IncludeProcessor.process(source, tmpDir)).now
-                cleanup(tmpDir).now
                 result match
                     case Result.Success(text) =>
                         zio.test.assertTrue(
@@ -89,12 +89,12 @@ object IncludeProcessorSpec extends KyoSpecDefault:
         test("include integrates with FileSource.fromFile") {
             direct {
                 val tmpDir = makeTempDir.now
+                Resource.ensure(cleanup(tmpDir)).now
                 writeFile(tmpDir, "snippet.adoc", "Snippet text.\n").now
                 writeFile(tmpDir, "main.adoc", "Main doc.\n\ninclude::snippet.adoc[]\n").now
                 val result = Abort.run[PipelineError](
                     FileSource.fromFile(Path(tmpDir.toJava.resolve("main.adoc").toString)).read
                 ).now
-                cleanup(tmpDir).now
                 result match
                     case Result.Success(tree) =>
                         val doc  = tree.allDocuments.head._2
@@ -112,9 +112,9 @@ object IncludeProcessorSpec extends KyoSpecDefault:
         test("lines without include directives pass through unchanged") {
             direct {
                 val tmpDir = makeTempDir.now
+                Resource.ensure(cleanup(tmpDir)).now
                 val source = "Line one.\nLine two.\nLine three.\n"
                 val result = Abort.run[PipelineError](IncludeProcessor.process(source, tmpDir)).now
-                cleanup(tmpDir).now
                 result match
                     case Result.Success(text) => zio.test.assertTrue(text == source.stripLineEnd)
                     case _                    => zio.test.assertTrue(false)
