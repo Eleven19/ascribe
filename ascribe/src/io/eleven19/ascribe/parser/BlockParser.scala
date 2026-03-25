@@ -196,11 +196,18 @@ object BlockParser:
     /** Blocks allowed inside a compound delimited block. Includes all delimited blocks (for nesting) plus headings,
       * lists, and paragraphs.
       */
+    /** Blocks allowed inside a compound delimited block. Open blocks cannot nest inside open blocks per spec. */
     private def compoundInnerBlock(parentDelim: String): Parsley[Block] =
+        val delimitedBlocks =
+            if parentDelim == "--" then
+                // Open blocks cannot nest inside open blocks per AsciiDoc spec
+                listingBlock | literalBlock | commentBlock | passBlock |
+                    sidebarBlock | exampleBlock | quoteBlock
+            else
+                listingBlock | literalBlock | commentBlock | passBlock |
+                    sidebarBlock | exampleBlock | quoteBlock | openBlock
         option(some(blankLine)).void *>
-            (listingBlock | literalBlock | commentBlock | passBlock |
-                sidebarBlock | exampleBlock | quoteBlock | openBlock |
-                heading | unorderedList | orderedList | paragraph)
+            (delimitedBlocks | heading | unorderedList | orderedList | paragraph)
 
     // -----------------------------------------------------------------------
     // Concrete delimited block parsers
@@ -265,27 +272,30 @@ object BlockParser:
             (delim, blocks, attrs, title, span) => QuoteBlock(delim, blocks, attrs, title)(span)
         ).label("quote block")
 
-    /** Open block: `--` (exactly 2 dashes, not 3+), compound content. Fixed length per spec. */
+    /** Open block: `--` (exactly 2 dashes, not 3+), compound content. Fixed length per spec. Cannot nest inside another
+      * open block.
+      */
     val openBlock: Parsley[Block] =
+        val openDelim = string("--") <* notFollowedBy(char('-'))
         val withAttrs = atomic(
             pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
-                (string("--") <* notFollowedBy(char('-')) <* eolOrEof)
+                (openDelim <* eolOrEof)
         ).flatMap { case (((s, title), attrs), _) =>
             (manyTill(
                 compoundInnerBlock("--"),
-                atomic(string("--") <* notFollowedBy(char('-')) <* eolOrEof)
-            ) <~> pos)
+                atomic(openDelim)
+            ) <~> pos <* eolOrEof)
                 .map { case (blocks, e) =>
                     OpenBlock("--", blocks, attrs, title)(mkSpan(s, e))
                 }
         }
         val plain = atomic(
-            pos <~> (string("--") <* notFollowedBy(char('-')) <* eolOrEof)
+            pos <~> (openDelim <* eolOrEof)
         ).flatMap { case (s, _) =>
             (manyTill(
                 compoundInnerBlock("--"),
-                atomic(string("--") <* notFollowedBy(char('-')) <* eolOrEof)
-            ) <~> pos)
+                atomic(openDelim)
+            ) <~> pos <* eolOrEof)
                 .map { case (blocks, e) =>
                     OpenBlock("--", blocks, None, None)(mkSpan(s, e))
                 }

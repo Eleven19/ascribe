@@ -17,11 +17,11 @@
           "value": "require 'sinatra'\n\nget '/hi' do\n  \"Hello World!\"\nend",
           "location": [
             {
-              "line": 2,
+              "line": 3,
               "col": 1
             },
             {
-              "line": 6,
+              "line": 7,
               "col": 3
             }
           ],

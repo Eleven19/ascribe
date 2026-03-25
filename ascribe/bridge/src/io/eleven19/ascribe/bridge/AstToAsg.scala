@@ -16,7 +16,7 @@ object AstToAsg:
         asg.Document(
             attributes = attributes,
             header = header,
-            blocks = Chunk.from(doc.blocks.map(convertBlock)),
+            blocks = Chunk.from(doc.blocks.flatMap(convertBlockOpt)),
             location = contentLocation(doc.span.start, lastContentPos(doc))
         )
 
@@ -39,7 +39,7 @@ object AstToAsg:
             asg.Section(
                 level = level,
                 title = Some(Chunk.from(title.map(convertInline))),
-                blocks = Chunk.from(blocks.map(convertBlock)),
+                blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
         case ast.Paragraph(content) =>
@@ -111,8 +111,9 @@ object AstToAsg:
         case ast.ListingBlock(delimiter, content, attrsOpt, titleOpt) =>
             // Block location spans from opening delimiter to closing delimiter
             val blockLoc = inclusiveLocation(block.span)
-            // Content location: lines inside the delimiters
-            val contentStartLine = block.span.start.line + 1
+            // Content location: lines inside the delimiters, accounting for metadata lines above
+            val metadataLines    = titleOpt.fold(0)(_ => 1) + attrsOpt.fold(0)(_ => 1)
+            val contentStartLine = block.span.start.line + metadataLines + 1
             val contentLines     = content.split("\n", -1)
             val lastLineLen      = contentLines.last.length
             val contentEndLine   = contentStartLine + contentLines.length - 1
@@ -144,11 +145,21 @@ object AstToAsg:
                 inlines = Chunk(asg.Text(content, contentLoc)),
                 location = blockLoc
             )
-        case ast.SidebarBlock(delimiter, blocks, _, _) =>
+        case ast.SidebarBlock(delimiter, blocks, attrsOpt, titleOpt) =>
+            val title = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            val metadata = attrsOpt.map(al =>
+                asg.BlockMetadata(
+                    attributes = al.named.map((k, v) => (k.value, v.value)),
+                    options = Chunk.from(al.options.map(_.value)),
+                    roles = Chunk.from(al.roles.map(_.value))
+                )
+            )
             asg.Sidebar(
+                title = title,
+                metadata = metadata,
                 form = "delimited",
                 delimiter = delimiter,
-                blocks = Chunk.from(blocks.map(convertBlock)),
+                blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                 location = inclusiveLocation(block.span)
             )
         case ast.ExampleBlock(delimiter, blocks, attrsOpt, titleOpt) =>
@@ -163,7 +174,7 @@ object AstToAsg:
                     form = "delimited",
                     delimiter = delimiter,
                     variant = style.get.toLowerCase,
-                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                     location = inclusiveLocation(block.span)
                 )
             else
@@ -171,7 +182,7 @@ object AstToAsg:
                     title = title,
                     form = "delimited",
                     delimiter = delimiter,
-                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                     location = inclusiveLocation(block.span)
                 )
         case ast.QuoteBlock(delimiter, blocks, attrsOpt, titleOpt) =>
@@ -196,12 +207,13 @@ object AstToAsg:
                     title = title,
                     form = "delimited",
                     delimiter = delimiter,
-                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                     location = inclusiveLocation(block.span)
                 )
-        case ast.LiteralBlock(delimiter, content, _, titleOpt) =>
+        case ast.LiteralBlock(delimiter, content, attrsOpt, titleOpt) =>
             val blockLoc         = inclusiveLocation(block.span)
-            val contentStartLine = block.span.start.line + 1
+            val metadataLines    = titleOpt.fold(0)(_ => 1) + attrsOpt.fold(0)(_ => 1)
+            val contentStartLine = block.span.start.line + metadataLines + 1
             val contentLines     = content.split("\n", -1)
             val lastLineLen      = contentLines.last.length
             val contentEndLine   = contentStartLine + contentLines.length - 1
@@ -217,26 +229,30 @@ object AstToAsg:
                 inlines = Chunk(asg.Text(content, contentLoc)),
                 location = blockLoc
             )
-        case ast.OpenBlock(delimiter, blocks, _, titleOpt) =>
+        case ast.OpenBlock(delimiter, blocks, attrsOpt, titleOpt) =>
             val title = titleOpt.map(bt => Chunk.from(bt.content.map(convertInline)))
+            val metadata = attrsOpt.map(al =>
+                asg.BlockMetadata(
+                    attributes = al.named.map((k, v) => (k.value, v.value)),
+                    options = Chunk.from(al.options.map(_.value)),
+                    roles = Chunk.from(al.roles.map(_.value))
+                )
+            )
             asg.Open(
                 title = title,
+                metadata = metadata,
                 form = "delimited",
                 delimiter = delimiter,
-                blocks = Chunk.from(blocks.map(convertBlock)),
+                blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                 location = inclusiveLocation(block.span)
             )
         case _: ast.CommentBlock =>
-            // Comment blocks are not preserved in the ASG per spec.
-            // Return an empty pass block as placeholder (will be filtered by caller if needed).
-            asg.Pass(
-                form = Some("delimited"),
-                delimiter = Some("////"),
-                location = inclusiveLocation(block.span)
-            )
-        case ast.PassBlock(delimiter, content, _, titleOpt) =>
+            // Comment blocks are filtered out — see convertBlockOpt
+            asg.Pass(location = inclusiveLocation(block.span))
+        case ast.PassBlock(delimiter, content, attrsOpt, titleOpt) =>
             val blockLoc         = inclusiveLocation(block.span)
-            val contentStartLine = block.span.start.line + 1
+            val metadataLines    = titleOpt.fold(0)(_ => 1) + attrsOpt.fold(0)(_ => 1)
+            val contentStartLine = block.span.start.line + metadataLines + 1
             val contentLines     = content.split("\n", -1)
             val lastLineLen      = contentLines.last.length
             val contentEndLine   = contentStartLine + contentLines.length - 1
@@ -266,6 +282,11 @@ object AstToAsg:
                 items = Chunk.from(items.map(convertListItem("."))),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
+
+    /** Convert a block, filtering out comment blocks (which are not preserved in the ASG per spec). */
+    private def convertBlockOpt(block: ast.Block): Option[asg.Block] = block match
+        case _: ast.CommentBlock => None
+        case other               => Some(convertBlock(other))
 
     private def convertListItem(marker: String)(item: ast.ListItem): asg.ListItem =
         asg.ListItem(
@@ -303,7 +324,7 @@ object AstToAsg:
                     colSpan = cell.colSpan.map(f => asg.ColSpan(f.value)),
                     rowSpan = cell.rowSpan.map(f => asg.RowSpan(f.value)),
                     dupCount = cell.dupFactor.map(f => asg.DupCount(f.value)),
-                    blocks = Chunk.from(blocks.map(convertBlock)),
+                    blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                     location = loc
                 )
 
