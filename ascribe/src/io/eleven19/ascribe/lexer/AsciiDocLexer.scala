@@ -76,7 +76,8 @@ object AsciiDocLexer:
       */
     def isContentChar(c: Char): Boolean =
         !c.isControl && c != '\n' && c != '\r' &&
-            c != '*' && c != '_' && c != '`'
+            c != '*' && c != '_' && c != '`' &&
+            c != '{' && c != '}'
 
     /** Parses a single unadorned prose character. */
     val contentChar: Parsley[Char] = satisfy(isContentChar)
@@ -91,4 +92,4 @@ object AsciiDocLexer:
       * delimiter sequence does not open a valid span.
       */
     val unpairedMarkupChar: Parsley[Char] =
-        satisfy(c => (c == '*' || c == '_' || c == '`') && c != '\n')
+        satisfy(c => (c == '*' || c == '_' || c == '`' || c == '{' || c == '}') && c != '\n')

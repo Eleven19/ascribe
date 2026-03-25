@@ -80,5 +80,15 @@ object InlineParserSpec extends ZIOSpecDefault:
                         ))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
+        ),
+        suite("attribute refs")(
+            test("bare {name} is not swallowed as plain text") {
+                parse("{version}") match
+                    case Success(inlines) =>
+                        // Currently parses as CstText("{version}") — after lexer fix it will not match plainText
+                        // This test verifies {version} is no longer a single CstText chunk
+                        assertTrue(inlines != List(CstText("{version}")(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
         )
     )
