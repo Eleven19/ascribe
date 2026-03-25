@@ -163,6 +163,31 @@ object DocumentTreeSpec extends ZIOSpecDefault:
             test("parentOption returns Some for non-root") {
                 val path = DocumentPath("a", "b")
                 assertTrue(path.parentOption == Some(DocumentPath("a")))
+            },
+            test("contains returns true when other is nested within") {
+                val dir  = DocumentPath("chapters")
+                val file = DocumentPath("chapters", "intro.adoc")
+                assertTrue(dir.contains(file))
+            },
+            test("contains returns false for same path") {
+                val path = DocumentPath("chapters")
+                assertTrue(!path.contains(path))
+            },
+            test("contains returns false for unrelated path") {
+                val dir  = DocumentPath("chapters")
+                val file = DocumentPath("appendix", "a.adoc")
+                assertTrue(!dir.contains(file))
+            },
+            test("root contains all non-root paths") {
+                assertTrue(DocumentPath.root.contains(DocumentPath("a.adoc")))
+            },
+            test("startsWith checks prefix") {
+                val path = DocumentPath("chapters", "intro.adoc")
+                assertTrue(
+                    path.startsWith(DocumentPath("chapters")),
+                    path.startsWith(DocumentPath.root),
+                    !path.startsWith(DocumentPath("appendix"))
+                )
             }
         )
     )

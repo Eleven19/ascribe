@@ -42,4 +42,12 @@ object DocumentPath:
         def depth: Int      = p.length
         def render: String  = p.mkString("/")
 
+        /** Whether `other` is within this path (i.e., this path is a prefix of `other`). */
+        def contains(other: DocumentPath): Boolean =
+            other.startsWith(p) && other.length > p.length
+
+        /** Whether this path starts with `prefix`. */
+        def startsWith(prefix: DocumentPath): Boolean =
+            p.startsWith(prefix)
+
     given CanEqual[DocumentPath, DocumentPath] = CanEqual.derived
