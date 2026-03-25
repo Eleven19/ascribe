@@ -2,6 +2,7 @@ package io.eleven19.ascribe.pipeline
 
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree, TreeNode}
+import io.eleven19.ascribe.cst.{CstDocument, CstLowering}
 import kyo.{<, Sync, Abort, Path, Chunk}
 
 /** A Source that reads `.adoc` files from a directory on the file system.
@@ -31,15 +32,17 @@ object FileSource:
             def read: DocumentTree < (Sync & Abort[PipelineError]) =
                 val docPath   = DocumentPath.fromString(file.toJava.getFileName.toString)
                 val parentDir = Path(file.toJava.getParent.toString)
-                file.read.map { rawContent =>
-                    IncludeProcessor.process(rawContent, parentDir).map { content =>
-                        parseOrAbort(content, docPath).map(doc => DocumentTree.single(docPath, doc))
+                file.read.flatMap { rawContent =>
+                    parseCstOrAbort(rawContent, docPath).flatMap { cst =>
+                        IncludeResolver.resolve(cst, parentDir).map { resolved =>
+                            DocumentTree.single(docPath, CstLowering.toAst(resolved))
+                        }
                     }
                 }
 
-    private def parseOrAbort(content: String, docPath: DocumentPath): Document < Abort[PipelineError] =
-        Ascribe.parse(content) match
-            case parsley.Success(doc) => doc
+    private def parseCstOrAbort(content: String, docPath: DocumentPath): CstDocument < Abort[PipelineError] =
+        Ascribe.parseCst(content) match
+            case parsley.Success(cst) => cst
             case parsley.Failure(msg) =>
                 Abort.fail(PipelineError.ParseError(msg.toString, Some(docPath)))
 
@@ -62,10 +65,10 @@ object FileSource:
                 val relativePath = baseDir.toJava.relativize(head.toJava).toString
                 val docPath      = DocumentPath.fromString(relativePath)
                 val parentDir    = Path(head.toJava.getParent.toString)
-                head.read.map { rawContent =>
-                    IncludeProcessor.process(rawContent, parentDir).map { content =>
-                        parseOrAbort(content, docPath).map { doc =>
-                            readPathList(baseDir, tail, (docPath, doc) :: acc)
+                head.read.flatMap { rawContent =>
+                    parseCstOrAbort(rawContent, docPath).flatMap { cst =>
+                        IncludeResolver.resolve(cst, parentDir).flatMap { resolved =>
+                            readPathList(baseDir, tail, (docPath, CstLowering.toAst(resolved)) :: acc)
                         }
                     }
                 }

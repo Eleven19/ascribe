@@ -3,11 +3,11 @@ package io.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
+import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.dsl.{*, given}
-import io.eleven19.ascribe.parser.DocumentParser.document as parseDocument
 
 object DocumentParserSpec extends ZIOSpecDefault:
-    private def parse(input: String) = parseDocument.parse(input)
+    private def parse(input: String) = Ascribe.parse(input)
 
     def spec = suite("DocumentParser")(
         suite("headings")(
