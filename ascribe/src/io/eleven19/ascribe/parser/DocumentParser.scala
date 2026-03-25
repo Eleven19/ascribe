@@ -61,7 +61,7 @@ object DocumentParser:
       * blocks until the next heading of equal or lesser level, or end of list. Level 1 headings (single `=`) are
       * document titles and are NOT restructured into sections.
       */
-    private def restructure(blocks: List[Block]): List[Block] =
+    private[ascribe] def restructure(blocks: List[Block]): List[Block] =
         blocks match
             case Nil => Nil
             case (h: Heading) :: rest if h.level >= 2 =>
