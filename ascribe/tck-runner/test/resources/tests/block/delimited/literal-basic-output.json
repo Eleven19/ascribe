@@ -1,0 +1,49 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "literal",
+      "form": "delimited",
+      "delimiter": "....",
+      "inlines": [
+        {
+          "name": "text",
+          "value": "  literal text\n  preserved formatting",
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 3,
+              "col": 22
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 4,
+          "col": 4
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 4,
+      "col": 4
+    }
+  ],
+  "type": "block"
+}

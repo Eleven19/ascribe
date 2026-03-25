@@ -1,0 +1,7 @@
+====
+Outer example.
+
+======
+Inner nested example.
+======
+====
