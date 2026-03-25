@@ -10,24 +10,24 @@ import parsley.position.pos
 import io.eleven19.ascribe.ast.{
     AttributeList,
     Block,
-    BlockTitle,
+    Title,
     CellContent,
     CellSpecifier,
-    CommentBlock,
-    ExampleBlock,
+    Comment,
+    Example,
     Heading,
     InlineContent,
     ListItem,
-    ListingBlock,
-    LiteralBlock,
-    OpenBlock,
+    Listing,
+    Literal,
+    Open,
     OrderedList,
     Paragraph,
-    PassBlock,
-    QuoteBlock,
-    SidebarBlock,
+    Pass,
+    Quote,
+    Sidebar,
     Span as AstSpan,
-    TableBlock,
+    Table,
     TableCell,
     TableFormat,
     TableRow,
@@ -137,7 +137,7 @@ object BlockParser:
     private def verbatimDelimitedBlock[B <: Block](
         delimChar: Char,
         minLen: Int,
-        build: (String, String, Option[AttributeList], Option[BlockTitle], AstSpan) => B
+        build: (String, String, Option[AttributeList], Option[Title], AstSpan) => B
     ): Parsley[Block] =
         val withAttrs = atomic(
             pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
@@ -166,7 +166,7 @@ object BlockParser:
     private def compoundDelimitedBlock[B <: Block](
         delimChar: Char,
         minLen: Int,
-        build: (String, List[Block], Option[AttributeList], Option[BlockTitle], AstSpan) => B
+        build: (String, List[Block], Option[AttributeList], Option[Title], AstSpan) => B
     ): Parsley[Block] =
         val withAttrs = atomic(
             pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
@@ -218,7 +218,7 @@ object BlockParser:
         verbatimDelimitedBlock(
             '-',
             4,
-            (delim, content, attrs, title, span) => ListingBlock(delim, content, attrs, title)(span)
+            (delim, content, attrs, title, span) => Listing(delim, content, attrs, title)(span)
         ).label("listing block")
 
     /** Literal block: `....` (4+ dots), verbatim content. */
@@ -226,7 +226,7 @@ object BlockParser:
         verbatimDelimitedBlock(
             '.',
             4,
-            (delim, content, attrs, title, span) => LiteralBlock(delim, content, attrs, title)(span)
+            (delim, content, attrs, title, span) => Literal(delim, content, attrs, title)(span)
         ).label("literal block")
 
     /** Comment block: `////` (4+ slashes), content is discarded. */
@@ -234,7 +234,7 @@ object BlockParser:
         verbatimDelimitedBlock(
             '/',
             4,
-            (delim, content, _, _, span) => CommentBlock(delim, content)(span)
+            (delim, content, _, _, span) => Comment(delim, content)(span)
         ).label("comment block")
 
     /** Passthrough block: `++++` (4+ pluses), raw content. */
@@ -242,7 +242,7 @@ object BlockParser:
         verbatimDelimitedBlock(
             '+',
             4,
-            (delim, content, attrs, title, span) => PassBlock(delim, content, attrs, title)(span)
+            (delim, content, attrs, title, span) => Pass(delim, content, attrs, title)(span)
         ).label("passthrough block")
 
     /** Sidebar block: `****` (4+ asterisks), compound content. */
@@ -250,7 +250,7 @@ object BlockParser:
         compoundDelimitedBlock(
             '*',
             4,
-            (delim, blocks, attrs, title, span) => SidebarBlock(delim, blocks, attrs, title)(span)
+            (delim, blocks, attrs, title, span) => Sidebar(delim, blocks, attrs, title)(span)
         ).label("sidebar block")
 
     /** Example block: `====` (4+ equals signs), compound content. Can be repurposed as admonition via
@@ -260,7 +260,7 @@ object BlockParser:
         compoundDelimitedBlock(
             '=',
             4,
-            (delim, blocks, attrs, title, span) => ExampleBlock(delim, blocks, attrs, title)(span)
+            (delim, blocks, attrs, title, span) => Example(delim, blocks, attrs, title)(span)
         ).label("example block")
 
     /** Quote block: `____` (4+ underscores), compound content. Can be repurposed as verse via `[verse]` style.
@@ -269,7 +269,7 @@ object BlockParser:
         compoundDelimitedBlock(
             '_',
             4,
-            (delim, blocks, attrs, title, span) => QuoteBlock(delim, blocks, attrs, title)(span)
+            (delim, blocks, attrs, title, span) => Quote(delim, blocks, attrs, title)(span)
         ).label("quote block")
 
     /** Open block: `--` (exactly 2 dashes, not 3+), compound content. Fixed length per spec. Cannot nest inside another
@@ -286,7 +286,7 @@ object BlockParser:
                 atomic(openDelim)
             ) <~> pos <* eolOrEof)
                 .map { case (blocks, e) =>
-                    OpenBlock("--", blocks, attrs, title)(mkSpan(s, e))
+                    Open("--", blocks, attrs, title)(mkSpan(s, e))
                 }
         }
         val plain = atomic(
@@ -297,7 +297,7 @@ object BlockParser:
                 atomic(openDelim)
             ) <~> pos <* eolOrEof)
                 .map { case (blocks, e) =>
-                    OpenBlock("--", blocks, None, None)(mkSpan(s, e))
+                    Open("--", blocks, None, None)(mkSpan(s, e))
                 }
         }
         (withAttrs | plain).label("open block")
@@ -374,9 +374,9 @@ object BlockParser:
     // -----------------------------------------------------------------------
 
     /** Parses a block title line: `.TitleText` (dot followed by non-dot, non-space content). */
-    val blockTitle: Parsley[BlockTitle] =
+    val blockTitle: Parsley[Title] =
         (pos <~> (char('.') *> notFollowedBy(char('.')) *> notFollowedBy(char(' ')) *> lineContent) <~> pos <* eolOrEof)
-            .map { case ((s, content), e) => BlockTitle(content)(mkSpan(s, e)) }
+            .map { case ((s, content), e) => Title(content)(mkSpan(s, e)) }
             .label("block title")
 
     // -----------------------------------------------------------------------
@@ -565,13 +565,13 @@ object BlockParser:
         )
 
     /** Parses a nested table block: `!===` delimiter with `!` cell separator. */
-    val nestedTableBlock: Parsley[Block] =
+    val nestedTable: Parsley[Block] =
         (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
             (atomic(string("!===")) <* eolOrEof) *>
             option(some(blankLine)).void *>
             nestedTableRows <~> pos <* eolOrEof)
             .map { case ((((s, title), attrs), rows), e) =>
-                TableBlock(rows, "!===", TableFormat.PSV, attrs, title)(mkSpan(s, e))
+                Table(rows, "!===", TableFormat.PSV, attrs, title)(mkSpan(s, e))
             }
             .label("nested table block")
 
@@ -579,7 +579,7 @@ object BlockParser:
 
     /** Parses block content within an a-style cell. Stops when it sees `|` at start of line or `|===`. */
     private val aCellBlock: Parsley[Block] =
-        nestedTableBlock | listingBlock | literalBlock | commentBlock | passBlock |
+        nestedTable | listingBlock | literalBlock | commentBlock | passBlock |
             sidebarBlock | exampleBlock | quoteBlock | openBlock |
             unorderedList | orderedList |
             // Paragraph: lines that don't start with |, !, delimiters
@@ -645,7 +645,7 @@ object BlockParser:
                                 .map { case ((headerRow, rows), e) =>
                                     val allRows            = headerRow.toList ++ rows
                                     val hasBlankAfterFirst = headerRow.isDefined
-                                    TableBlock(allRows, "|===", TableFormat.PSV, attrs, title, hasBlankAfterFirst)(
+                                    Table(allRows, "|===", TableFormat.PSV, attrs, title, hasBlankAfterFirst)(
                                         mkSpan(s, e)
                                     )
                                 }
@@ -661,7 +661,7 @@ object BlockParser:
                                         case Some("tsv") => TableFormat.TSV
                                         case Some("dsv") => TableFormat.DSV
                                         case _           => TableFormat.PSV
-                                    TableBlock(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
+                                    Table(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
                                 }
                     )
                 }
@@ -672,7 +672,7 @@ object BlockParser:
                 option(some(blankLine)).void *>
                 dataTableRows(',', true, ",===") <~> pos <* eolOrEof)
                 .map { case ((((s, title), attrs), rows), e) =>
-                    TableBlock(rows, ",===", TableFormat.CSV, attrs, title)(mkSpan(s, e))
+                    Table(rows, ",===", TableFormat.CSV, attrs, title)(mkSpan(s, e))
                 }
 
         val dsvTable =
@@ -681,7 +681,7 @@ object BlockParser:
                 option(some(blankLine)).void *>
                 dataTableRows(':', false, ":===") <~> pos <* eolOrEof)
                 .map { case ((((s, title), attrs), rows), e) =>
-                    TableBlock(rows, ":===", TableFormat.DSV, attrs, title)(mkSpan(s, e))
+                    Table(rows, ":===", TableFormat.DSV, attrs, title)(mkSpan(s, e))
                 }
 
         (psvTable | csvTable | dsvTable).label("table block")
