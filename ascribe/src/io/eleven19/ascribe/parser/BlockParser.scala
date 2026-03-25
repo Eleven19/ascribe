@@ -1,41 +1,15 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.{atomic, lookAhead, many, notFollowedBy, pure, some}
+import parsley.Parsley.{atomic, lookAhead, many, notFollowedBy, some}
 import parsley.character.{char, satisfy, string, stringOfSome}
 import parsley.combinator.{manyTill, option, sepEndBy}
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
-import io.eleven19.ascribe.ast.{
-    AttributeList,
-    Block,
-    Title,
-    CellContent,
-    CellSpecifier,
-    Comment,
-    Example,
-    Heading,
-    InlineContent,
-    ListItem,
-    Listing,
-    Literal,
-    Open,
-    OrderedList,
-    Paragraph,
-    Pass,
-    Quote,
-    Sidebar,
-    Span as AstSpan,
-    Table,
-    TableCell,
-    TableFormat,
-    TableRow,
-    Text,
-    UnorderedList,
-    mkSpan
-}
+import io.eleven19.ascribe.ast.{Span as AstSpan, TableFormat, mkSpan}
 import io.eleven19.ascribe.ast.AttributeList.{AttributeName, AttributeValue, OptionName, RoleName}
+import io.eleven19.ascribe.cst.*
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 import io.eleven19.ascribe.parser.InlineParser.*
 
@@ -45,11 +19,7 @@ import io.eleven19.ascribe.parser.InlineParser.*
   * start with a distinctive prefix (heading markers, list markers) are wrapped in [[atomic]] so that failures produce
   * clean backtracking.
   *
-  * ==Supported blocks==
-  *   - `= Title` through `===== Title` -- [[heading]]
-  *   - `* item` -- [[unorderedList]]
-  *   - `. item` -- [[orderedList]]
-  *   - everything else -- [[paragraph]]
+  * All parsers emit CST nodes (`CstBlock`, `CstTopLevel`, etc.).
   */
 object BlockParser:
 
@@ -57,10 +27,6 @@ object BlockParser:
     // Headings
     // -----------------------------------------------------------------------
 
-    /** Parses the leading `=`-markers of a heading and returns the heading level (1-5).
-      *
-      * Tries longer sequences first to avoid the two-character `==` matching before `===`.
-      */
     private val headingLevel: Parsley[Int] =
         atomic(string("=====")).as(5) |
             atomic(string("====")).as(4) |
@@ -68,20 +34,14 @@ object BlockParser:
             atomic(string("==")).as(2) |
             atomic(string("=")).as(1)
 
-    /** Parses a section heading using the Heading bridge constructor.
-      *
-      * Syntax: one to five `=` characters, a single space, then the title on the rest of the line. Level is determined
-      * by the number of `=` signs.
-      *
-      * {{{
-      * = Document title
-      * == Chapter
-      * === Section
-      * }}}
-      */
-    val heading: Parsley[Block] =
-        atomic(Heading(headingLevel <* char(' '), lineContent <* eolOrEof))
-            .label("heading")
+    val heading: Parsley[CstBlock] =
+        atomic(
+            (pos <~> (headingLevel <~> char(' ') *> lineContent) <~> pos <* eolOrEof)
+                .map { case ((s, (level, title)), e) =>
+                    val marker = "=" * level
+                    CstHeading(level, marker, title)(mkSpan(s, e))
+                }
+        ).label("heading")
             .explain(
                 "A heading starts with one to five equals signs followed by a space, e.g. = Title"
             )
@@ -90,55 +50,50 @@ object BlockParser:
     // Lists
     // -----------------------------------------------------------------------
 
-    /** Parses a single unordered list item line: `* content`. */
-    private val unorderedItem: Parsley[ListItem] =
-        atomic(ListItem(char('*') *> char(' ') *> lineContent <* eolOrEof))
-            .label("unordered list item")
+    private val unorderedItem: Parsley[CstListItem] =
+        atomic(
+            (pos <~> (char('*') *> char(' ') *> lineContent) <~> pos <* eolOrEof)
+                .map { case ((s, content), e) => CstListItem("* ", content)(mkSpan(s, e)) }
+        ).label("unordered list item")
 
-    /** Parses one or more consecutive `* item` lines as an [[UnorderedList]]. */
-    val unorderedList: Parsley[Block] =
-        UnorderedList(some(unorderedItem).map(_.toList))
+    val unorderedList: Parsley[CstBlock] =
+        (pos <~> some(unorderedItem).map(_.toList) <~> pos)
+            .map { case ((s, items), e) => CstList(ListVariant.Unordered, items)(mkSpan(s, e)) }
             .label("unordered list")
 
-    /** Parses a single ordered list item line: `. content`. */
-    private val orderedItem: Parsley[ListItem] =
-        atomic(ListItem(char('.') *> char(' ') *> lineContent <* eolOrEof))
-            .label("ordered list item")
+    private val orderedItem: Parsley[CstListItem] =
+        atomic(
+            (pos <~> (char('.') *> char(' ') *> lineContent) <~> pos <* eolOrEof)
+                .map { case ((s, content), e) => CstListItem(". ", content)(mkSpan(s, e)) }
+        ).label("ordered list item")
 
-    /** Parses one or more consecutive `. item` lines as an [[OrderedList]]. */
-    val orderedList: Parsley[Block] =
-        OrderedList(some(orderedItem).map(_.toList))
+    val orderedList: Parsley[CstBlock] =
+        (pos <~> some(orderedItem).map(_.toList) <~> pos)
+            .map { case ((s, items), e) => CstList(ListVariant.Ordered, items)(mkSpan(s, e)) }
             .label("ordered list")
 
     // -----------------------------------------------------------------------
     // Delimited blocks
     // -----------------------------------------------------------------------
 
-    /** Parses a line of text (any chars until newline), returning the content without the newline. */
     private val rawLine: Parsley[String] =
         many(nonEolChar).map(_.mkString) <* eolOrEof
 
-    /** One or more consecutive blank lines. */
+    /** One or more consecutive blank lines (consumed as separator, not captured). */
     private val blankLine: Parsley[Unit] = (hspaces *> eol).void
 
     // -----------------------------------------------------------------------
     // Generic delimited block parsers (variable-length fences)
     // -----------------------------------------------------------------------
 
-    /** Parses a delimiter line: 'minLen' or more repetitions of 'delimChar', alone on a line. Returns the matched
-      * delimiter string.
-      */
     private def delimiterLine(delimChar: Char, minLen: Int): Parsley[String] =
         some(char(delimChar)).map(_.mkString).filter(_.length >= minLen) <* eolOrEof
 
-    /** Parses a verbatim delimited block (listing, literal, comment, passthrough). Content lines are collected as raw
-      * strings; no inline parsing. The closing delimiter must match the opening delimiter exactly.
-      */
-    private def verbatimDelimitedBlock[B <: Block](
+    private def verbatimDelimitedBlock(
         delimChar: Char,
         minLen: Int,
-        build: (String, String, Option[AttributeList], Option[Title], AstSpan) => B
-    ): Parsley[Block] =
+        kind: DelimitedBlockKind
+    ): Parsley[CstBlock] =
         val withAttrs = atomic(
             pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
                 delimiterLine(delimChar, minLen)
@@ -146,58 +101,54 @@ object BlockParser:
             (manyTill(rawLine, atomic(string(delim))) <~> pos <* eolOrEof)
                 .map { case (lines, e) =>
                     val content = lines.mkString("\n").stripSuffix("\n")
-                    build(delim, content, attrs, title, mkSpan(s, e))
+                    CstDelimitedBlock(kind, delim, CstVerbatimContent(content)(mkSpan(s, e)), attrs, title)(mkSpan(s, e))
                 }
         }
-        val plain = atomic(
-            pos <~> delimiterLine(delimChar, minLen)
-        ).flatMap { case (s, delim) =>
+        val plain = atomic(pos <~> delimiterLine(delimChar, minLen)).flatMap { case (s, delim) =>
             (manyTill(rawLine, atomic(string(delim))) <~> pos <* eolOrEof)
                 .map { case (lines, e) =>
                     val content = lines.mkString("\n").stripSuffix("\n")
-                    build(delim, content, None, None, mkSpan(s, e))
+                    CstDelimitedBlock(kind, delim, CstVerbatimContent(content)(mkSpan(s, e)), None, None)(mkSpan(s, e))
                 }
         }
         withAttrs | plain
 
-    /** Parses a compound delimited block (sidebar, example, quote, open). Content is recursively parsed as blocks. The
-      * closing delimiter must match the opening delimiter exactly.
-      */
-    private def compoundDelimitedBlock[B <: Block](
+    private def compoundDelimitedBlock(
         delimChar: Char,
         minLen: Int,
-        build: (String, List[Block], Option[AttributeList], Option[Title], AstSpan) => B
-    ): Parsley[Block] =
+        kind: DelimitedBlockKind
+    ): Parsley[CstBlock] =
+        // Stop only on an exact-length delimiter — notFollowedBy(char(delimChar)) prevents matching
+        // a shorter delimiter as a prefix of a longer nested delimiter (e.g. ==== inside ======).
+        def exactStop(delim: String): Parsley[Unit] =
+            atomic((string(delim) <* notFollowedBy(char(delimChar))).void)
         val withAttrs = atomic(
             pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
                 delimiterLine(delimChar, minLen)
         ).flatMap { case (((s, title), attrs), delim) =>
             (manyTill(
                 compoundInnerBlock(delim),
-                atomic(string(delim))
+                exactStop(delim)
             ) <~> pos <* eolOrEof)
-                .map { case (blocks, e) =>
-                    build(delim, blocks, attrs, title, mkSpan(s, e))
+                .map { case (children, e) =>
+                    CstDelimitedBlock(kind, delim, CstNestedContent(children)(mkSpan(s, e)), attrs, title)(mkSpan(s, e))
                 }
         }
-        val plain = atomic(
-            pos <~> delimiterLine(delimChar, minLen)
-        ).flatMap { case (s, delim) =>
+        val plain = atomic(pos <~> delimiterLine(delimChar, minLen)).flatMap { case (s, delim) =>
             (manyTill(
                 compoundInnerBlock(delim),
-                atomic(string(delim))
+                exactStop(delim)
             ) <~> pos <* eolOrEof)
-                .map { case (blocks, e) =>
-                    build(delim, blocks, None, None, mkSpan(s, e))
+                .map { case (children, e) =>
+                    CstDelimitedBlock(kind, delim, CstNestedContent(children)(mkSpan(s, e)), None, None)(mkSpan(s, e))
                 }
         }
         withAttrs | plain
 
-    /** Blocks allowed inside a compound delimited block. Includes all delimited blocks (for nesting) plus headings,
-      * lists, and paragraphs.
+    /** Blocks allowed inside a compound delimited block. Includes blank lines, comments, includes,
+      * attribute entries, all delimited blocks (for nesting), headings, lists, and paragraphs.
       */
-    /** Blocks allowed inside a compound delimited block. Open blocks cannot nest inside open blocks per spec. */
-    private def compoundInnerBlock(parentDelim: String): Parsley[Block] =
+    private def compoundInnerBlock(parentDelim: String): Parsley[CstTopLevel] =
         val delimitedBlocks =
             if parentDelim == "--" then
                 // Open blocks cannot nest inside open blocks per AsciiDoc spec
@@ -206,76 +157,24 @@ object BlockParser:
             else
                 listingBlock | literalBlock | commentBlock | passBlock |
                     sidebarBlock | exampleBlock | quoteBlock | openBlock
-        option(some(blankLine)).void *>
+        cstBlankLine |
+            lineCommentBlock | includeDirective | attributeEntryBlock |
             (delimitedBlocks | heading | unorderedList | orderedList | paragraph)
 
     // -----------------------------------------------------------------------
     // Concrete delimited block parsers
     // -----------------------------------------------------------------------
 
-    /** Listing block: `----` (4+ dashes), verbatim content. */
-    val listingBlock: Parsley[Block] =
-        verbatimDelimitedBlock(
-            '-',
-            4,
-            (delim, content, attrs, title, span) => Listing(delim, content, attrs, title)(span)
-        ).label("listing block")
+    val listingBlock: Parsley[CstBlock] = verbatimDelimitedBlock('-', 4, DelimitedBlockKind.Listing).label("listing block")
+    val literalBlock: Parsley[CstBlock] = verbatimDelimitedBlock('.', 4, DelimitedBlockKind.Literal).label("literal block")
+    val commentBlock: Parsley[CstBlock] = verbatimDelimitedBlock('/', 4, DelimitedBlockKind.Comment).label("comment block")
+    val passBlock:    Parsley[CstBlock] = verbatimDelimitedBlock('+', 4, DelimitedBlockKind.Pass).label("passthrough block")
 
-    /** Literal block: `....` (4+ dots), verbatim content. */
-    val literalBlock: Parsley[Block] =
-        verbatimDelimitedBlock(
-            '.',
-            4,
-            (delim, content, attrs, title, span) => Literal(delim, content, attrs, title)(span)
-        ).label("literal block")
+    val sidebarBlock: Parsley[CstBlock] = compoundDelimitedBlock('*', 4, DelimitedBlockKind.Sidebar).label("sidebar block")
+    val exampleBlock: Parsley[CstBlock] = compoundDelimitedBlock('=', 4, DelimitedBlockKind.Example).label("example block")
+    val quoteBlock:   Parsley[CstBlock] = compoundDelimitedBlock('_', 4, DelimitedBlockKind.Quote).label("quote block")
 
-    /** Comment block: `////` (4+ slashes), content is discarded. */
-    val commentBlock: Parsley[Block] =
-        verbatimDelimitedBlock(
-            '/',
-            4,
-            (delim, content, _, _, span) => Comment(delim, content)(span)
-        ).label("comment block")
-
-    /** Passthrough block: `++++` (4+ pluses), raw content. */
-    val passBlock: Parsley[Block] =
-        verbatimDelimitedBlock(
-            '+',
-            4,
-            (delim, content, attrs, title, span) => Pass(delim, content, attrs, title)(span)
-        ).label("passthrough block")
-
-    /** Sidebar block: `****` (4+ asterisks), compound content. */
-    val sidebarBlock: Parsley[Block] =
-        compoundDelimitedBlock(
-            '*',
-            4,
-            (delim, blocks, attrs, title, span) => Sidebar(delim, blocks, attrs, title)(span)
-        ).label("sidebar block")
-
-    /** Example block: `====` (4+ equals signs), compound content. Can be repurposed as admonition via
-      * `[NOTE]`/`[TIP]`/etc. style.
-      */
-    val exampleBlock: Parsley[Block] =
-        compoundDelimitedBlock(
-            '=',
-            4,
-            (delim, blocks, attrs, title, span) => Example(delim, blocks, attrs, title)(span)
-        ).label("example block")
-
-    /** Quote block: `____` (4+ underscores), compound content. Can be repurposed as verse via `[verse]` style.
-      */
-    val quoteBlock: Parsley[Block] =
-        compoundDelimitedBlock(
-            '_',
-            4,
-            (delim, blocks, attrs, title, span) => Quote(delim, blocks, attrs, title)(span)
-        ).label("quote block")
-
-    /** Open block: `--` (exactly 2 dashes, not 3+), compound content. Fixed length per spec. Cannot nest inside another
-      * open block.
-      */
-    val openBlock: Parsley[Block] =
+    val openBlock: Parsley[CstBlock] =
         val openDelim = string("--") <* notFollowedBy(char('-'))
         val withAttrs = atomic(
             pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
@@ -285,19 +184,17 @@ object BlockParser:
                 compoundInnerBlock("--"),
                 atomic(openDelim)
             ) <~> pos <* eolOrEof)
-                .map { case (blocks, e) =>
-                    Open("--", blocks, attrs, title)(mkSpan(s, e))
+                .map { case (children, e) =>
+                    CstDelimitedBlock(DelimitedBlockKind.Open, "--", CstNestedContent(children)(mkSpan(s, e)), attrs, title)(mkSpan(s, e))
                 }
         }
-        val plain = atomic(
-            pos <~> (openDelim <* eolOrEof)
-        ).flatMap { case (s, _) =>
+        val plain = atomic(pos <~> (openDelim <* eolOrEof)).flatMap { case (s, _) =>
             (manyTill(
                 compoundInnerBlock("--"),
                 atomic(openDelim)
             ) <~> pos <* eolOrEof)
-                .map { case (blocks, e) =>
-                    Open("--", blocks, None, None)(mkSpan(s, e))
+                .map { case (children, e) =>
+                    CstDelimitedBlock(DelimitedBlockKind.Open, "--", CstNestedContent(children)(mkSpan(s, e)), None, None)(mkSpan(s, e))
                 }
         }
         (withAttrs | plain).label("open block")
@@ -306,18 +203,16 @@ object BlockParser:
     // Attribute lists
     // -----------------------------------------------------------------------
 
-    /** ADT for individual entries within an attribute list. */
+    /** ADT for individual entries within an attribute list. Uses AST opaque types internally. */
     private enum AttrEntry:
         case Named(key: AttributeName, value: AttributeValue)
         case Opt(name: OptionName)
         case Role(name: RoleName)
         case Positional(value: AttributeValue)
 
-    /** Parses a double-quoted string value (content between `"` delimiters). */
     private val quotedValue: Parsley[String] =
         char('"') *> stringOfSome(satisfy(c => c != '"' && c != '\n' && c != '\r')) <* char('"')
 
-    /** Parses an unquoted attribute value (stops at `,`, `]`, `"`, newline, and shorthand prefixes). */
     private val unquotedValue: Parsley[String] =
         stringOfSome(
             satisfy(c =>
@@ -325,12 +220,8 @@ object BlockParser:
             )
         )
 
-    /** Characters that delimit shorthand entries in an attribute list. */
     private val shorthandChars = Set(',', ']', '%', '#', '.', '\n', '\r')
 
-    /** Parses a single attribute entry: option (`%name`), id shorthand (`#id`), role shorthand (`.role`), named
-      * (`key=value`), or positional (bare value).
-      */
     private val attrEntry: Parsley[AttrEntry] =
         (char('%') *> stringOfSome(satisfy(c => !shorthandChars(c))))
             .map(s => AttrEntry.Opt(OptionName(s.trim))) |
@@ -344,143 +235,121 @@ object BlockParser:
                 .map(s => AttrEntry.Positional(AttributeValue(s.trim)))
 
     /** Parses a single attribute list line: `[key=value, %option, .role]`. */
-    val attributeListLine: Parsley[AttributeList] =
-        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(
-            ']'
-        ) <* eolOrEof) <~> pos)
+    val attributeListLine: Parsley[CstAttributeList] =
+        (pos <~> (char('[') *> sepEndBy(attrEntry, option(char(',') *> option(char(' ')).void).void) <* char(']') <* eolOrEof) <~> pos)
             .map { case ((s, entries), e) =>
-                val positional = entries.collect { case AttrEntry.Positional(v) => v }.toList
-                val named      = entries.collect { case AttrEntry.Named(k, v) => (k, v) }.toMap
-                val options    = entries.collect { case AttrEntry.Opt(o) => o }.toList
-                val roles      = entries.collect { case AttrEntry.Role(r) => r }.toList
-                AttributeList(positional, named, options, roles)(mkSpan(s, e))
+                val positional = entries.collect { case AttrEntry.Positional(v) => v.value }.toList
+                val named      = entries.collect { case AttrEntry.Named(k, v) => (k.value, v.value) }.toMap
+                val options    = entries.collect { case AttrEntry.Opt(o) => o.value }.toList
+                val roles      = entries.collect { case AttrEntry.Role(r) => r.value }.toList
+                CstAttributeList(positional, named, options, roles)(mkSpan(s, e))
             }
             .label("attribute list")
 
-    /** Parses zero or more attribute list lines and merges them into a single optional [[AttributeList]]. */
-    val attributeLists: Parsley[Option[AttributeList]] =
+    /** Parses zero or more attribute list lines and merges them into a single optional [[CstAttributeList]]. */
+    val attributeLists: Parsley[Option[CstAttributeList]] =
         many(attributeListLine).map {
             case Nil => None
             case first :: rest =>
-                Some(
-                    rest.foldLeft(first)((acc, al) =>
-                        AttributeList.merge(acc, al)(io.eleven19.ascribe.ast.Span(acc.span.start, al.span.end))
-                    )
-                )
+                Some(rest.foldLeft(first)((acc, al) =>
+                    CstAttributeList(
+                        acc.positional ++ al.positional,
+                        acc.named ++ al.named,
+                        acc.options ++ al.options,
+                        acc.roles ++ al.roles
+                    )(AstSpan(acc.span.start, al.span.end))
+                ))
         }
 
     // -----------------------------------------------------------------------
     // Block title
     // -----------------------------------------------------------------------
 
-    /** Parses a block title line: `.TitleText` (dot followed by non-dot, non-space content). */
-    val blockTitle: Parsley[Title] =
+    val blockTitle: Parsley[CstBlockTitle] =
         (pos <~> (char('.') *> notFollowedBy(char('.')) *> notFollowedBy(char(' ')) *> lineContent) <~> pos <* eolOrEof)
-            .map { case ((s, content), e) => Title(content)(mkSpan(s, e)) }
+            .map { case ((s, content), e) => CstBlockTitle(content)(mkSpan(s, e)) }
             .label("block title")
 
     // -----------------------------------------------------------------------
     // Tables
     // -----------------------------------------------------------------------
 
-    /** Content of a single table cell (everything after `| ` until next `|` or end of line). Stops consuming before
-      * trailing spaces that precede a `|` or end of line.
-      */
-    private val cellContent: Parsley[InlineContent] =
+    private val cellContent: Parsley[List[CstInline]] =
         many(
             boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
-                Text(stringOfSome(satisfy(c => isContentChar(c) && c != '|'))) |
+                (pos <~> stringOfSome(satisfy(c => isContentChar(c) && c != '|')) <~> pos)
+                    .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)) } |
                 (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
-                    io.eleven19.ascribe.ast.Text(c.toString)(mkSpan(s, e)): io.eleven19.ascribe.ast.Inline
+                    CstText(c.toString)(mkSpan(s, e)): CstInline
                 }
         )
 
-    /** Trim trailing whitespace from the last Text node in a cell's inline content. */
-    private def trimCellContent(content: InlineContent): InlineContent =
+    private def trimCellContent(content: List[CstInline]): List[CstInline] =
         content match
-            case init :+ (t: io.eleven19.ascribe.ast.Text) =>
+            case init :+ (t: CstText) =>
                 val trimmed = t.content.stripTrailing()
                 if trimmed.isEmpty then init
-                else init :+ io.eleven19.ascribe.ast.Text(trimmed)(t.span)
+                else init :+ CstText(trimmed)(t.span)
             case other => other
 
-    import CellSpecifier.{ColSpanFactor, DupFactor, RowSpanFactor, StyleOperator}
-
-    /** Parsed cell specifier: optional span/duplication factors and style operator. */
+    /** Parsed cell specifier using plain primitive types (not opaque). */
     private case class CellSpec(
-        colSpan: Option[ColSpanFactor] = None,
-        rowSpan: Option[RowSpanFactor] = None,
-        dupFactor: Option[DupFactor] = None,
-        style: Option[StyleOperator] = None
+        colSpan: Option[Int] = None,
+        rowSpan: Option[Int] = None,
+        dupFactor: Option[Int] = None,
+        style: Option[Char] = None
     )
 
-    /** Parses a cell specifier prefix before `|`.
-      *   - Span: `2+|`, `.3+|`, `2.3+|`, `2+s|`
-      *   - Duplication: `3*|`, `3*s|`
-      *   - Style only: `s|`
-      */
     private val cellSpecifier: Parsley[CellSpec] = atomic {
         import parsley.character.digit
         val digits  = some(digit).map(_.mkString.toInt)
-        val styleOp = option(satisfy(c => "adehilms".contains(c)).map(StyleOperator(_)))
+        val styleOp = option(satisfy(c => "adehilms".contains(c)))
 
-        // Span: [col][.row]+[style]|
         val spanSpec = atomic {
-            val colFactor = option(digits.map(ColSpanFactor(_)))
-            val rowFactor = option(char('.') *> digits.map(RowSpanFactor(_)))
+            val colFactor = option(digits)
+            val rowFactor = option(char('.') *> digits)
             (colFactor <~> rowFactor <* char('+') <~> styleOp <* char('|')).map { case ((col, row), sty) =>
                 CellSpec(colSpan = col, rowSpan = row, style = sty)
             }
         }
 
-        // Duplication: <n>*[style]|
         val dupSpec = atomic(
-            (digits.map(DupFactor(_)) <* char('*') <~> styleOp <* char('|')).map { case (dup, sty) =>
+            (digits <* char('*') <~> styleOp <* char('|')).map { case (dup, sty) =>
                 CellSpec(dupFactor = Some(dup), style = sty)
             }
         )
 
-        // Style only: <style>|
         val styleSpec = atomic((styleOp.filter(_.isDefined) <* char('|')).map(sty => CellSpec(style = sty)))
 
         spanSpec | dupSpec | styleSpec
     }
 
-    /** Parses a single cell with optional specifier: `[spec]| content` or plain `| content`. */
-    private val tableCell: Parsley[TableCell] =
+    private val tableCell: Parsley[CstTableCell] =
         val specifiedCell =
             (pos <~> cellSpecifier <~> option(char(' ')).void <~> cellContent <~> pos)
                 .map { case ((((s, spec), _), content), e) =>
-                    TableCell(
-                        CellContent.Inlines(trimCellContent(content)),
-                        spec.style,
+                    CstTableCell(
+                        CstCellInlines(trimCellContent(content))(mkSpan(s, e)),
+                        spec.style.map(_.toString),
                         spec.colSpan,
                         spec.rowSpan,
                         spec.dupFactor
-                    )(
-                        mkSpan(s, e)
-                    )
+                    )(mkSpan(s, e))
                 }
         val plainCell =
             (pos <~> (char('|') *> option(char(' ')).void *> cellContent) <~> pos)
                 .map { case ((s, content), e) =>
-                    TableCell(CellContent.Inlines(trimCellContent(content)))(mkSpan(s, e))
+                    CstTableCell(CstCellInlines(trimCellContent(content))(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
                 }
         specifiedCell | plainCell
 
-    /** Parses a row of cells on a single line ending with eolOrEof. */
-    private val tableRowLine: Parsley[List[TableCell]] =
+    private val tableRowLine: Parsley[List[CstTableCell]] =
         some(tableCell).map(_.toList) <* eolOrEof
 
-    /** Parses a complete table row (possibly spanning multiple lines separated by blank lines). */
-    private val tableRow: Parsley[TableRow] =
-        (pos <~> tableRowLine <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+    private val tableRow: Parsley[CstTableRow] =
+        (pos <~> tableRowLine <~> pos).map { case ((s, cells), e) => CstTableRow(cells)(mkSpan(s, e)) }
 
-    /** Parses table rows while tracking whether a blank line appears after the first row.
-      *
-      * This information is needed for implicit header row detection in AsciiDoc tables.
-      */
-    private val tableRowsWithBlankTracking: Parsley[(List[TableRow], Boolean)] =
+    private val tableRowsWithBlankTracking: Parsley[(List[CstTableRow], Boolean)] =
         option(tableRow).flatMap {
             case None =>
                 atomic(string("|===")).map(_ => (Nil, false))
@@ -498,170 +367,145 @@ object BlockParser:
                     atomic(string("|===")).map(_ => (List(firstRow), false))
         }
 
-    // --- CSV/DSV data format parsers ---
-
-    /** Parses a CSV row: comma-separated values with optional double-quote enclosing. */
-    private def csvRow(sep: Char): Parsley[List[TableCell]] =
+    private def csvRow(sep: Char): Parsley[List[CstTableCell]] =
         val unquoted = stringOfSome(satisfy(c => c != sep && c != '"' && c != '\n' && c != '\r'))
         val quoted   = char('"') *> many(satisfy(_ != '"') | (char('"') *> char('"'))).map(_.mkString) <* char('"')
         val cellVal  = option(quoted | unquoted).map(_.getOrElse("").trim)
         val cell = (pos <~> cellVal <~> pos).map { case ((s, v), e) =>
-            val content: InlineContent =
+            val content: List[CstInline] =
                 if v.isEmpty then Nil
-                else scala.List(io.eleven19.ascribe.ast.Text(v)(mkSpan(s, e)))
-            TableCell(CellContent.Inlines(content))(mkSpan(s, e))
+                else List(CstText(v)(mkSpan(s, e)))
+            CstTableCell(CstCellInlines(content)(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
         }
         (cell <~> many(char(sep) *> cell)).map { case (first, rest) => first :: rest } <* eolOrEof
 
-    /** Parses a DSV row: separator-separated values with backslash escaping. */
-    private def dsvRow(sep: Char): Parsley[List[TableCell]] =
+    private def dsvRow(sep: Char): Parsley[List[CstTableCell]] =
         val escaped = char('\\') *> satisfy(_ => true)
         val cellVal = many(escaped | satisfy(c => c != sep && c != '\n' && c != '\r')).map(_.mkString.trim)
         val cell = (pos <~> cellVal <~> pos).map { case ((s, v), e) =>
-            val content: InlineContent =
+            val content: List[CstInline] =
                 if v.isEmpty then Nil
-                else scala.List(io.eleven19.ascribe.ast.Text(v)(mkSpan(s, e)))
-            TableCell(CellContent.Inlines(content))(mkSpan(s, e))
+                else List(CstText(v)(mkSpan(s, e)))
+            CstTableCell(CstCellInlines(content)(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
         }
         (cell <~> many(char(sep) *> cell)).map { case (first, rest) => first :: rest } <* eolOrEof
 
-    /** Parses data-format table rows (CSV/DSV/TSV) until closing delimiter. */
-    private def dataTableRows(sep: Char, useCsv: Boolean, closingDelim: String): Parsley[List[TableRow]] =
+    private def dataTableRows(sep: Char, useCsv: Boolean, closingDelim: String): Parsley[List[CstTableRow]] =
         val rowParser = if useCsv then csvRow(sep) else dsvRow(sep)
-        val row       = (pos <~> rowParser <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+        val row       = (pos <~> rowParser <~> pos).map { case ((s, cells), e) => CstTableRow(cells)(mkSpan(s, e)) }
         manyTill(
-            (row <* option(some(blankLine)).void) | (blankLine.map(_ => null)),
+            row.map(Some(_)) <* option(some(blankLine)).void | blankLine.map(_ => None),
             atomic(string(closingDelim))
-        ).map(_.filter(_ != null))
+        ).map(_.flatten)
 
-    // --- Nested table parser (uses ! separator and !=== delimiter) ---
-
-    /** Cell content for nested tables: text that isn't `!` or newline. */
-    private val nestedCellContent: Parsley[InlineContent] =
+    private val nestedCellContent: Parsley[List[CstInline]] =
         many(
             boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
-                Text(stringOfSome(satisfy(c => isContentChar(c) && c != '!'))) |
+                (pos <~> stringOfSome(satisfy(c => isContentChar(c) && c != '!')) <~> pos)
+                    .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)) } |
                 (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
-                    io.eleven19.ascribe.ast.Text(c.toString)(mkSpan(s, e)): io.eleven19.ascribe.ast.Inline
+                    CstText(c.toString)(mkSpan(s, e)): CstInline
                 }
         )
 
-    private val nestedTableCell: Parsley[TableCell] =
+    private val nestedTableCell: Parsley[CstTableCell] =
         (pos <~> (char('!') *> option(char(' ')).void *> nestedCellContent) <~> pos)
             .map { case ((s, content), e) =>
-                TableCell(CellContent.Inlines(trimCellContent(content)))(mkSpan(s, e))
+                CstTableCell(CstCellInlines(trimCellContent(content))(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
             }
 
-    private val nestedTableRowLine: Parsley[List[TableCell]] =
+    private val nestedTableRowLine: Parsley[List[CstTableCell]] =
         some(nestedTableCell).map(_.toList) <* eolOrEof
 
-    private val nestedTableRow: Parsley[TableRow] =
-        (pos <~> nestedTableRowLine <~> pos).map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+    private val nestedTableRow: Parsley[CstTableRow] =
+        (pos <~> nestedTableRowLine <~> pos).map { case ((s, cells), e) => CstTableRow(cells)(mkSpan(s, e)) }
 
-    private val nestedTableRows: Parsley[List[TableRow]] =
+    private val nestedTableRows: Parsley[List[CstTableRow]] =
         manyTill(
             nestedTableRow <* option(some(blankLine)).void,
             atomic(string("!==="))
         )
 
-    /** Parses a nested table block: `!===` delimiter with `!` cell separator. */
-    val nestedTable: Parsley[Block] =
+    val nestedTable: Parsley[CstBlock] =
         (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
             (atomic(string("!===")) <* eolOrEof) *>
             option(some(blankLine)).void *>
             nestedTableRows <~> pos <* eolOrEof)
             .map { case ((((s, title), attrs), rows), e) =>
-                Table(rows, "!===", TableFormat.PSV, attrs, title)(mkSpan(s, e))
+                CstTable(rows, "!===", TableFormat.PSV, attrs, title, false)(mkSpan(s, e))
             }
             .label("nested table block")
 
-    // --- Multi-line a-style cell block content ---
-
-    /** Parses block content within an a-style cell. Stops when it sees `|` at start of line or `|===`. */
-    private val aCellBlock: Parsley[Block] =
+    private val aCellBlock: Parsley[CstBlock] =
         nestedTable | listingBlock | literalBlock | commentBlock | passBlock |
             sidebarBlock | exampleBlock | quoteBlock | openBlock |
             unorderedList | orderedList |
-            // Paragraph: lines that don't start with |, !, delimiters
             (pos <~> some(
-                notFollowedBy(char('|')) *> notFollowedBy(string("!===")) *>
-                    notBlockStart *>
-                    some(inlineElement) <* eolOrEof
-            ).map(_.toList.flatten) <~> pos)
-                .map { case ((s, content), e) => Paragraph(content)(mkSpan(s, e)) }
+                (pos <~> (notFollowedBy(char('|')) *> notFollowedBy(string("!===")) *>
+                    notCstBlockStart *>
+                    some(inlineElement) <* eolOrEof) <~> pos)
+                    .map { case ((ls, content), le) => CstParagraphLine(content)(mkSpan(ls, le)) }
+            ).map(_.toList) <~> pos)
+                .map { case ((s, lines), e) => CstParagraph(lines)(mkSpan(s, e)) }
 
-    /** Parses multi-line block content for an a-style cell, stopping at next outer `|` or `|===`. Uses lookAhead so the
-      * terminator is NOT consumed (the next cell or |=== will consume it).
-      */
-    val aCellContent: Parsley[List[Block]] =
+    val aCellContent: Parsley[List[CstBlock]] =
         manyTill(
             aCellBlock <* option(some(blankLine)).void,
             lookAhead(atomic(string("|==="))) | lookAhead(atomic(char('|')))
         )
 
-    /** Parses a multi-line a-style cell: `|` followed by block content across multiple lines. Content continues until
-      * the next `|` at start of line or `|===`. Does not match `|===` (that's the table closing delimiter).
-      */
-    private val multiLineCell: Parsley[TableCell] =
+    private val multiLineCell: Parsley[CstTableCell] =
         (pos <~> (notFollowedBy(string("|===")) *> char('|') *> option(char(' ')).void) *> aCellContent <~> pos)
             .map { case ((s, blocks), e) =>
-                TableCell(CellContent.Blocks(blocks))(mkSpan(s, e))
+                CstTableCell(CstCellBlocks(blocks)(mkSpan(s, e)), None, None, None, None)(mkSpan(s, e))
             }
 
-    /** Parses a multi-line table row where cells start with `|` at line beginnings. Each cell may span multiple lines
-      * (for a-style block content). Stops at `|===`.
-      */
-    private val multiLineTableRow: Parsley[TableRow] =
+    private val multiLineTableRow: Parsley[CstTableRow] =
         (pos <~> some(multiLineCell).map(_.toList) <~> pos)
-            .map { case ((s, cells), e) => TableRow(cells)(mkSpan(s, e)) }
+            .map { case ((s, cells), e) => CstTableRow(cells)(mkSpan(s, e)) }
 
-    /** Parses rows in multi-line mode (for tables with a-style columns). */
-    private val multiLineTableRows: Parsley[List[TableRow]] =
+    private val multiLineTableRows: Parsley[List[CstTableRow]] =
         manyTill(
             multiLineTableRow <* option(some(blankLine)).void,
             atomic(string("|==="))
         )
 
-    /** Check if an attribute list contains an a-style column. */
-    private def hasAStyleColumn(attrs: Option[AttributeList]): Boolean =
+    private def hasAStyleColumn(attrs: Option[CstAttributeList]): Boolean =
         attrs
-            .map(_.named.map((k, v) => (k.value, v.value)))
+            .map(_.named)
             .getOrElse(Map.empty)
             .get("cols")
             .exists(_.contains('a'))
 
-    /** Parses a table block: PSV (`|===`), CSV (`,===`), or DSV (`:===`). */
-    val tableBlock: Parsley[Block] =
+    val tableBlock: Parsley[CstBlock] =
         val psvTable =
             (pos <~> option(atomic(blockTitle)) <~> attributeLists <~>
                 (atomic(string("|===")) <* eolOrEof))
                 .flatMap { case (((s, title), attrs), _) =>
                     option(some(blankLine)).void *> (
                         if hasAStyleColumn(attrs) then
-                            // Multi-line mode for tables with a-style columns
                             (option(tableRowLine <* some(blankLine)).map(
-                                _.map(cells => TableRow(cells)(mkSpan(s, s)))
+                                _.map(cells => CstTableRow(cells)(mkSpan(s, s)))
                             ) <~> multiLineTableRows <~> pos <* eolOrEof)
                                 .map { case ((headerRow, rows), e) =>
                                     val allRows            = headerRow.toList ++ rows
                                     val hasBlankAfterFirst = headerRow.isDefined
-                                    Table(allRows, "|===", TableFormat.PSV, attrs, title, hasBlankAfterFirst)(
+                                    CstTable(allRows, "|===", TableFormat.PSV, attrs, title, hasBlankAfterFirst)(
                                         mkSpan(s, e)
                                     )
                                 }
                         else
-                            // Single-line mode (existing behavior)
                             (tableRowsWithBlankTracking <~> pos <* eolOrEof)
                                 .map { case ((rows, hasBlankAfterFirst), e) =>
                                     val format = attrs
-                                        .map(_.named.map((k, v) => (k.value, v.value)))
+                                        .map(_.named)
                                         .getOrElse(Map.empty)
                                         .get("format") match
                                         case Some("csv") => TableFormat.CSV
                                         case Some("tsv") => TableFormat.TSV
                                         case Some("dsv") => TableFormat.DSV
                                         case _           => TableFormat.PSV
-                                    Table(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
+                                    CstTable(rows, "|===", format, attrs, title, hasBlankAfterFirst)(mkSpan(s, e))
                                 }
                     )
                 }
@@ -672,7 +516,7 @@ object BlockParser:
                 option(some(blankLine)).void *>
                 dataTableRows(',', true, ",===") <~> pos <* eolOrEof)
                 .map { case ((((s, title), attrs), rows), e) =>
-                    Table(rows, ",===", TableFormat.CSV, attrs, title)(mkSpan(s, e))
+                    CstTable(rows, ",===", TableFormat.CSV, attrs, title, false)(mkSpan(s, e))
                 }
 
         val dsvTable =
@@ -681,47 +525,99 @@ object BlockParser:
                 option(some(blankLine)).void *>
                 dataTableRows(':', false, ":===") <~> pos <* eolOrEof)
                 .map { case ((((s, title), attrs), rows), e) =>
-                    Table(rows, ":===", TableFormat.DSV, attrs, title)(mkSpan(s, e))
+                    CstTable(rows, ":===", TableFormat.DSV, attrs, title, false)(mkSpan(s, e))
                 }
 
         (psvTable | csvTable | dsvTable).label("table block")
 
     // -----------------------------------------------------------------------
+    // New CST-only block parsers (not in original AST parser)
+    // -----------------------------------------------------------------------
+
+    /** Captures a single blank line as a [[CstBlankLine]] node. */
+    val cstBlankLine: Parsley[CstBlankLine] =
+        (pos <~> (hspaces *> eol) <~> pos)
+            .map { case ((s, _), e) => CstBlankLine()(mkSpan(s, e)) }
+            .label("blank line")
+
+    /** Parses a single-line `// comment` as a [[CstLineComment]] node. */
+    val lineCommentBlock: Parsley[CstBlock] =
+        atomic(
+            (pos <~> (string("//") *> many(nonEolChar).map(_.mkString)) <~> pos <* eolOrEof)
+                .map { case ((s, content), e) => CstLineComment(content.stripLeading())(mkSpan(s, e)) }
+        ).label("line comment")
+
+    /** Parses an `include::target[attrs]` directive as a [[CstInclude]] node. */
+    val includeDirective: Parsley[CstBlock] =
+        atomic(
+            (pos <~>
+                (string("include::") *>
+                    stringOfSome(satisfy(c => c != '[' && c != '\n' && c != '\r')) <~>
+                    (char('[') *> many(satisfy(c => c != ']' && c != '\n')) <* char(']')).map(_.mkString)) <~>
+                pos <* eolOrEof)
+                .map { case ((s, (target, rawAttrs)), e) =>
+                    val attrsSpan = mkSpan(s, e)
+                    val attrs =
+                        if rawAttrs.isEmpty then CstAttributeList.empty(attrsSpan)
+                        else CstAttributeList(List(rawAttrs), Map.empty, Nil, Nil)(attrsSpan)
+                    CstInclude(target, attrs)(mkSpan(s, e))
+                }
+        ).label("include directive")
+
+    /** Parses a `:name: value` attribute entry as a [[CstAttributeEntry]] node. */
+    val attributeEntryBlock: Parsley[CstBlock] =
+        atomic(
+            (pos <~>
+                (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(char(' '))) <~>
+                many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
+                .map { case (((s, name), value), e) => CstAttributeEntry(name, value)(mkSpan(s, e)) }
+        ).label("attribute entry")
+
+    // -----------------------------------------------------------------------
     // Paragraphs
     // -----------------------------------------------------------------------
 
-    /** Negative lookahead for any block-starting prefix.
-      *
-      * Prevents [[paragraphLine]] from consuming lines that belong to a heading, list, block title, attribute list, or
-      * delimited block.
-      */
-    private val notBlockStart: Parsley[Unit] =
+    /** Negative lookahead for any block-starting prefix, extended to reject CST-only block starters. */
+    private val notCstBlockStart: Parsley[Unit] =
         notFollowedBy(headingLevel *> char(' ')) *>
             notFollowedBy(char('*') *> char(' ')) *>
             notFollowedBy(char('.') *> char(' ')) *>
             notFollowedBy(char('.') *> satisfy(c => c != '.' && c != ' ' && c != '\n' && c != '\r')) *>
             notFollowedBy(char('[') *> satisfy(c => c != '\n' && c != '\r')) *>
-            notFollowedBy(string("----")) *>                           // listing
-            notFollowedBy(string("....")) *>                           // literal
-            notFollowedBy(string("****")) *>                           // sidebar
-            notFollowedBy(string("====")) *>                           // example
-            notFollowedBy(string("____")) *>                           // quote
-            notFollowedBy(string("////")) *>                           // comment
-            notFollowedBy(string("++++")) *>                           // passthrough
-            notFollowedBy(string("--") <* notFollowedBy(char('-'))) *> // open block (exactly --)
+            notFollowedBy(string("----")) *>
+            notFollowedBy(string("....")) *>
+            notFollowedBy(string("****")) *>
+            notFollowedBy(string("====")) *>
+            notFollowedBy(string("____")) *>
+            notFollowedBy(string("////")) *>
+            notFollowedBy(string("++++")) *>
+            notFollowedBy(string("--") <* notFollowedBy(char('-'))) *>
             notFollowedBy(string("|===")) *>
             notFollowedBy(string("!===")) *>
             notFollowedBy(string(",===")) *>
-            notFollowedBy(string(":==="))
+            notFollowedBy(string(":===")) *>
+            notFollowedBy(string("//")) *>                                         // line comment
+            notFollowedBy(string("include::")) *>                                   // include directive
+            notFollowedBy(char(':') *> satisfy(c => c != ':' && c != '\n'))         // attribute entry
 
-    /** Parses a single non-empty, non-block-start line as a list of inline elements. */
-    private val paragraphLine: Parsley[InlineContent] =
-        (notBlockStart *> some(inlineElement) <* eolOrEof).label("paragraph line")
+    private val cstParagraphLine: Parsley[CstParagraphLine] =
+        (pos <~> (notCstBlockStart *> some(inlineElement) <* eolOrEof) <~> pos)
+            .map { case ((s, content), e) => CstParagraphLine(content)(mkSpan(s, e)) }
+            .label("paragraph line")
 
-    /** Parses one or more consecutive paragraph lines, joining their inline content.
-      *
-      * Consecutive lines within the same paragraph are concatenated, mirroring AsciiDoc's line-continuation semantics.
-      */
-    val paragraph: Parsley[Block] =
-        Paragraph(some(paragraphLine).map(_.flatten))
+    val paragraph: Parsley[CstBlock] =
+        (pos <~> some(cstParagraphLine).map(_.toList) <~> pos)
+            .map { case ((s, lines), e) => CstParagraph(lines)(mkSpan(s, e)) }
             .label("paragraph")
+
+    // -----------------------------------------------------------------------
+    // Top-level block combinator
+    // -----------------------------------------------------------------------
+
+    /** Recognises any one block, trying block types in priority order. */
+    private[parser] val block: Parsley[CstBlock] =
+        listingBlock | literalBlock | commentBlock | passBlock |
+            sidebarBlock | exampleBlock | quoteBlock | openBlock |
+            tableBlock | heading | unorderedList | orderedList |
+            lineCommentBlock | includeDirective | attributeEntryBlock |
+            paragraph
