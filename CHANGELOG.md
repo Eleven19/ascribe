@@ -18,6 +18,12 @@ leading `v`.
 
 ### CI
 
+## [0.2.1] - 2026-03-25
+
+### Fixed
+
+- Added `PublishSupport` to `ascribe-asg`, `ascribe-bridge`, and `ascribe-pipeline` modules so all library artifacts are published to Maven Central.
+
 ## [0.2.0] - 2026-03-25
 
 ### Added
