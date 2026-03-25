@@ -1,5 +1,6 @@
 package io.eleven19.ascribe.ast
 
+import scala.language.implicitConversions
 import zio.test.*
 import io.eleven19.ascribe.ast.dsl.{*, given}
 
