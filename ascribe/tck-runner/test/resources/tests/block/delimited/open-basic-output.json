@@ -1,65 +1,65 @@
 {
-  "name": "document",
-  "blocks": [
-    {
-      "name": "open",
-      "form": "delimited",
-      "delimiter": "--",
-      "blocks": [
+    "name": "document",
+    "blocks": [
         {
-          "name": "paragraph",
-          "inlines": [
-            {
-              "name": "text",
-              "value": "Open block content.",
-              "location": [
+            "name": "open",
+            "form": "delimited",
+            "delimiter": "--",
+            "blocks": [
                 {
-                  "line": 2,
-                  "col": 1
+                    "name": "paragraph",
+                    "inlines": [
+                        {
+                            "name": "text",
+                            "value": "Open block content.",
+                            "location": [
+                                {
+                                    "line": 2,
+                                    "col": 1
+                                },
+                                {
+                                    "line": 2,
+                                    "col": 19
+                                }
+                            ],
+                            "type": "string"
+                        }
+                    ],
+                    "location": [
+                        {
+                            "line": 2,
+                            "col": 1
+                        },
+                        {
+                            "line": 2,
+                            "col": 19
+                        }
+                    ],
+                    "type": "block"
+                }
+            ],
+            "location": [
+                {
+                    "line": 1,
+                    "col": 1
                 },
                 {
-                  "line": 2,
-                  "col": 19
+                    "line": 3,
+                    "col": 2
                 }
-              ],
-              "type": "string"
-            }
-          ],
-          "location": [
-            {
-              "line": 2,
-              "col": 1
-            },
-            {
-              "line": 2,
-              "col": 19
-            }
-          ],
-          "type": "block"
+            ],
+            "type": "block"
         }
-      ],
-      "location": [
+    ],
+    "location": [
         {
-          "line": 1,
-          "col": 1
+            "line": 1,
+            "col": 1
         },
         {
-          "line": 4,
-          "col": 0
+            "line": 3,
+            "col": 2
         }
-      ],
-      "type": "block"
-    }
-  ],
-  "location": [
-    {
-      "line": 1,
-      "col": 1
-    },
-    {
-      "line": 4,
-      "col": 0
-    }
-  ],
-  "type": "block"
+    ],
+    "type": "block"
 }
