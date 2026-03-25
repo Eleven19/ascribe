@@ -11,4 +11,4 @@ enum SpecStatus:
 /** Annotation documenting an ASG type's specification provenance. This is purely documentary and does not affect
   * runtime behavior, codecs, or serialization.
   */
-class specStatus(val status: SpecStatus, val note: String = "") extends scala.annotation.StaticAnnotation
+class specStatusInfo(val status: SpecStatus, val note: String = "") extends scala.annotation.StaticAnnotation

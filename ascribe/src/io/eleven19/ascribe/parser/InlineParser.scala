@@ -1,9 +1,9 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.atomic
+import parsley.Parsley.{atomic, many}
 import parsley.character.string
-import parsley.combinator.{many, manyTill}
+import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 

@@ -1,5 +1,4 @@
-extends: [ScalaModule, scalafmt.ScalafmtModule]
-scalaVersion: "3.8.2"
+extends: [_root_.build.CommonScalaModule]
 moduleDeps:
   - build.ascribe
   - build.ascribe.asg

@@ -3,9 +3,7 @@ package build.ascribe.`tck-runner`
 import mill.*
 import mill.scalalib.*
 
-object `package` extends ScalaModule with scalafmt.ScalafmtModule with _root_.build.TckSubmoduleSupport {
-
-  def scalaVersion = "3.8.2"
+object `package` extends _root_.build.CommonScalaModule with _root_.build.TckSubmoduleSupport {
 
   def moduleDeps = Seq(build.ascribe, build.ascribe.asg, build.ascribe.bridge)
 

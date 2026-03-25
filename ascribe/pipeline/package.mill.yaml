@@ -1,10 +1,4 @@
-extends: [ScalaModule, scalafmt.ScalafmtModule]
-scalaVersion: "3.8.2"
-scalacOptions:
-  - "-Wvalue-discard"
-  - "-Wnonunit-statement"
-  - "-Wconf:msg=(unused.*value|discarded.*value|pure.*statement):error"
-  - "-language:strictEquality"
+extends: [_root_.build.CommonScalaModule]
 moduleDeps:
   - build.ascribe
   - build.ascribe.asg

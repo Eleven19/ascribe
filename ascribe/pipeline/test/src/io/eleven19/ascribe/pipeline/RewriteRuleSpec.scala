@@ -4,6 +4,7 @@ import zio.test.*
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.ast.dsl.{*, given}
+import scala.language.implicitConversions
 import kyo.<
 
 object RewriteRuleSpec extends ZIOSpecDefault:

@@ -2,7 +2,7 @@ package io.eleven19.ascribe.pipeline
 
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree, TreeNode}
-import kyo.{<, IO, Abort, Path, Chunk}
+import kyo.{<, Sync, Abort, Path, Chunk}
 
 /** A Source that reads `.adoc` files from a directory on the file system.
   *
@@ -14,9 +14,9 @@ object FileSource:
     private val adocExtensions = Set(".adoc", ".asciidoc", ".ad", ".asc")
 
     /** Create a Source that reads all `.adoc` files from a directory. */
-    def fromDirectory(dir: Path): Source[IO & Abort[PipelineError]] =
-        new Source[IO & Abort[PipelineError]]:
-            def read: DocumentTree < (IO & Abort[PipelineError]) =
+    def fromDirectory(dir: Path): Source[Sync & Abort[PipelineError]] =
+        new Source[Sync & Abort[PipelineError]]:
+            def read: DocumentTree < (Sync & Abort[PipelineError]) =
                 dir.walk.run.map { paths =>
                     val adocPaths = paths.toList.filter { p =>
                         val name = p.toJava.getFileName.toString
@@ -26,9 +26,9 @@ object FileSource:
                 }
 
     /** Create a Source that reads a single `.adoc` file, resolving include directives. */
-    def fromFile(file: Path): Source[IO & Abort[PipelineError]] =
-        new Source[IO & Abort[PipelineError]]:
-            def read: DocumentTree < (IO & Abort[PipelineError]) =
+    def fromFile(file: Path): Source[Sync & Abort[PipelineError]] =
+        new Source[Sync & Abort[PipelineError]]:
+            def read: DocumentTree < (Sync & Abort[PipelineError]) =
                 val docPath   = DocumentPath.fromString(file.toJava.getFileName.toString)
                 val parentDir = Path(file.toJava.getParent.toString)
                 file.read.map { rawContent =>
@@ -46,7 +46,7 @@ object FileSource:
     private def readPaths(
         baseDir: Path,
         paths: List[Path]
-    ): DocumentTree < (IO & Abort[PipelineError]) =
+    ): DocumentTree < (Sync & Abort[PipelineError]) =
         readPathList(baseDir, paths, Nil).map { docs =>
             DocumentTree.fromDocuments(docs)
         }
@@ -55,7 +55,7 @@ object FileSource:
         baseDir: Path,
         paths: List[Path],
         acc: List[(DocumentPath, Document)]
-    ): List[(DocumentPath, Document)] < (IO & Abort[PipelineError]) =
+    ): List[(DocumentPath, Document)] < (Sync & Abort[PipelineError]) =
         paths match
             case Nil => acc.reverse
             case head :: tail =>

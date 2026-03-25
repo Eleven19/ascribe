@@ -1,7 +1,7 @@
 package io.eleven19.ascribe.pipeline
 
 import io.eleven19.ascribe.ast.DocumentPath
-import kyo.{<, IO, Path}
+import kyo.{<, Sync, Path}
 
 /** A Sink that writes rendered output to files on the file system.
   *
@@ -10,15 +10,15 @@ import kyo.{<, IO, Path}
 object FileSink:
 
     /** Create a Sink that writes rendered documents to a directory. */
-    def toDirectory(outputDir: Path): Sink[IO] =
-        new Sink[IO]:
-            def write(rendered: Map[DocumentPath, String]): Unit < IO =
+    def toDirectory(outputDir: Path): Sink[Sync] =
+        new Sink[Sync]:
+            def write(rendered: Map[DocumentPath, String]): Unit < Sync =
                 writeEntries(outputDir, rendered.toList)
 
     /** Create a Sink that writes a single rendered document to a file. */
-    def toFile(outputFile: Path): Sink[IO] =
-        new Sink[IO]:
-            def write(rendered: Map[DocumentPath, String]): Unit < IO =
+    def toFile(outputFile: Path): Sink[Sync] =
+        new Sink[Sync]:
+            def write(rendered: Map[DocumentPath, String]): Unit < Sync =
                 rendered.headOption match
                     case Some((_, content)) =>
                         val parentDir = Path(outputFile.toJava.getParent.toString)
@@ -28,7 +28,7 @@ object FileSink:
     private def writeEntries(
         outputDir: Path,
         entries: List[(DocumentPath, String)]
-    ): Unit < IO =
+    ): Unit < Sync =
         entries match
             case Nil => ()
             case (docPath, content) :: rest =>
@@ -41,7 +41,7 @@ object FileSink:
                 }
 
     /** Create directory if it doesn't exist. */
-    private def ensureDir(dir: Path): Unit < IO =
+    private def ensureDir(dir: Path): Unit < Sync =
         dir.exists.map { exists =>
             if !exists then dir.mkDir
             else ()

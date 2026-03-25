@@ -169,10 +169,11 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     /** Flattens an [[InlineContent]] list into a plain string for assertion comparison. */
     private def inlinesToText(inlines: List[Inline]): String =
         inlines.map {
-            case Text(s)    => s
-            case Bold(cs)   => inlinesToText(cs)
-            case Italic(cs) => inlinesToText(cs)
-            case Mono(cs)   => inlinesToText(cs)
+            case Text(s)             => s
+            case Bold(cs)            => inlinesToText(cs)
+            case ConstrainedBold(cs) => inlinesToText(cs)
+            case Italic(cs)          => inlinesToText(cs)
+            case Mono(cs)            => inlinesToText(cs)
         }.mkString
 
     /** Generic helper to assert that block `idx` is a Paragraph containing a span whose inner text equals `expected`.
