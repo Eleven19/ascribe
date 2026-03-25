@@ -60,5 +60,12 @@ object CstRendererSpec extends ZIOSpecDefault:
                     val rendered = CstRenderer.render(cst)
                     assertTrue(rendered.contains("include::file.adoc"))
                 case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
+        },
+        test("render produces :!name: for unset entry") {
+            Ascribe.parseCst(":!my-attr:\n") match
+                case Success(cst) =>
+                    val rendered = CstRenderer.render(cst)
+                    assertTrue(rendered.contains(":!my-attr:"))
+                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
         }
     )

@@ -36,10 +36,11 @@ trait CstVisitor[A]:
     def visitTableRow(node: CstTableRow): A           = visitNode(node)
     def visitTableCell(node: CstTableCell): A         = visitNode(node)
 
-    def visitText(node: CstText): A     = visitInline(node)
-    def visitBold(node: CstBold): A     = visitInline(node)
-    def visitItalic(node: CstItalic): A = visitInline(node)
-    def visitMono(node: CstMono): A     = visitInline(node)
+    def visitText(node: CstText): A               = visitInline(node)
+    def visitBold(node: CstBold): A               = visitInline(node)
+    def visitItalic(node: CstItalic): A           = visitInline(node)
+    def visitMono(node: CstMono): A               = visitInline(node)
+    def visitAttributeRef(node: CstAttributeRef): A = visitInline(node)
 
     def visitVerbatimContent(node: CstVerbatimContent): A = visitNode(node)
     def visitNestedContent(node: CstNestedContent): A     = visitNode(node)
@@ -76,6 +77,7 @@ object CstVisitor:
         case n: CstBold            => visitor.visitBold(n)
         case n: CstItalic          => visitor.visitItalic(n)
         case n: CstMono            => visitor.visitMono(n)
+        case n: CstAttributeRef    => visitor.visitAttributeRef(n)
         case n: CstVerbatimContent => visitor.visitVerbatimContent(n)
         case n: CstNestedContent   => visitor.visitNestedContent(n)
         case n: CstCellInlines     => visitor.visitCellInlines(n)
@@ -108,6 +110,7 @@ object CstVisitor:
         case b: CstBold            => b.content
         case i: CstItalic          => i.content
         case m: CstMono            => m.content
+        case _: CstAttributeRef    => Nil
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.

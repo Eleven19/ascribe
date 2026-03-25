@@ -604,7 +604,7 @@ object BlockParser:
                     char(' ')
                 )) <~>
                 many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
-                .map { case (((s, name), value), e) => CstAttributeEntry(name, value)(mkSpan(s, e)) }
+                .map { case (((s, name), value), e) => CstAttributeEntry(name, value, false)(mkSpan(s, e)) }
         ).label("attribute entry")
 
     // -----------------------------------------------------------------------

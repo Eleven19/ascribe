@@ -135,6 +135,7 @@ object CstLowering:
         case CstBold(content, true)  => ConstrainedBold(lowerInlines(content))(inline.span)
         case CstItalic(content)      => Italic(lowerInlines(content))(inline.span)
         case CstMono(content)        => Mono(lowerInlines(content))(inline.span)
+        case CstAttributeRef(name)   => Text(s"{$name}")(inline.span)
 
     private def restructure(blocks: List[Block]): List[Block] =
         blocks match

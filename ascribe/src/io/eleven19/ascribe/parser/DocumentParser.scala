@@ -36,7 +36,7 @@ object DocumentParser:
                 char(' ')
             )) <~>
             many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
-            .map { case (((s, name), value), e) => CstAttributeEntry(name, value)(mkSpan(s, e)) }
+            .map { case (((s, name), value), e) => CstAttributeEntry(name, value, false)(mkSpan(s, e)) }
 
     /** Parses a document header: `= Title` followed by optional attribute entries. */
     private val documentHeader: Parsley[CstDocumentHeader] =
