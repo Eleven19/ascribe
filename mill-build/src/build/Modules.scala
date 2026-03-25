@@ -21,10 +21,4 @@ trait CommonScalaModule extends ScalaModule with scalafmt.ScalafmtModule {
   }
 }
 
-trait CommonScalaTestModule extends ScalaModule {
-  private val unsafeMemoryAccessOption = "--sun-misc-unsafe-memory-access=allow"
-
-  override def forkArgs = Task {
-    super.forkArgs() ++ Seq(unsafeMemoryAccessOption)
-  }
-}
+trait CommonScalaTestModule extends ScalaModule
