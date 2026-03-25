@@ -98,8 +98,8 @@ case class Pipeline[S] private (
             }
         }
 
-    /** Execute the pipeline and write output to a sink. */
-    def runTo(sink: Sink[Any]): Unit < S =
+    /** Execute the pipeline and write output to a sink. The sink's effect type is combined with the pipeline's. */
+    def runTo[S2](sink: Sink[S2]): Unit < (S & S2) =
         runToStrings.map { rendered =>
             sink.write(rendered)
         }
