@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.pipeline
 
-import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree}
+import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree, TreeNode}
 import kyo.{<, Abort}
 
 /** A composable document processing pipeline.
@@ -22,6 +22,8 @@ case class Pipeline[S] private (
 ):
     /** Add a rewrite rule to the pipeline. Pure rules (`RewriteRule[Any]`) are accepted for any pipeline. */
     def rewrite(rule: RewriteRule[Any]): Pipeline[S] =
+        // RewriteRule[Any] is safe to widen to RewriteRule[S]: it carries no effects and S only appears
+        // in covariant position in the rule's return type. A RewriteRule variance declaration would remove this cast.
         copy(rules = rules :+ rule.asInstanceOf[RewriteRule[S]])
 
     /** Set a custom renderer. */
@@ -32,30 +34,21 @@ case class Pipeline[S] private (
     def run: DocumentTree < S =
         source.read.map { tree =>
             val composedRule = RewriteRule.compose(rules*)
-            tree.allDocuments match
-                case Nil => tree
-                case docs =>
-                    val rewritten = docs.map { (path, doc) =>
-                        RewriteRule.rewrite(doc, composedRule).map(d => (path, d))
-                    }
-                    rewriteAll(rewritten)
+            rewriteTreeNode(tree.root, composedRule).map(DocumentTree(_))
         }
 
     /** Execute the pipeline and render all documents to strings. */
     def runToStrings: Map[DocumentPath, String] < S =
         run.map { tree =>
-            tree.allDocuments.map { (p, d) =>
-                (p, renderer.render(d))
-            }.toMap.asInstanceOf[Map[DocumentPath, String]]
+            renderDocList(tree.allDocuments, Map.empty)
         }
 
     /** Execute the pipeline and render the first document to a string. */
     def runToString: String < S =
         run.map { tree =>
-            tree.allDocuments.headOption
-                .map((_, d) => renderer.render(d))
-                .getOrElse("")
-                .asInstanceOf[String]
+            tree.allDocuments.headOption match
+                case None         => ""
+                case Some((_, d)) => renderer.render(d)
         }
 
     /** Execute the pipeline and render all documents through multiple renderers.
@@ -78,6 +71,7 @@ case class Pipeline[S] private (
         run.map { tree =>
             val docs = tree.allDocuments
             targets.map { (label, r) =>
+                // r is Renderer[Any] (effectless): String < Any == String at runtime in Kyo.
                 val rendered = docs.map { (p, d) =>
                     (p, r.render(d).asInstanceOf[String])
                 }.toMap
@@ -98,6 +92,7 @@ case class Pipeline[S] private (
     ): List[Map[DocumentPath, String]] < S =
         run.map { tree =>
             val docs = tree.allDocuments
+            // Renderer[Any] is effectless: String < Any == String at runtime in Kyo.
             renderers.toList.map { r =>
                 docs.map((p, d) => (p, r.render(d).asInstanceOf[String])).toMap
             }
@@ -105,26 +100,43 @@ case class Pipeline[S] private (
 
     /** Execute the pipeline and write output to a sink. */
     def runTo(sink: Sink[Any]): Unit < S =
-        run.map { tree =>
-            sink.write(tree, d => renderer.render(d).asInstanceOf[String])
+        runToStrings.map { rendered =>
+            sink.write(rendered)
         }
 
-    private def rewriteAll(
-        docs: List[(DocumentPath, Document) < S]
-    ): DocumentTree < S =
+    private def renderDocList(
+        docs: List[(DocumentPath, Document)],
+        acc: Map[DocumentPath, String]
+    ): Map[DocumentPath, String] < S =
         docs match
-            case Nil => DocumentTree.empty
+            case Nil => acc
+            case (p, d) :: rest =>
+                renderer.render(d).map { s =>
+                    renderDocList(rest, acc + (p -> s))
+                }
+
+    private def rewriteTreeNode(node: TreeNode, rule: RewriteRule[S]): TreeNode < S =
+        node match
+            case TreeNode.DocLeaf(p, d) =>
+                RewriteRule.rewrite(d, rule).map(TreeNode.DocLeaf(p, _))
+            case TreeNode.TreeBranch(p, kids) =>
+                rewriteNodeList(kids, rule).map(TreeNode.TreeBranch(p, _))
+
+    private def rewriteNodeList(nodes: List[TreeNode], rule: RewriteRule[S]): List[TreeNode] < S =
+        nodes match
+            case Nil => Nil
             case head :: tail =>
-                head.map { h =>
-                    rewriteAll(tail).map { rest =>
-                        DocumentTree.fromDocuments(h :: rest.allDocuments)
-                    }
+                rewriteTreeNode(head, rule).map { h =>
+                    rewriteNodeList(tail, rule).map(h :: _)
                 }
 
 object Pipeline:
 
     /** Create a pipeline from a source with default AsciiDoc rendering. */
     def from[S](source: Source[S]): Pipeline[S] =
+        // AsciiDocRenderer is Renderer[Any] (no effects). Widening to Renderer[S] is safe because the render method
+        // only uses S in its return type, and Any is compatible with any S at runtime. Declaring Renderer covariant
+        // would remove this cast.
         Pipeline(source, Nil, AsciiDocRenderer.asInstanceOf[Renderer[S]])
 
     /** Create a pipeline from a single AsciiDoc string. */
