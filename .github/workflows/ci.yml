@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: actions/setup-java@v4
         with:
@@ -40,5 +42,14 @@ jobs:
       - name: Run unit tests
         run: ./mill ascribe.test
 
+      - name: Run ASG tests
+        run: ./mill ascribe.asg.test
+
+      - name: Run bridge tests
+        run: ./mill ascribe.bridge.test
+
       - name: Run integration tests
         run: ./mill ascribe.itest
+
+      - name: Run TCK tests
+        run: ./mill ascribe.tck-runner.test
