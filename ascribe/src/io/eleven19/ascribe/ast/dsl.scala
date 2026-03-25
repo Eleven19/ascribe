@@ -37,11 +37,11 @@ object dsl:
     def section(level: Int, title: scala.List[Inline], blocks: Block*): Section =
         Section(level, title, blocks.toList)(u)
 
-    def listingBlock(delimiter: String, content: String): ListingBlock =
-        ListingBlock(delimiter, content)(u)
+    def listingBlock(delimiter: String, content: String): Listing =
+        Listing(delimiter, content)(u)
 
-    def sidebarBlock(delimiter: String, blocks: Block*): SidebarBlock =
-        SidebarBlock(delimiter, blocks.toList)(u)
+    def sidebarBlock(delimiter: String, blocks: Block*): Sidebar =
+        Sidebar(delimiter, blocks.toList)(u)
 
     // --- Attribute lists and block titles ---
     def attributeList(
@@ -63,16 +63,16 @@ object dsl:
         roles = Nil
     )(u)
 
-    def blockTitle(inlines: Inline*): BlockTitle = BlockTitle(inlines.toList)(u)
+    def blockTitle(inlines: Inline*): Title = Title(inlines.toList)(u)
 
     // --- Tables ---
-    def tableBlock(rows: TableRow*): TableBlock = TableBlock(rows.toList, "|===")(u)
+    def tableBlock(rows: TableRow*): Table = Table(rows.toList, "|===")(u)
 
-    def tableBlock(attrs: AttributeList, rows: TableRow*): TableBlock =
-        TableBlock(rows.toList, "|===", TableFormat.PSV, Some(attrs))(u)
+    def tableBlock(attrs: AttributeList, rows: TableRow*): Table =
+        Table(rows.toList, "|===", TableFormat.PSV, Some(attrs))(u)
 
-    def tableBlock(title: BlockTitle, attrs: AttributeList, rows: TableRow*): TableBlock =
-        TableBlock(rows.toList, "|===", TableFormat.PSV, Some(attrs), Some(title))(u)
+    def tableBlock(title: Title, attrs: AttributeList, rows: TableRow*): Table =
+        Table(rows.toList, "|===", TableFormat.PSV, Some(attrs), Some(title))(u)
 
     def tableRow(cells: TableCell*): TableRow  = TableRow(cells.toList)(u)
     def tableCell(inlines: Inline*): TableCell = TableCell(CellContent.Inlines(inlines.toList))(u)

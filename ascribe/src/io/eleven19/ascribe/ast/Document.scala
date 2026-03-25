@@ -74,72 +74,72 @@ case class Section(level: Int, title: InlineContent, blocks: List[Block])(val sp
 case class Paragraph(content: InlineContent)(val span: Span) extends Block derives CanEqual
 
 /** A delimited listing block (verbatim code). May have attributes like `[source,ruby]`. */
-case class ListingBlock(
+case class Listing(
     delimiter: String,
     content: String,
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited sidebar block containing nested blocks. */
-case class SidebarBlock(
+case class Sidebar(
     delimiter: String,
     blocks: List[Block],
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited example block containing nested blocks. */
-case class ExampleBlock(
+case class Example(
     delimiter: String,
     blocks: List[Block],
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited quote block containing nested blocks. Can be repurposed as verse via `[verse]` style. */
-case class QuoteBlock(
+case class Quote(
     delimiter: String,
     blocks: List[Block],
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited literal block (verbatim content). */
-case class LiteralBlock(
+case class Literal(
     delimiter: String,
     content: String,
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited open block containing nested blocks. Uses `--` as delimiter (fixed 2-char). */
-case class OpenBlock(
+case class Open(
     delimiter: String,
     blocks: List[Block],
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited comment block (content is discarded from parsed output). */
-case class CommentBlock(
+case class Comment(
     delimiter: String,
     content: String
 )(val span: Span)
     extends Block derives CanEqual
 
 /** A delimited passthrough block (raw content, no substitutions). */
-case class PassBlock(
+case class Pass(
     delimiter: String,
     content: String,
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None
+    title: Option[Title] = None
 )(val span: Span)
     extends Block derives CanEqual
 
@@ -181,19 +181,19 @@ case class AttributeList(
 )(val span: Span)
     extends AstNode derives CanEqual
 
-case class BlockTitle(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
+case class Title(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
 
 /** Table data format. */
 enum TableFormat:
     case PSV, CSV, DSV, TSV
 
 /** A table block. The format determines cell parsing rules and default separator. */
-case class TableBlock(
+case class Table(
     rows: List[TableRow],
     delimiter: String,
     format: TableFormat = TableFormat.PSV,
     attributes: Option[AttributeList] = None,
-    title: Option[BlockTitle] = None,
+    title: Option[Title] = None,
     hasBlankAfterFirstRow: Boolean = false
 )(val span: Span)
     extends Block derives CanEqual
