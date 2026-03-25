@@ -2,13 +2,13 @@ package io.eleven19.ascribe.parser
 
 import parsley.Parsley
 import parsley.Parsley.{atomic, many}
-import parsley.character.string
+import parsley.character.{char, satisfy, string, stringOfMany}
 import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
 import io.eleven19.ascribe.ast.{Span, mkSpan}
-import io.eleven19.ascribe.cst.{CstBold, CstInline, CstItalic, CstMono, CstText}
+import io.eleven19.ascribe.cst.{CstAttributeRef, CstBold, CstInline, CstItalic, CstMono, CstText}
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 
 /** Parsers for inline AsciiDoc elements.
@@ -76,6 +76,18 @@ object InlineParser:
             .label("monospace span")
             .explain("Monospace text is surrounded by double backticks, e.g. ``mono``")
 
+    /** Parses an attribute reference: `{name}` where name starts with a letter. */
+    val attrRefInline: Parsley[CstInline] =
+        atomic(
+            (pos <~>
+                (char('{') *>
+                    (satisfy(_.isLetter) <~> stringOfMany(satisfy(c => c.isLetterOrDigit || c == '-' || c == '_')))
+                        .map { case (first, rest) => first.toString + rest } <*
+                    char('}')) <~>
+                pos)
+                .map { case ((s, name), e) => CstAttributeRef(name)(mkSpan(s, e)) }
+        ).label("attribute reference")
+
     /** Parses a constrained *bold* span: `*content*`.
       *
       * Must be tried after unconstrained `**` to avoid ambiguity.
@@ -102,7 +114,8 @@ object InlineParser:
       * before constrained (`*`) to avoid ambiguity.
       */
     val inlineElement: Parsley[CstInline] =
-        boldSpan | constrainedBoldSpan | italicSpan | monoSpan | plainTextInline | unpairedMarkupInline
+        boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+            attrRefInline | plainTextInline | unpairedMarkupInline
 
     /** Parses zero or more inline elements, stopping naturally at a newline or end-of-input. */
     val lineContent: Parsley[List[CstInline]] = many(inlineElement)
