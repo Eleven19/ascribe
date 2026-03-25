@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.pipeline
 
-import kyo.{<, IO, Abort, Path, Sync}
+import kyo.{<, Sync, Abort, Path}
 
 /** Preprocesses AsciiDoc source text, resolving `include::` directives by reading referenced files and inlining their
   * content.
@@ -18,7 +18,7 @@ object IncludeProcessor:
     private val includePattern = """^include::(.+?)\[(.*)\]\s*$""".r
 
     /** Process all include directives in the source text, resolving relative to `baseDir`. */
-    def process(source: String, baseDir: Path): String < (IO & Abort[PipelineError]) =
+    def process(source: String, baseDir: Path): String < (Sync & Abort[PipelineError]) =
         processLines(source.linesIterator.toList, baseDir, maxDepth = 64, currentDepth = 0)
 
     /** Process include directives with a depth limit to prevent infinite recursion. */
@@ -27,7 +27,7 @@ object IncludeProcessor:
         baseDir: Path,
         maxDepth: Int,
         currentDepth: Int
-    ): String < (IO & Abort[PipelineError]) =
+    ): String < (Sync & Abort[PipelineError]) =
         lines match
             case Nil => ""
             case head :: tail =>
@@ -43,7 +43,7 @@ object IncludeProcessor:
         baseDir: Path,
         maxDepth: Int,
         currentDepth: Int
-    ): String < (IO & Abort[PipelineError]) =
+    ): String < (Sync & Abort[PipelineError]) =
         line match
             case includePattern(target, attrs) =>
                 val isOptional = attrs.contains("opts=optional") || attrs.contains("optional")
@@ -63,7 +63,7 @@ object IncludeProcessor:
         isOptional: Boolean,
         maxDepth: Int,
         currentDepth: Int
-    ): String < (IO & Abort[PipelineError]) =
+    ): String < (Sync & Abort[PipelineError]) =
         targetPath.exists.map { exists =>
             if !exists then
                 if isOptional then ""
