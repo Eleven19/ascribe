@@ -16,6 +16,11 @@ leading `v`.
 
 ### Documentation
 
+- Updated README with current v0.2.1 versions, usage examples, module table, and link to documentation site.
+- Added ascribe logo to repository.
+- Fixed broken logo image link in README.
+- Updated getting-started guide with correct artifact coordinates and versions.
+
 ### CI
 
 ## [0.2.1] - 2026-03-25

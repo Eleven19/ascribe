@@ -10,9 +10,10 @@ In your `build.mill` (Mill build tool), add Ascribe as a dependency:
 
 ```scala
 def ivyDeps = Agg(
-  ivy"io.eleven19::ascribe:0.1.0",
-  ivy"io.eleven19::ascribe-asg:0.1.0",
-  ivy"io.eleven19::ascribe-bridge:0.1.0"
+  ivy"io.eleven19.ascribe::ascribe:0.2.1",
+  ivy"io.eleven19.ascribe::ascribe-asg:0.2.1",
+  ivy"io.eleven19.ascribe::ascribe-bridge:0.2.1",
+  ivy"io.eleven19.ascribe::ascribe-pipeline:0.2.1"
 )
 ```
 
