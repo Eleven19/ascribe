@@ -500,7 +500,7 @@ object Break:
 
 // --- Tables (spec-derived, no official TCK test cases yet) ---
 
-@specStatus(
+@specStatusInfo(
     SpecStatus.SpecDerived,
     "Table ASG structure inferred from AsciiDoc Language spec; no TCK test cases exist yet"
 )
@@ -557,7 +557,7 @@ object Table:
         "block"
     )
 
-@specStatus(SpecStatus.SpecDerived)
+@specStatusInfo(SpecStatus.SpecDerived)
 case class TableRow private (
     id: Option[String],
     title: Option[Chunk[Inline]],
@@ -579,7 +579,7 @@ object TableRow:
         location: Location
     ): TableRow = new TableRow(id, title, reftext, metadata, cells, location, "block")
 
-@specStatus(SpecStatus.SpecDerived)
+@specStatusInfo(SpecStatus.SpecDerived)
 case class TableCell private (
     id: Option[String],
     title: Option[Chunk[Inline]],
