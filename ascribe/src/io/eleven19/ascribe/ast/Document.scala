@@ -184,7 +184,7 @@ case class AttributeList(
 case class Title(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
 
 /** Table data format. */
-enum TableFormat:
+enum TableFormat derives CanEqual:
     case PSV, CSV, DSV, TSV
 
 /** A table block. The format determines cell parsing rules and default separator. */
