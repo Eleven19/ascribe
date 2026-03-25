@@ -10,6 +10,18 @@ leading `v`.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Documentation
+
+### CI
+
+## [0.2.0] - 2026-03-25
+
+### Added
+
 - Added ASG (Abstract Semantic Graph) module with full type hierarchy (23 block types, 5 inline types), Schema.derived JSON codecs with discriminator, and private constructor + smart apply pattern.
 - Added AST-to-ASG bridge converter for headings, paragraphs, lists, inline formatting, sections, listing/sidebar blocks, document headers, and attribute entries.
 - Added AST and ASG Visitor traits with hierarchical defaults, stack-safe foldLeft/foldRight via trampolining, collect/collectPostOrder/count, and extension methods on Node/AstNode.
@@ -23,7 +35,7 @@ leading `v`.
   - Cell spanning (`2+|`, `.3+|`, `2.3+|`) and cell duplication (`3*|`).
   - CSV (`,===`) and DSV (`:===`) data format tables.
   - Nested tables (`!===`) inside `a`-style cells with `CellContent` ADT (Inlines | Blocks).
-- Added `@specStatus` annotation for tracking ASG type provenance (TCK, SpecDerived, Custom).
+- Added `@specStatusInfo` annotation for tracking ASG type provenance (TCK, SpecDerived, Custom).
 - Added opaque types for type safety: `ColSpan`, `RowSpan`, `DupCount`, `CellStyle`, `ColumnSpec`, and AST `CellSpecifier` types.
 - Added 28 custom table TCK test cases covering all table features.
 - Added `AstNode` sealed trait as common base for all AST types.
@@ -32,6 +44,14 @@ leading `v`.
 - Added Maven Central publishing via `SonatypeCentralPublishModule` with `publish-central.yml` and `publish-snapshot.yml` workflows.
 - Added `PublishSupport` Mill trait for consistent POM metadata and Sonatype Central integration.
 - Added `compute-publish-version.sh` script for branch-aware SNAPSHOT versioning.
+- Added `DocumentPath` and `DocumentTree` types for multi-document processing.
+- Added `ascribe-pipeline` module with `Renderer`, `RewriteRule`, `Source`, `Sink`, and `Pipeline` abstractions using Kyo effects.
+- Added `FileSource` and `FileSink` for filesystem-based document I/O.
+- Added `IncludeProcessor` for `include::` directive preprocessing.
+- Added `AsciiDocRenderer` and `AsgJsonRenderer` for multi-target rendering.
+- Added pipeline DSL for ergonomic pipeline construction.
+- Added full delimited block support (listing, literal, sidebar, comment, passthrough, example, open) with variable-length fences and nesting.
+- Added source block support with language and title attributes.
 
 ### Changed
 
@@ -39,27 +59,32 @@ leading `v`.
 - Replaced 627-line manual ASG JSON codec with ~30 lines using `Schema.derived` + `JsonBinaryCodecDeriver`.
 - Converted ASG sealed abstract classes to sealed traits with `derives Schema` and private constructors.
 - Converted Mill build configs from `package.mill` (Scala) to `package.mill.yaml` (YAML) format.
-- Changed interceptor selection to use `mill-interceptor intercept <tool> ...`
-  instead of `INTERCEPTED_BUILD_TOOL`.
+- Centralized compiler settings into shared `CommonScalaModule` and `CommonScalaTestModule` meta-build traits, following the `mill-interceptor` pattern.
+- Enabled `-Werror`, `-deprecation`, and `-feature` compiler flags across all modules.
+- Replaced deprecated `parsley.combinator.{many, some}` with `Parsley.{many, some}`.
+- Replaced deprecated `kyo.IO` with `kyo.Sync` across pipeline module.
+- Dropped `Block` suffix from AST type names for conciseness.
 
 ### Fixed
 
 - Fixed end positions to be inclusive (last char, not past-end) matching TCK expectations.
 - Fixed multi-line paragraphs to produce single Text node with `\n`-joined content.
 - Fixed JSON serialization to omit None/default fields (`withTransientDefaultValue(true)`).
+- Fixed non-exhaustive pattern match in integration test steps.
+- Fixed case-insensitive class name clash between `SpecStatus` enum and `specStatus` annotation.
 
 ### Documentation
 
 - Added GitHub Pages documentation site with Scala 3 scaladoc API docs and prose content.
 - Added documentation guides for parsing, ASG model, and visitor pattern.
 - Added contributing guides for development setup and TCK compliance.
-- Documented the `intercept` subcommand and `mvn` alias behavior.
 
 ### CI
 
 - Added `docs.yml` GitHub Actions workflow for deploying documentation to GitHub Pages.
 - Added `publish-central.yml` workflow for tag-driven and manual Maven Central releases.
 - Added `publish-snapshot.yml` workflow for manual SNAPSHOT publishing.
+- Added TCK, ASG, and bridge tests to CI pipeline.
 
 ## [0.1.0] - 2026-03-14
 
