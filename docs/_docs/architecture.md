@@ -9,7 +9,7 @@ title: Architecture
 Ascribe processes AsciiDoc through a linear pipeline:
 
 ```
-Source (String)
+Source (String / Files)
   |
   v
 Parser (Parsley combinators)
@@ -18,27 +18,34 @@ Parser (Parsley combinators)
 AST (io.eleven19.ascribe.ast)
   |
   v
+Rewrite Rules (optional transforms)
+  |
+  v
 Bridge (AstToAsg.convert)
   |
   v
 ASG (io.eleven19.ascribe.asg)
   |
   v
-JSON (AsgCodecs.encode)
+Renderers (AsciiDoc, JSON, custom)
+  |
+  v
+Sink (String / Files)
 ```
 
-Each stage is a pure function. The parser produces an AST with source positions, the bridge converts it to the ASG model matching the official AsciiDoc schema, and the codec serializes it to TCK-compatible JSON.
+Each stage is a pure function or a Kyo effect. The parser produces an AST with source positions, rewrite rules can transform the AST, the bridge converts it to the ASG model matching the official AsciiDoc schema, and renderers produce output in various formats.
 
 ## Module Structure
 
-The project is organized into four modules:
+The project is organized into five modules:
 
-| Module | Package | Purpose |
-|--------|---------|---------|
-| `ascribe` | `io.eleven19.ascribe` | Parser, lexer, AST types, AST visitor |
-| `ascribe.asg` | `io.eleven19.ascribe.asg` | ASG node types, JSON codecs, ASG visitor |
-| `ascribe.bridge` | `io.eleven19.ascribe.bridge` | AST-to-ASG converter |
-| `ascribe.tck-runner` | `build.ascribe.tckrunner` | TCK test harness (Cucumber) |
+| Module | Artifact | Package | Purpose |
+|--------|----------|---------|---------|
+| Core | `ascribe` | `io.eleven19.ascribe` | Parser, lexer, AST types, AST visitor, DSL |
+| ASG | `ascribe-asg` | `io.eleven19.ascribe.asg` | ASG node types, JSON codecs, ASG visitor, DSL |
+| Bridge | `ascribe-bridge` | `io.eleven19.ascribe.bridge` | AST-to-ASG converter |
+| Pipeline | `ascribe-pipeline` | `io.eleven19.ascribe.pipeline` | Source, Sink, Pipeline, renderers, rewrite rules, file I/O |
+| TCK Runner | `ascribe-tck-runner` | `build.ascribe.tckrunner` | TCK test harness (Cucumber) — not published |
 
 ## AST Type Hierarchy
 
@@ -52,11 +59,17 @@ AstNode
   |     +-- Heading (level, title)
   |     +-- Section (level, title, blocks)
   |     +-- Paragraph (content: InlineContent)
-  |     +-- ListingBlock (delimiter, content: String)
-  |     +-- SidebarBlock (delimiter, blocks)
+  |     +-- Listing (delimiter, content: String, attributes, title)
+  |     +-- Literal (delimiter, content: String, attributes, title)
+  |     +-- Sidebar (delimiter, blocks, attributes, title)
+  |     +-- Example (delimiter, blocks, attributes, title)
+  |     +-- Quote (delimiter, blocks, attributes, title)
+  |     +-- Open (delimiter, blocks, attributes, title)
+  |     +-- Pass (delimiter, content: String, attributes, title)
+  |     +-- Comment (delimiter, content: String)
   |     +-- UnorderedList (items: List[ListItem])
   |     +-- OrderedList (items: List[ListItem])
-  |     +-- TableBlock (attributes: AttributeList, title: Option[BlockTitle], rows: List[TableRow], format: TableFormat)
+  |     +-- Table (rows, delimiter, format, attributes, title, hasBlankAfterFirstRow)
   +-- TableRow (cells: List[TableCell])
   +-- TableCell (content: CellContent)   -- CellContent = Inlines | Blocks
   +-- AttributeList, BlockTitle, TableFormat
@@ -68,6 +81,8 @@ AstNode
   |     +-- Mono (content: List[Inline])
   +-- ListItem (content: InlineContent)
 ```
+
+Delimited blocks (Listing, Literal, Sidebar, Example, Quote, Open, Pass) support variable-length fences and nesting. Content-only blocks (Listing, Literal, Pass, Comment) capture their body as a raw string; container blocks (Sidebar, Example, Quote, Open) parse their body as nested blocks.
 
 All AST nodes carry a `Span` (start/end source positions).
 
@@ -103,3 +118,5 @@ All ASG nodes carry a `Location` (start/end `Position` with 1-based line and col
 - **Position tracking via ParserBridges**: The parser uses custom `PosParserBridge` traits that capture Parsley source positions and thread them into AST node constructors.
 - **Section restructuring**: The parser emits flat headings; `DocumentParser.restructure` groups them into nested `Section` trees based on heading level.
 - **Location as array**: The ASG `Location` type serializes as a JSON array `[[startLine, startCol], [endLine, endCol]]` via `Schema.transform`, matching the TCK schema.
+- **Kyo effects in pipeline**: The pipeline module uses Kyo's effect system for composable I/O, allowing pipelines to be constructed without committing to a specific execution strategy.
+- **Shared build traits**: Compiler settings (including `-Werror`) are centralized in `CommonScalaModule` and `CommonScalaTestModule` meta-build traits.

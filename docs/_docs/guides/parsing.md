@@ -49,7 +49,7 @@ Items prefixed with `* `:
 * Second item
 ```
 
-Parsed by `BlockParser.unorderedList` using `some(unorderedItem)`.
+Parsed by `BlockParser.unorderedList` using `Parsley.some(unorderedItem)`.
 
 ### Ordered Lists
 
@@ -60,29 +60,35 @@ Items prefixed with `. `:
 . Step two
 ```
 
-### Listing Blocks
+### Delimited Blocks
 
-Delimited by `----`:
+Ascribe supports all standard AsciiDoc delimited block types. Each block type uses a distinct delimiter character repeated 4+ times:
+
+| Block Type | Delimiter | AST Node | Content |
+|-----------|-----------|----------|---------|
+| Listing | `----` | `Listing` | Verbatim string |
+| Literal | `....` | `Literal` | Verbatim string |
+| Sidebar | `****` | `Sidebar` | Nested blocks |
+| Example | `====` | `Example` | Nested blocks |
+| Quote | `____` | `Quote` | Nested blocks |
+| Open | `--` | `Open` | Nested blocks |
+| Passthrough | `++++` | `Pass` | Verbatim string |
+| Comment | `////` | `Comment` | Verbatim string |
+
+Verbatim blocks capture their content as a raw `String` without inline parsing. Container blocks (Sidebar, Example, Quote, Open) parse their body as nested blocks, supporting headings, paragraphs, lists, and further nesting.
+
+Delimiters support variable-length fences (e.g., `------` and `--------` are both valid listing delimiters). The closing delimiter must match the opening delimiter's character and length.
+
+#### Source Blocks
+
+A listing block with a `[source]` attribute becomes a source block with language highlighting:
 
 ```asciidoc
+[source,scala]
 ----
-code goes here
+def hello = println("Hello")
 ----
 ```
-
-Content inside is captured verbatim as a `String`, not parsed for inline markup.
-
-### Sidebar Blocks
-
-Delimited by `****`:
-
-```asciidoc
-****
-Sidebar content with *inline markup*.
-****
-```
-
-Inner content is parsed as nested blocks (headings, paragraphs, lists).
 
 ### Tables
 
@@ -103,7 +109,7 @@ Tables are delimited by `|===` and support three data formats:
 |===
 ```
 
-The parser handles:
+Table parsing is implemented within `BlockParser` and handles:
 
 - **Column specs** (`cols` attribute) -- proportional widths, alignment, and default cell styles (e.g., `cols="3*,>1,^.^1e"`)
 - **Cell specifiers** -- per-cell style, horizontal/vertical alignment, column span, row span, and duplication count (e.g., `2.3+^.>s|`)
@@ -111,7 +117,7 @@ The parser handles:
 - **Header/footer rows** -- determined by the `%header`, `%footer` options or an implicit header row
 - **Nested tables** -- inner tables use `!===` delimiters with `!` as the cell separator
 
-Table parsing is implemented in `TableParser` which produces `TableBlock` AST nodes. The bridge converts these to ASG `Table`, `TableRow`, and `TableCell` nodes.
+Table parsing produces `Table` AST nodes. The bridge converts these to ASG `Table`, `TableRow`, and `TableCell` nodes.
 
 ## Inline Parsers
 

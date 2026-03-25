@@ -9,11 +9,22 @@ title: Getting Started
 In your `build.mill` (Mill build tool), add Ascribe as a dependency:
 
 ```scala
-def ivyDeps = Agg(
-  ivy"io.eleven19.ascribe::ascribe:0.2.1",
-  ivy"io.eleven19.ascribe::ascribe-asg:0.2.1",
-  ivy"io.eleven19.ascribe::ascribe-bridge:0.2.1",
-  ivy"io.eleven19.ascribe::ascribe-pipeline:0.2.1"
+def mvnDeps = Seq(
+  mvn"io.eleven19.ascribe::ascribe:0.2.1",
+  mvn"io.eleven19.ascribe::ascribe-asg:0.2.1",
+  mvn"io.eleven19.ascribe::ascribe-bridge:0.2.1",
+  mvn"io.eleven19.ascribe::ascribe-pipeline:0.2.1"
+)
+```
+
+Or with sbt:
+
+```scala
+libraryDependencies ++= Seq(
+  "io.eleven19.ascribe" %% "ascribe"          % "0.2.1",
+  "io.eleven19.ascribe" %% "ascribe-asg"      % "0.2.1",
+  "io.eleven19.ascribe" %% "ascribe-bridge"   % "0.2.1",
+  "io.eleven19.ascribe" %% "ascribe-pipeline" % "0.2.1"
 )
 ```
 
@@ -62,6 +73,7 @@ The `ast.dsl` module provides a concise builder syntax for constructing AST node
 
 ```scala
 import io.eleven19.ascribe.ast.dsl.{*, given}
+import scala.language.implicitConversions
 
 val doc = document(
   heading(1, text("My Document")),
@@ -92,4 +104,29 @@ Override the default location by providing your own `given Location`:
 ```scala
 given Location = loc(1, 1, 3, 9)
 val located = document(paragraph(text("Hello")))
+```
+
+## Process Documents with the Pipeline
+
+The pipeline module provides renderers, rewrite rules, and file I/O using [Kyo](https://getkyo.io) effects:
+
+```scala
+import io.eleven19.ascribe.pipeline.*
+import io.eleven19.ascribe.pipeline.dsl.*
+
+// Parse, remove comments, and render back to AsciiDoc
+val result = Pipeline
+  .fromString("= Title\n\n// a comment\n\nHello.\n")
+  .rewrite(removeComments)
+  .runToString
+```
+
+For file-based processing:
+
+```scala
+val pipeline = Pipeline
+  .from(FileSource.fromDirectory(inputDir))
+  .rewrite(removeComments)
+
+pipeline.runTo(FileSink.toDirectory(outputDir))
 ```

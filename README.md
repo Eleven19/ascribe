@@ -27,11 +27,11 @@ Built against the [AsciiDoc Language Specification](https://gitlab.eclipse.org/e
 ### Mill
 
 ```scala
-def ivyDeps = Agg(
-  ivy"io.eleven19.ascribe::ascribe:0.2.1",
-  ivy"io.eleven19.ascribe::ascribe-asg:0.2.1",
-  ivy"io.eleven19.ascribe::ascribe-bridge:0.2.1",
-  ivy"io.eleven19.ascribe::ascribe-pipeline:0.2.1"
+def mvnDeps = Seq(
+  mvn"io.eleven19.ascribe::ascribe:0.2.1",
+  mvn"io.eleven19.ascribe::ascribe-asg:0.2.1",
+  mvn"io.eleven19.ascribe::ascribe-bridge:0.2.1",
+  mvn"io.eleven19.ascribe::ascribe-pipeline:0.2.1"
 )
 ```
 
@@ -114,10 +114,16 @@ The pipeline module provides renderers, rewrite rules, and file I/O using [Kyo](
 import io.eleven19.ascribe.pipeline.*
 import io.eleven19.ascribe.pipeline.dsl.*
 
-// Create a pipeline from a source, apply rewrite rules, and render
+// Parse, remove comments, and render back to AsciiDoc
+val result = Pipeline
+  .fromString("= Title\n\n// a comment\n\nHello.\n")
+  .rewrite(removeComments)
+  .runToString
+
+// Or process files from a directory
 val pipeline = Pipeline
-  .fromSource(FileSource.fromDirectory(inputDir))
-  .withRule(removeComments)
+  .from(FileSource.fromDirectory(inputDir))
+  .rewrite(removeComments)
 
 pipeline.runTo(FileSink.toDirectory(outputDir))
 ```

@@ -25,7 +25,7 @@ trait AstVisitor[A]:
   def visitText(node: Text): A                 = visitInline(node)
   def visitBold(node: Bold): A                 = visitInline(node)
 
-  def visitTable(node: TableBlock): A          = visitBlock(node)
+  def visitTable(node: Table): A          = visitBlock(node)
   def visitTableRow(node: TableRow): A         = visitNode(node)
   def visitTableCell(node: TableCell): A       = visitNode(node)
   // ... etc.

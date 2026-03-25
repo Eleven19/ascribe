@@ -19,7 +19,11 @@ leading `v`.
 - Updated README with current v0.2.1 versions, usage examples, module table, and link to documentation site.
 - Added ascribe logo to repository.
 - Fixed broken logo image link in README.
-- Updated getting-started guide with correct artifact coordinates and versions.
+- Updated all docs to reflect current code: correct AST type names, pipeline module, delimited block types, Mill `mvnDeps`/`Seq` syntax.
+- Fixed getting-started guide with correct artifact coordinates, versions, and pipeline examples.
+- Fixed architecture doc to include pipeline module and all delimited block types.
+- Fixed parsing guide to document all delimited block types and correct table parser location.
+- Fixed visitor guide `TableBlock` references to `Table`.
 
 ### CI
 
