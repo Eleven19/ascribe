@@ -8,6 +8,8 @@ import zio.json.*
 import zio.json.ast.Json
 
 import io.eleven19.ascribe.Ascribe
+
+given CanEqual[Json, Json] = CanEqual.derived
 import io.eleven19.ascribe.asg
 import io.eleven19.ascribe.asg.AsgCodecs
 import io.eleven19.ascribe.bridge.AstToAsg
