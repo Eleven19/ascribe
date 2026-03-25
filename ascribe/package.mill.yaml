@@ -1,9 +1,3 @@
-extends: [ScalaModule, scalafmt.ScalafmtModule, _root_.build.PublishSupport, _root_.build.DocSiteSupport]
-scalaVersion: "3.8.2"
-scalacOptions:
-  - "-Wvalue-discard"
-  - "-Wnonunit-statement"
-  - "-Wconf:msg=(unused.*value|discarded.*value|pure.*statement):error"
-  - "-language:strictEquality"
+extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport, _root_.build.DocSiteSupport]
 mvnDeps:
   - com.github.j-mie6::parsley::4.6.2

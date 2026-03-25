@@ -4,7 +4,7 @@ import mill.*
 import mill.scalalib.*
 import mill.scalalib.TestModule
 
-object `package` extends build.ascribe.`tck-runner`.ScalaTests with TestModule.Junit5 with _root_.build.TckTestSupport {
+object `package` extends build.ascribe.`tck-runner`.ScalaTests with _root_.build.CommonScalaTestModule with TestModule.Junit5 with _root_.build.TckTestSupport {
 
   def mvnDeps = Seq(
     mvn"org.scalameta::munit::1.0.4",
