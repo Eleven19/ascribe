@@ -1,9 +1,9 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.{atomic, eof}
+import parsley.Parsley.{atomic, eof, many, some}
 import parsley.character.{char, noneOf, satisfy, string, stringOfSome}
-import parsley.combinator.{many, option, sepEndBy, some}
+import parsley.combinator.{option, sepEndBy}
 import parsley.position.pos
 
 import io.eleven19.ascribe.ast.{Block, Document, DocumentHeader, Heading, Section, Span, mkSpan}

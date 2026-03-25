@@ -1,9 +1,9 @@
 package io.eleven19.ascribe.lexer
 
 import parsley.Parsley
-import parsley.Parsley.eof
+import parsley.Parsley.{eof, many}
 import parsley.character.{char, satisfy, stringOfSome}
-import parsley.combinator.{many, option}
+import parsley.combinator.option
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.Lexer
 import parsley.token.descriptions.{LexicalDesc, NameDesc, SymbolDesc}
