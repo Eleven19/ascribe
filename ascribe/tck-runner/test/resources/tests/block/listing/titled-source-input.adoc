@@ -1,0 +1,5 @@
+.Hello World application
+[source,ruby]
+----
+puts "Hello World!"
+----

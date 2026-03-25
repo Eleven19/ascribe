@@ -1,0 +1,55 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "listing",
+      "metadata": {
+        "attributes": {
+          "style": "source",
+          "language": "ruby"
+        }
+      },
+      "form": "delimited",
+      "delimiter": "----",
+      "inlines": [
+        {
+          "name": "text",
+          "value": "require 'sinatra'\n\nget '/hi' do\n  \"Hello World!\"\nend",
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 6,
+              "col": 3
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 8,
+          "col": 4
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 8,
+      "col": 4
+    }
+  ],
+  "type": "block"
+}
