@@ -79,47 +79,66 @@ val inlineElement: Parsley[CstInline] =
 - After matching the opening `:`, if the next char is `!`, consume it, strip the `!` prefix from the name, and set `unset = true`
 - Otherwise `unset = false` as before
 
+#### Layer 4b — `AttributeMap` type (`CstLowering.scala` or `cst` package)
+
+`AttributeMap` is a dedicated value type wrapping `Map[String, String]`. It encapsulates the built-in seed values, set/unset operations, and resolution logic so that none of those details leak into the lowering loop.
+
+```scala
+opaque type AttributeMap = Map[String, String]
+
+object AttributeMap:
+    /** Seed map containing AsciiDoc built-in special attributes. */
+    val builtIns: AttributeMap =
+        Map("empty" -> "", "sp" -> " ", "nbsp" -> "\u00A0", "zwsp" -> "\u200B")
+
+    /** Build a map seeded with built-ins then overlaid with document header entries. */
+    def fromHeader(entries: List[CstAttributeEntry]): AttributeMap =
+        entries.foldLeft(builtIns) {
+            case (m, CstAttributeEntry(name, value, false)) => m + (name -> value)
+            case (m, CstAttributeEntry(name, _, true))      => m - name
+        }
+
+    extension (m: AttributeMap)
+        def set(name: String, value: String): AttributeMap = m + (name -> value)
+        def unset(name: String): AttributeMap              = m - name
+        def resolve(name: String): String                  = m.getOrElse(name, s"{$name}")
+```
+
+Using `opaque type` keeps the underlying `Map` hidden — callers use only `set`, `unset`, and `resolve`. The type lives in `CstLowering.scala` (as a private top-level definition) or as a separate file in the `cst` package if it grows.
+
 #### Layer 5 — Lowering (`CstLowering.scala`)
 
-**Attribute map threading mechanism:** Rather than adding a parameter to `lowerBlock` (which would require updating all recursive internal calls for nested delimited blocks), `toAst` is refactored so that `lowerBlock`, `lowerInlines`, and `lowerInline` become **local `def`s inside `toAst`** that close over a `var attributeMap`. This means all recursive calls — including nested delimited block lowering — automatically see the same map without any signature changes:
+**Attribute map threading mechanism:** `toAst` is refactored so that `lowerBlock`, `lowerInlines`, and `lowerInline` become **local `def`s inside `toAst`** that close over a `var attrs: AttributeMap`. All recursive calls — including nested delimited block lowering — automatically see the current map without any signature changes:
 
 ```scala
 def toAst(cst: CstDocument): Document =
     val header = cst.header.map(lowerHeader)
-    // Build initial attribute map from built-ins + header attributes
-    var attributeMap: Map[String, String] =
-        Map("empty" -> "", "sp" -> " ", "nbsp" -> "\u00A0", "zwsp" -> "\u200B") ++
-            cst.header.toList.flatMap(_.attributes).map(e => e.name -> e.value)
+    var attrs  = AttributeMap.fromHeader(cst.header.toList.flatMap(_.attributes))
 
     def lowerInline(inline: CstInline): Inline = inline match
         // ... existing cases ...
-        case CstAttributeRef(name) =>
-            Text(attributeMap.getOrElse(name, s"{$name}"))(inline.span)
+        case CstAttributeRef(name) => Text(attrs.resolve(name))(inline.span)
 
     def lowerInlines(inlines: List[CstInline]): List[Inline] = inlines.map(lowerInline)
 
     def lowerBlock(block: CstBlock): Option[Block] = block match
-        // ... existing cases, unchanged signatures, all close over attributeMap via lowerInlines ...
+        // ... existing cases close over attrs via lowerInlines, no signature change ...
 
-    // Process body blocks sequentially, updating attributeMap as entries are encountered
     val blocks = cst.content
         .collect { case b: CstBlock => b }
         .flatMap {
-            case CstAttributeEntry(name, value, false) => attributeMap = attributeMap + (name -> value); None
-            case CstAttributeEntry(name, _, true)      => attributeMap = attributeMap - name; None
+            case CstAttributeEntry(name, value, false) => attrs = attrs.set(name, value); None
+            case CstAttributeEntry(name, _, true)      => attrs = attrs.unset(name); None
             case other                                 => lowerBlock(other)
         }
-    val restructured = restructure(blocks)
-    Document(header, restructured)(cst.span)
+    Document(header, restructure(blocks))(cst.span)
 ```
-
-The existing private `lowerBlock`, `lowerInlines`, and `lowerInline` methods on `CstLowering` become private helpers called by the local defs, or are inlined. All recursive calls within delimited block lowering continue to work without change because they call the local `lowerBlock` def which closes over the same `attributeMap`.
 
 Unresolved references pass through as literal `{name}` text — standard AsciiDoc behaviour.
 
 **Scope note:** Because `lowerInline` is called transitively from heading titles, list items, block titles, table cells, and all other inline contexts, attribute references are automatically resolved everywhere — consistent with the AsciiDoc spec which applies attribute substitution to all inline contexts except verbatim/pass content.
 
-Built-in initial values:
+Built-in initial values (seeded in `AttributeMap.builtIns`):
 | Reference | Value |
 |-----------|-------|
 | `{empty}` | `""` |
@@ -302,7 +321,7 @@ Plus dispatch arms in `CstVisitor.visit` for the new node types.
 | `ascribe/src/.../cst/CstNodes.scala` | Add `CstAttributeRef`; add `CstAdmonitionParagraph`; add `unset: Boolean` to `CstAttributeEntry` (breaking change) |
 | `ascribe/src/.../parser/InlineParser.scala` | Add `attrRefInline`; update `inlineElement` order |
 | `ascribe/src/.../parser/BlockParser.scala` | Add `admonitionParagraphBlock`; extend `attributeEntryBlock` for `:!name:` |
-| `ascribe/src/.../cst/CstLowering.scala` | Refactored: `lowerBlock`/`lowerInlines`/`lowerInline` become local defs closing over `var attributeMap`; sequential fold for body blocks; admonition paragraph lowering |
+| `ascribe/src/.../cst/CstLowering.scala` | Add `AttributeMap` opaque type; refactor to local defs closing over `var attrs: AttributeMap`; sequential fold for body blocks; admonition paragraph lowering |
 | `ascribe/src/.../cst/CstRenderer.scala` | Handle `CstAttributeRef` (render as `{name}`); `CstAdmonitionParagraph` (render as `KIND: text`); `CstAttributeEntry(unset=true)` (render as `:!name:`) |
 | `ascribe/src/.../cst/CstVisitor.scala` | Dispatch + children for `CstAttributeRef` and `CstAdmonitionParagraph` |
 | `ascribe/src/.../ast/Document.scala` | Add `AdmonitionKind` enum; add `Admonition` block |
