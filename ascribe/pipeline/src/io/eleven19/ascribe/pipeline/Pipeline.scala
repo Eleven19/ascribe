@@ -58,6 +58,51 @@ case class Pipeline[S] private (
                 .asInstanceOf[String]
         }
 
+    /** Execute the pipeline and render all documents through multiple renderers.
+      *
+      * Runs the source and rewrite stages once, then renders each document through every provided renderer. Returns a
+      * map from (renderer label, document path) to rendered string.
+      *
+      * {{{
+      * val results = pipeline.runToTargets(
+      *     "adoc" -> AsciiDocRenderer,
+      *     "json" -> AsgJsonRenderer
+      * )
+      * // results("adoc")(DocumentPath("doc.adoc")) == "= Title\n..."
+      * // results("json")(DocumentPath("doc.adoc")) == "{\"name\":\"document\"..."
+      * }}}
+      */
+    def runToTargets(
+        targets: (String, Renderer[Any])*
+    ): Map[String, Map[DocumentPath, String]] < S =
+        run.map { tree =>
+            val docs = tree.allDocuments
+            targets.map { (label, r) =>
+                val rendered = docs.map { (p, d) =>
+                    (p, r.render(d).asInstanceOf[String])
+                }.toMap
+                (label, rendered)
+            }.toMap
+        }
+
+    /** Execute the pipeline and render all documents through multiple renderers.
+      *
+      * Like `runToTargets` but returns a list of results (one per renderer) without labels.
+      *
+      * {{{
+      * val List(adocResults, jsonResults) = pipeline.renderAll(AsciiDocRenderer, AsgJsonRenderer)
+      * }}}
+      */
+    def renderAll(
+        renderers: Renderer[Any]*
+    ): List[Map[DocumentPath, String]] < S =
+        run.map { tree =>
+            val docs = tree.allDocuments
+            renderers.toList.map { r =>
+                docs.map((p, d) => (p, r.render(d).asInstanceOf[String])).toMap
+            }
+        }
+
     /** Execute the pipeline and write output to a sink. */
     def runTo(sink: Sink[Any]): Unit < S =
         run.map { tree =>

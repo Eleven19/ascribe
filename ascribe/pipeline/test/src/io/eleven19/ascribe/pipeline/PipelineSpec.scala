@@ -89,5 +89,44 @@ object PipelineSpec extends ZIOSpecDefault:
         test("Source.fromString fails on invalid input") {
             val result = runAbort(Source.fromString("[invalid\n").read)
             assertTrue(!result.isSuccess)
+        },
+        test("runToTargets renders through multiple renderers in a single run") {
+            val results = runPure(
+                Pipeline.fromDocument(document(paragraph("hello")))
+                    .runToTargets(
+                        "adoc" -> AsciiDocRenderer,
+                        "json" -> AsgJsonRenderer
+                    )
+            )
+            assertTrue(
+                results.size == 2,
+                results("adoc").values.head == "hello\n",
+                results("json").values.head.contains("\"name\":\"document\"")
+            )
+        },
+        test("renderAll returns a list of results per renderer") {
+            val results = runPure(
+                Pipeline.fromDocument(document(paragraph("hello")))
+                    .renderAll(AsciiDocRenderer, AsgJsonRenderer)
+            )
+            assertTrue(
+                results.size == 2,
+                results.head.values.head == "hello\n",
+                results(1).values.head.contains("\"name\":\"document\"")
+            )
+        },
+        test("runToTargets works with multi-document tree") {
+            val tree = DocumentTree.fromDocuments(scala.List(
+                (DocumentPath("a.adoc"), document(paragraph("one"))),
+                (DocumentPath("b.adoc"), document(paragraph("two")))
+            ))
+            val results = runPure(
+                Pipeline.fromTree(tree).runToTargets("adoc" -> AsciiDocRenderer)
+            )
+            assertTrue(
+                results("adoc").size == 2,
+                results("adoc")(DocumentPath("a.adoc")) == "one\n",
+                results("adoc")(DocumentPath("b.adoc")) == "two\n"
+            )
         }
     )
