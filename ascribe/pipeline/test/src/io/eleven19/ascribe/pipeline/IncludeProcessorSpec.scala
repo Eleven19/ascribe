@@ -1,18 +1,18 @@
 package io.eleven19.ascribe.pipeline
 
-import kyo.{<, IO, Abort, Path, Result, Sync, Resource, direct, now}
+import kyo.{<, Abort, Path, Result, Sync, Resource, direct, now}
 import kyo.test.KyoSpecDefault
 import io.eleven19.ascribe.ast.*
 
 object IncludeProcessorSpec extends KyoSpecDefault:
 
-    private def makeTempDir: Path < IO =
+    private def makeTempDir: Path < Sync =
         Sync.defer { Path(java.nio.file.Files.createTempDirectory("ascribe-inc-test").toString) }
 
-    private def writeFile(dir: Path, name: String, content: String): Unit < IO =
+    private def writeFile(dir: Path, name: String, content: String): Unit < Sync =
         Sync.defer { java.nio.file.Files.writeString(dir.toJava.resolve(name), content): Unit }
 
-    private def cleanup(dir: Path): Unit < IO =
+    private def cleanup(dir: Path): Unit < Sync =
         Sync.defer {
             def go(p: java.nio.file.Path): Unit =
                 if java.nio.file.Files.isDirectory(p) then

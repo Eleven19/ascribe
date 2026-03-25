@@ -3,6 +3,7 @@ package io.eleven19.ascribe.pipeline
 import zio.test.*
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.ast.dsl.{*, given}
+import scala.language.implicitConversions
 import kyo.{<, Abort, Result}
 
 object PipelineSpec extends ZIOSpecDefault:
