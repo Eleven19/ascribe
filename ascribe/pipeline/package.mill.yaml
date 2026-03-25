@@ -11,4 +11,3 @@ moduleDeps:
   - build.ascribe.bridge
 mvnDeps:
   - io.getkyo::kyo-core::1.0-RC1
-  - io.getkyo::kyo-direct::1.0-RC1

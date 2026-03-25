@@ -25,13 +25,16 @@ object FileSource:
                     readPaths(dir, adocPaths)
                 }
 
-    /** Create a Source that reads a single `.adoc` file. */
+    /** Create a Source that reads a single `.adoc` file, resolving include directives. */
     def fromFile(file: Path): Source[IO & Abort[PipelineError]] =
         new Source[IO & Abort[PipelineError]]:
             def read: DocumentTree < (IO & Abort[PipelineError]) =
-                val docPath = DocumentPath.fromString(file.toJava.getFileName.toString)
-                file.read.map { content =>
-                    parseOrAbort(content, docPath).map(doc => DocumentTree.single(docPath, doc))
+                val docPath   = DocumentPath.fromString(file.toJava.getFileName.toString)
+                val parentDir = Path(file.toJava.getParent.toString)
+                file.read.map { rawContent =>
+                    IncludeProcessor.process(rawContent, parentDir).map { content =>
+                        parseOrAbort(content, docPath).map(doc => DocumentTree.single(docPath, doc))
+                    }
                 }
 
     private def parseOrAbort(content: String, docPath: DocumentPath): Document < Abort[PipelineError] =
@@ -58,8 +61,11 @@ object FileSource:
             case head :: tail =>
                 val relativePath = baseDir.toJava.relativize(head.toJava).toString
                 val docPath      = DocumentPath.fromString(relativePath)
-                head.read.map { content =>
-                    parseOrAbort(content, docPath).map { doc =>
-                        readPathList(baseDir, tail, (docPath, doc) :: acc)
+                val parentDir    = Path(head.toJava.getParent.toString)
+                head.read.map { rawContent =>
+                    IncludeProcessor.process(rawContent, parentDir).map { content =>
+                        parseOrAbort(content, docPath).map { doc =>
+                            readPathList(baseDir, tail, (docPath, doc) :: acc)
+                        }
                     }
                 }
