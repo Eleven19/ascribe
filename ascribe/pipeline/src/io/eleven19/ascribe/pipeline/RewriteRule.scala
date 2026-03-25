@@ -41,7 +41,9 @@ object RewriteRule:
             override def applyInline(inline: Inline): RewriteAction[Inline] < Any =
                 if pf.isDefinedAt(inline) then pf(inline) else RewriteAction.Retain
 
-    /** Combine multiple rules. Rules are applied in order; the first non-Retain result wins. */
+    /** Combine multiple rules. Rules are applied in order; the first non-Retain result wins. With zero rules, returns a
+      * rule that retains everything.
+      */
     def compose[S](rules: RewriteRule[S]*): RewriteRule[S] =
         new RewriteRule[S]:
             override def applyBlock(block: Block): RewriteAction[Block] < S =
@@ -72,10 +74,8 @@ object RewriteRule:
         blocks match
             case Nil => List.empty[Block]
             case head :: tail =>
-                val headResult = rewriteBlock(head, rule)
-                val tailResult = rewriteBlocks(tail, rule)
-                headResult.map { maybeHead =>
-                    tailResult.map { rest =>
+                rewriteBlock(head, rule).map { maybeHead =>
+                    rewriteBlocks(tail, rule).map { rest =>
                         maybeHead.toList ++ rest
                     }
                 }
@@ -90,9 +90,9 @@ object RewriteRule:
     private def rewriteBlockChildren[S](block: Block, rule: RewriteRule[S]): Block < S =
         block match
             case s @ Section(level, title, blocks) =>
-                val newTitle  = rewriteInlines(title, rule)
-                val newBlocks = rewriteBlocks(blocks, rule)
-                newTitle.map(t => newBlocks.map(b => Section(level, t, b)(s.span)))
+                rewriteInlines(title, rule).map { t =>
+                    rewriteBlocks(blocks, rule).map(b => Section(level, t, b)(s.span))
+                }
 
             case p @ Paragraph(content) =>
                 rewriteInlines(content, rule).map(Paragraph(_)(p.span))
@@ -118,25 +118,26 @@ object RewriteRule:
             case h @ Heading(level, title) =>
                 rewriteInlines(title, rule).map(Heading(level, _)(h.span))
 
-            // Verbatim blocks have no child AST nodes to rewrite
+            case tb @ Table(rows, delim, fmt, attrs, title, blank) =>
+                rewriteTableRows(rows, rule).map(Table(_, delim, fmt, attrs, title, blank)(tb.span))
+
+            // Verbatim blocks (Listing, Literal, Comment, Pass) have no child AST nodes to rewrite
             case other => other
 
     private def rewriteListItems[S](items: List[ListItem], rule: RewriteRule[S]): List[ListItem] < S =
         items match
             case Nil => List.empty[ListItem]
             case head :: tail =>
-                val headResult = rewriteInlines(head.content, rule).map(ListItem(_)(head.span))
-                val tailResult = rewriteListItems(tail, rule)
-                headResult.map(h => tailResult.map(t => h :: t))
+                rewriteInlines(head.content, rule).map(ListItem(_)(head.span)).map { h =>
+                    rewriteListItems(tail, rule).map(t => h :: t)
+                }
 
     private def rewriteInlines[S](inlines: List[Inline], rule: RewriteRule[S]): List[Inline] < S =
         inlines match
             case Nil => List.empty[Inline]
             case head :: tail =>
-                val headResult = rewriteInline(head, rule)
-                val tailResult = rewriteInlines(tail, rule)
-                headResult.map { maybeHead =>
-                    tailResult.map { rest =>
+                rewriteInline(head, rule).map { maybeHead =>
+                    rewriteInlines(tail, rule).map { rest =>
                         maybeHead.toList ++ rest
                     }
                 }
@@ -159,3 +160,37 @@ object RewriteRule:
             case m @ Mono(content) =>
                 rewriteInlines(content, rule).map(Mono(_)(m.span))
             case other => other // Text has no children
+
+    private def rewriteTableRows[S](rows: List[TableRow], rule: RewriteRule[S]): List[TableRow] < S =
+        rows match
+            case Nil => List.empty[TableRow]
+            case head :: tail =>
+                rewriteTableRow(head, rule).map { h =>
+                    rewriteTableRows(tail, rule).map(t => h :: t)
+                }
+
+    private def rewriteTableRow[S](row: TableRow, rule: RewriteRule[S]): TableRow < S =
+        rewriteTableCells(row.cells, rule).map(TableRow(_)(row.span))
+
+    private def rewriteTableCells[S](cells: List[TableCell], rule: RewriteRule[S]): List[TableCell] < S =
+        cells match
+            case Nil => List.empty[TableCell]
+            case head :: tail =>
+                rewriteTableCell(head, rule).map { h =>
+                    rewriteTableCells(tail, rule).map(t => h :: t)
+                }
+
+    private def rewriteTableCell[S](cell: TableCell, rule: RewriteRule[S]): TableCell < S =
+        cell.content match
+            case CellContent.Inlines(inlines) =>
+                rewriteInlines(inlines, rule).map { newInlines =>
+                    TableCell(CellContent.Inlines(newInlines), cell.style, cell.colSpan, cell.rowSpan, cell.dupFactor)(
+                        cell.span
+                    )
+                }
+            case CellContent.Blocks(blocks) =>
+                rewriteBlocks(blocks, rule).map { newBlocks =>
+                    TableCell(CellContent.Blocks(newBlocks), cell.style, cell.colSpan, cell.rowSpan, cell.dupFactor)(
+                        cell.span
+                    )
+                }

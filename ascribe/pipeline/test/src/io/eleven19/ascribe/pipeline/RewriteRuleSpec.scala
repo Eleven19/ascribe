@@ -8,10 +8,10 @@ import kyo.<
 
 object RewriteRuleSpec extends ZIOSpecDefault:
 
-    private def eval[A](v: A < Any): A = v.asInstanceOf[A]
+    private def runPure[A](v: A < Any): A = v.asInstanceOf[A]
 
     private def rewriteDoc(doc: Document, rule: RewriteRule[Any]): Document =
-        eval(RewriteRule.rewrite(doc, rule))
+        runPure(RewriteRule.rewrite(doc, rule))
 
     def spec = suite("RewriteRule")(
         test("block rule replaces matching blocks") {

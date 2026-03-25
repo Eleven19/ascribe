@@ -9,9 +9,9 @@ import kyo.<
 object AsciiDocRendererSpec extends ZIOSpecDefault:
 
     /** Evaluate a pure Kyo value (no pending effects). */
-    private def eval(v: String < Any): String = v.asInstanceOf[String]
+    private def runPure(v: String < Any): String = v.asInstanceOf[String]
 
-    private def renderDoc(doc: Document): String = eval(AsciiDocRenderer.render(doc))
+    private def renderDoc(doc: Document): String = runPure(AsciiDocRenderer.render(doc))
 
     /** Parse input and render back, returning the rendered string. */
     private def roundtrip(input: String): String =
