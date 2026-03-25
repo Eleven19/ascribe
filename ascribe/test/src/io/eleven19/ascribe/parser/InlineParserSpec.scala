@@ -82,12 +82,6 @@ object InlineParserSpec extends ZIOSpecDefault:
             }
         ),
         suite("attribute refs")(
-            test("bare {name} is not swallowed as plain text") {
-                parse("{version}") match
-                    case Success(inlines) =>
-                        assertTrue(inlines == List(CstAttributeRef("version")(u)))
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
-            },
             test("parses {name} as CstAttributeRef") {
                 parse("{version}") match
                     case Success(inlines) =>
