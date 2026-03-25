@@ -30,7 +30,7 @@ object CstLowering:
     private def lowerHeader(h: CstDocumentHeader): DocumentHeader =
         DocumentHeader(
             title = lowerInlines(h.title.title),
-            attributes = h.attributes.map(e => (e.name, e.value))
+            attributes = h.attributes.filterNot(_.unset).map(e => (e.name, e.value))
         )(h.span)
 
     private def lowerBlock(block: CstBlock): Option[Block] = block match
