@@ -1,9 +1,9 @@
 package io.eleven19.ascribe.cst
 
 import zio.test.*
-import io.eleven19.ascribe.ast.{Heading, Section, Span}
+import io.eleven19.ascribe.ast.{Admonition, AdmonitionKind, Heading, Paragraph, Section, Span}
 import io.eleven19.ascribe.ast.dsl.{*, given}
-import io.eleven19.ascribe.cst.{CstAttributeEntry, CstAttributeRef, CstDocumentHeader, CstDocument, CstParagraph, CstParagraphLine, CstHeading, CstText}
+import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstAttributeRef, CstDocumentHeader, CstDocument, CstParagraph, CstParagraphLine, CstHeading, CstText}
 
 object CstLoweringSpec extends ZIOSpecDefault:
     private val u = Span.unknown
@@ -139,6 +139,44 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                 ))(u)
                 assertTrue(CstLowering.toAst(cst) == document(paragraph(text(" "))))
+            }
+        ),
+        suite("admonition paragraphs")(
+            test("NOTE: text lowers to Admonition(Note, [Paragraph])") {
+                val cst = CstDocument(None, List(
+                    CstAdmonitionParagraph("NOTE", List(CstText("Watch out.")(u)))(u)
+                ))(u)
+                val doc = CstLowering.toAst(cst)
+                doc.blocks match
+                    case List(Admonition(AdmonitionKind.Note, List(_: Paragraph))) => assertTrue(true)
+                    case other => assertTrue(s"unexpected: $other" == "")
+            },
+            test("WARNING: lowers to AdmonitionKind.Warning") {
+                val cst = CstDocument(None, List(
+                    CstAdmonitionParagraph("WARNING", List(CstText("Danger.")(u)))(u)
+                ))(u)
+                val doc = CstLowering.toAst(cst)
+                doc.blocks match
+                    case List(Admonition(AdmonitionKind.Warning, _)) => assertTrue(true)
+                    case other => assertTrue(s"unexpected: $other" == "")
+            },
+            test("all five admonition kinds lower correctly") {
+                val kinds = List(
+                    "NOTE"      -> AdmonitionKind.Note,
+                    "TIP"       -> AdmonitionKind.Tip,
+                    "IMPORTANT" -> AdmonitionKind.Important,
+                    "CAUTION"   -> AdmonitionKind.Caution,
+                    "WARNING"   -> AdmonitionKind.Warning
+                )
+                val results = kinds.map { case (label, expected) =>
+                    val cst = CstDocument(None, List(
+                        CstAdmonitionParagraph(label, List(CstText("text")(u)))(u)
+                    ))(u)
+                    CstLowering.toAst(cst).blocks match
+                        case List(Admonition(kind, _)) => kind == expected
+                        case _                         => false
+                }
+                assertTrue(results.forall(identity))
             }
         ),
         suite("heading and section restructuring")(

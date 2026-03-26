@@ -54,7 +54,15 @@ object CstLowering:
         def lowerBlock(block: CstBlock): Option[Block] = block match
             case _: CstLineComment         => None
             case _: CstAttributeEntry      => None
-            case _: CstAdmonitionParagraph => None
+            case CstAdmonitionParagraph(kind, content) =>
+                val k = kind match
+                    case "NOTE"      => AdmonitionKind.Note
+                    case "TIP"       => AdmonitionKind.Tip
+                    case "IMPORTANT" => AdmonitionKind.Important
+                    case "CAUTION"   => AdmonitionKind.Caution
+                    case "WARNING"   => AdmonitionKind.Warning
+                    case other       => sys.error(s"Unknown admonition kind: $other")
+                Some(Admonition(k, List(Paragraph(lowerInlines(content))(block.span)))(block.span))
             case CstInclude(target, _) =>
                 sys.error(s"Unresolved CstInclude: $target — resolve includes before lowering")
 
