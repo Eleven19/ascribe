@@ -107,14 +107,22 @@ case class CstLineComment(
 )(val span: Span)
     extends CstBlock derives CanEqual
 
-/** Attribute entry: `:name: value`
+/** Attribute entry: `:name: value` or `:!name:` (unset form).
   *
-  * Note: The AsciiDoc unset form (`:!name:`) is not represented here — `value` is always the raw string after the
-  * trailing `:`. Representing unset/negated entries is out of scope for this CST iteration.
+  * When `unset = true` the entry represents `:!name:` and `value` is always empty. When `unset = false` the entry
+  * represents `:name: value` where `value` is the raw string after the trailing `:`.
   */
 case class CstAttributeEntry(
     name: String,
-    value: String
+    value: String,
+    unset: Boolean
+)(val span: Span)
+    extends CstBlock derives CanEqual
+
+/** Paragraph-form admonition: `NOTE: text on same line` */
+case class CstAdmonitionParagraph(
+    kind: String,
+    content: List[CstInline]
 )(val span: Span)
     extends CstBlock derives CanEqual
 
@@ -166,6 +174,8 @@ case class CstMono(
     content: List[CstInline]
 )(val span: Span)
     extends CstInline derives CanEqual
+
+case class CstAttributeRef(name: String)(val span: Span) extends CstInline derives CanEqual
 
 // ── Table sub-nodes ───────────────────────────────────────────────────────────
 

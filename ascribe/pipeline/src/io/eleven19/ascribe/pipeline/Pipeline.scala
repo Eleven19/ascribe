@@ -20,6 +20,7 @@ case class Pipeline[S] private (
     rules: List[RewriteRule[S]],
     renderer: Renderer[S]
 ):
+
     /** Add a rewrite rule to the pipeline. Pure rules (`RewriteRule[Any]`) are accepted for any pipeline. */
     def rewrite(rule: RewriteRule[Any]): Pipeline[S] =
         // RewriteRule[Any] is safe to widen to RewriteRule[S]: it carries no effects and S only appears

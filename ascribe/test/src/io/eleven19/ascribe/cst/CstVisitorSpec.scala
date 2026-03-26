@@ -42,5 +42,25 @@ object CstVisitorSpec extends ZIOSpecDefault:
         test("count returns 1 for a leaf node") {
             val t = CstText("hello")(Span.unknown)
             assertTrue(t.count == 1)
+        },
+        test("collect finds CstAttributeRef nodes") {
+            Ascribe.parseCst("{version} text\n") match
+                case Success(doc) =>
+                    val refs = doc.collect { case r: CstAttributeRef => r.name }
+                    assertTrue(refs == List("version"))
+                case _ => assertTrue(false)
+        },
+        test("count includes CstAttributeRef in total") {
+            Ascribe.parseCst("{x}\n") match
+                case Success(doc) =>
+                    assertTrue(doc.count > 3)  // document + paragraph + line + ref
+                case _ => assertTrue(false)
+        },
+        test("collect finds CstAdmonitionParagraph nodes") {
+            Ascribe.parseCst("NOTE: Watch out.\n") match
+                case Success(doc) =>
+                    val kinds = doc.collect { case a: CstAdmonitionParagraph => a.kind }
+                    assertTrue(kinds == List("NOTE"))
+                case _ => assertTrue(false)
         }
     )

@@ -596,16 +596,36 @@ object BlockParser:
                 }
         ).label("include directive")
 
-    /** Parses a `:name: value` attribute entry as a [[CstAttributeEntry]] node. */
+    /** Parses a `:name: value` or `:!name:` attribute entry as a [[CstAttributeEntry]] node. */
     val attributeEntryBlock: Parsley[CstBlock] =
         atomic(
             (pos <~>
-                (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(
-                    char(' ')
-                )) <~>
+                (char(':') *> option(char('!')).map(_.isDefined) <~>
+                    stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(
+                        char(' ')
+                    )) <~>
                 many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
-                .map { case (((s, name), value), e) => CstAttributeEntry(name, value)(mkSpan(s, e)) }
+                .map { case ((((s, (unset, name)), value), e)) =>
+                    CstAttributeEntry(name, if unset then "" else value, unset)(mkSpan(s, e))
+                }
         ).label("attribute entry")
+
+    // -----------------------------------------------------------------------
+    // Admonition paragraphs
+    // -----------------------------------------------------------------------
+
+    private val admonitionLabel: Parsley[String] =
+        atomic(string("NOTE")) | atomic(string("TIP")) | atomic(string("IMPORTANT")) |
+            atomic(string("CAUTION")) | atomic(string("WARNING"))
+
+    /** Parses a paragraph-form admonition: `NOTE: text`, `TIP: text`, etc. */
+    val admonitionParagraphBlock: Parsley[CstBlock] =
+        atomic(
+            (pos <~> (admonitionLabel <* string(": ") <~> lineContent) <~> pos <* eolOrEof)
+                .map { case ((s, (kind, content)), e) =>
+                    CstAdmonitionParagraph(kind, content)(mkSpan(s, e))
+                }
+        ).label("admonition paragraph")
 
     // -----------------------------------------------------------------------
     // Paragraphs
@@ -654,4 +674,4 @@ object BlockParser:
             sidebarBlock | exampleBlock | quoteBlock | openBlock |
             tableBlock | heading | unorderedList | orderedList |
             lineCommentBlock | includeDirective | attributeEntryBlock |
-            paragraph
+            admonitionParagraphBlock | paragraph

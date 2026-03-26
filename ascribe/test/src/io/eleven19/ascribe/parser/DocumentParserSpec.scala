@@ -116,5 +116,23 @@ object DocumentParserSpec extends ZIOSpecDefault:
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
+        ),
+        suite("header attribute entries")(
+            test("parses :!name: unset entry in document header") {
+                Ascribe.parseCst("= Doc\n:!my-attr:\n\nPara.\n") match
+                    case Success(cst) =>
+                        val unsetEntries = cst.header.toList.flatMap(_.attributes).filter(_.unset)
+                        assertTrue(unsetEntries.nonEmpty) &&
+                        assertTrue(unsetEntries.head.name == "my-attr")
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test(":!name: in header does not appear in lowered attributes list") {
+                Ascribe.parse("= Doc\n:!my-attr:\n\nPara.\n") match
+                    case Success(doc) =>
+                        val attrNames = doc.header.toList.flatMap(_.attributes).map(_._1)
+                        assertTrue(!attrNames.contains("!my-attr")) &&
+                        assertTrue(!attrNames.contains("my-attr"))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
         )
     )

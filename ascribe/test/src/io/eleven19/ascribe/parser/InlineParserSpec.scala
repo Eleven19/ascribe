@@ -4,7 +4,7 @@ import parsley.{Failure, Success}
 import zio.test.*
 
 import io.eleven19.ascribe.ast.Span
-import io.eleven19.ascribe.cst.{CstBold, CstItalic, CstMono, CstText}
+import io.eleven19.ascribe.cst.{CstAttributeRef, CstBold, CstItalic, CstMono, CstText}
 import io.eleven19.ascribe.parser.InlineParser.lineContent
 
 object InlineParserSpec extends ZIOSpecDefault:
@@ -78,6 +78,38 @@ object InlineParserSpec extends ZIOSpecDefault:
                             CstText(" and ")(u),
                             CstItalic(List(CstText("i")(u)))(u)
                         ))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("attribute refs")(
+            test("parses {name} as CstAttributeRef") {
+                parse("{version}") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstAttributeRef("version")(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses attribute ref embedded in text") {
+                parse("Release {version} now") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(
+                            CstText("Release ")(u),
+                            CstAttributeRef("version")(u),
+                            CstText(" now")(u)
+                        ))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("attribute ref name must start with letter") {
+                parse("{1foo}") match
+                    case Success(inlines) =>
+                        // {1foo} is not a valid attr ref name — parses as plain { text
+                        assertTrue(!inlines.exists { case CstAttributeRef(_) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("lone { is plain text fallback") {
+                parse("a{b") match
+                    case Success(inlines) =>
+                        val texts = inlines.collect { case CstText(c) => c }
+                        assertTrue(texts.contains("{"))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         )

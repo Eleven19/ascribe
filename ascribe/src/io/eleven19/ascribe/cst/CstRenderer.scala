@@ -105,14 +105,27 @@ object CstRenderer:
         case e: CstAttributeEntry =>
             renderAttributeEntry(e, sb)
 
+        case ap: CstAdmonitionParagraph =>
+            sb.append(ap.kind)
+            sb.append(": ")
+            renderInlines(ap.content, sb)
+            sb.append('\n')
+
     private def renderAttributeEntry(e: CstAttributeEntry, sb: StringBuilder): Unit =
-        sb.append(':')
-        sb.append(e.name)
-        sb.append(':')
-        if e.value.nonEmpty then
-            sb.append(' ')
-            sb.append(e.value)
-        sb.append('\n')
+        if e.unset then
+            sb.append(':')
+            sb.append('!')
+            sb.append(e.name)
+            sb.append(':')
+            sb.append('\n')
+        else
+            sb.append(':')
+            sb.append(e.name)
+            sb.append(':')
+            if e.value.nonEmpty then
+                sb.append(' ')
+                sb.append(e.value)
+            sb.append('\n')
 
     private def renderAttributeList(al: CstAttributeList, sb: StringBuilder): Unit =
         if al.positional.nonEmpty || al.named.nonEmpty || al.options.nonEmpty || al.roles.nonEmpty then
@@ -151,3 +164,7 @@ object CstRenderer:
             sb.append("``")
             renderInlines(content, sb)
             sb.append("``")
+        case CstAttributeRef(name) =>
+            sb.append('{')
+            sb.append(name)
+            sb.append('}')

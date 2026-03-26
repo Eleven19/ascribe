@@ -60,5 +60,32 @@ object CstRendererSpec extends ZIOSpecDefault:
                     val rendered = CstRenderer.render(cst)
                     assertTrue(rendered.contains("include::file.adoc"))
                 case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
+        },
+        test("render produces :!name: for unset entry") {
+            Ascribe.parseCst(":!my-attr:\n") match
+                case Success(cst) =>
+                    val rendered = CstRenderer.render(cst)
+                    assertTrue(rendered.contains(":!my-attr:"))
+                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
+        },
+        test("attribute ref roundtrips") {
+            roundtrip("{version} text\n")
+        },
+        test("render produces correct text for attribute ref") {
+            Ascribe.parseCst("Release {version}.\n") match
+                case Success(cst) =>
+                    val rendered = CstRenderer.render(cst)
+                    assertTrue(rendered.contains("{version}"))
+                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
+        },
+        test("admonition paragraph roundtrips") {
+            roundtrip("NOTE: Watch out.\n")
+        },
+        test("render produces NOTE: prefix") {
+            Ascribe.parseCst("NOTE: Watch out.\n") match
+                case Success(cst) =>
+                    val rendered = CstRenderer.render(cst)
+                    assertTrue(rendered.startsWith("NOTE: "))
+                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
         }
     )

@@ -52,6 +52,10 @@ case class ListItem(content: InlineContent)(val span: Span) extends AstNode deri
 object ListItem extends PosParserBridge1[InlineContent, ListItem]:
     def apply(content: InlineContent)(span: Span): ListItem = new ListItem(content)(span)
 
+/** The admonition label type for paragraph-form and delimited admonitions. */
+enum AdmonitionKind derives CanEqual:
+    case Note, Tip, Important, Caution, Warning
+
 /** A block-level element in an AsciiDoc document. */
 sealed trait Block extends AstNode
 
@@ -244,6 +248,11 @@ case class UnorderedList(items: List[ListItem])(val span: Span) extends Block de
 
 /** A numbered list (items prefixed with ". "). */
 case class OrderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual
+
+/** A paragraph-form admonition: `NOTE: text`. The `blocks` list contains a single `Paragraph`. For delimited
+  * admonitions (`[NOTE]\n====`), see `Example` with positional attribute.
+  */
+case class Admonition(kind: AdmonitionKind, blocks: List[Block])(val span: Span) extends Block derives CanEqual
 
 object Heading extends PosParserBridge2[Int, InlineContent, Heading]:
     def apply(level: Int, title: InlineContent)(span: Span): Heading = new Heading(level, title)(span)
