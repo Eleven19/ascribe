@@ -119,6 +119,13 @@ case class CstAttributeEntry(
 )(val span: Span)
     extends CstBlock derives CanEqual
 
+/** Paragraph-form admonition: `NOTE: text on same line` */
+case class CstAdmonitionParagraph(
+    kind: String,
+    content: List[CstInline]
+)(val span: Span)
+    extends CstBlock derives CanEqual
+
 /** Blank line — preserved as a node instead of consumed. */
 case class CstBlankLine()(val span: Span) extends CstTopLevel derives CanEqual
 

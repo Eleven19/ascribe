@@ -611,6 +611,23 @@ object BlockParser:
         ).label("attribute entry")
 
     // -----------------------------------------------------------------------
+    // Admonition paragraphs
+    // -----------------------------------------------------------------------
+
+    private val admonitionLabel: Parsley[String] =
+        atomic(string("NOTE")) | atomic(string("TIP")) | atomic(string("IMPORTANT")) |
+            atomic(string("CAUTION")) | atomic(string("WARNING"))
+
+    /** Parses a paragraph-form admonition: `NOTE: text`, `TIP: text`, etc. */
+    val admonitionParagraphBlock: Parsley[CstBlock] =
+        atomic(
+            (pos <~> (admonitionLabel <* string(": ") <~> lineContent) <~> pos <* eolOrEof)
+                .map { case ((s, (kind, content)), e) =>
+                    CstAdmonitionParagraph(kind, content)(mkSpan(s, e))
+                }
+        ).label("admonition paragraph")
+
+    // -----------------------------------------------------------------------
     // Paragraphs
     // -----------------------------------------------------------------------
 
@@ -657,4 +674,4 @@ object BlockParser:
             sidebarBlock | exampleBlock | quoteBlock | openBlock |
             tableBlock | heading | unorderedList | orderedList |
             lineCommentBlock | includeDirective | attributeEntryBlock |
-            paragraph
+            admonitionParagraphBlock | paragraph

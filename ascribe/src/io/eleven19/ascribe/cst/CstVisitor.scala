@@ -26,8 +26,9 @@ trait CstVisitor[A]:
     def visitTable(node: CstTable): A                   = visitBlock(node)
     def visitInclude(node: CstInclude): A               = visitBlock(node)
     def visitLineComment(node: CstLineComment): A       = visitBlock(node)
-    def visitAttributeEntry(node: CstAttributeEntry): A = visitBlock(node)
-    def visitBlankLine(node: CstBlankLine): A           = visitTopLevel(node)
+    def visitAttributeEntry(node: CstAttributeEntry): A         = visitBlock(node)
+    def visitAdmonitionParagraph(node: CstAdmonitionParagraph): A = visitBlock(node)
+    def visitBlankLine(node: CstBlankLine): A                   = visitTopLevel(node)
 
     def visitParagraphLine(node: CstParagraphLine): A = visitNode(node)
     def visitListItem(node: CstListItem): A           = visitNode(node)
@@ -65,8 +66,9 @@ object CstVisitor:
         case n: CstTable           => visitor.visitTable(n)
         case n: CstInclude         => visitor.visitInclude(n)
         case n: CstLineComment     => visitor.visitLineComment(n)
-        case n: CstAttributeEntry  => visitor.visitAttributeEntry(n)
-        case n: CstBlankLine       => visitor.visitBlankLine(n)
+        case n: CstAttributeEntry        => visitor.visitAttributeEntry(n)
+        case n: CstAdmonitionParagraph   => visitor.visitAdmonitionParagraph(n)
+        case n: CstBlankLine             => visitor.visitBlankLine(n)
         case n: CstParagraphLine   => visitor.visitParagraphLine(n)
         case n: CstListItem        => visitor.visitListItem(n)
         case n: CstBlockTitle      => visitor.visitBlockTitle(n)
@@ -100,10 +102,11 @@ object CstVisitor:
         case tc: CstTableCell      => List(tc.content)
         case ci: CstCellInlines    => ci.content
         case cb: CstCellBlocks     => cb.content
-        case _: CstInclude         => Nil
-        case _: CstLineComment     => Nil
-        case _: CstAttributeEntry  => Nil
-        case _: CstBlankLine       => Nil
+        case _: CstInclude              => Nil
+        case _: CstLineComment          => Nil
+        case _: CstAttributeEntry       => Nil
+        case ap: CstAdmonitionParagraph => ap.content
+        case _: CstBlankLine            => Nil
         case _: CstAttributeList   => Nil
         case bt: CstBlockTitle     => bt.content
         case _: CstText            => Nil

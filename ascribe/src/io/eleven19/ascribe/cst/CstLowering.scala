@@ -52,8 +52,9 @@ object CstLowering:
         def lowerInlines(inlines: List[CstInline]): List[Inline] = inlines.map(lowerInline)
 
         def lowerBlock(block: CstBlock): Option[Block] = block match
-            case _: CstLineComment    => None
-            case _: CstAttributeEntry => None
+            case _: CstLineComment         => None
+            case _: CstAttributeEntry      => None
+            case _: CstAdmonitionParagraph => None
             case CstInclude(target, _) =>
                 sys.error(s"Unresolved CstInclude: $target — resolve includes before lowering")
 

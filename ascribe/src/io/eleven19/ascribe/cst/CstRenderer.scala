@@ -105,6 +105,12 @@ object CstRenderer:
         case e: CstAttributeEntry =>
             renderAttributeEntry(e, sb)
 
+        case ap: CstAdmonitionParagraph =>
+            sb.append(ap.kind)
+            sb.append(": ")
+            renderInlines(ap.content, sb)
+            sb.append('\n')
+
     private def renderAttributeEntry(e: CstAttributeEntry, sb: StringBuilder): Unit =
         if e.unset then
             sb.append(':')
