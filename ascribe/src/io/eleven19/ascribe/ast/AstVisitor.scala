@@ -35,6 +35,7 @@ trait AstVisitor[A]:
     def visitPass(node: Pass): A                   = visitBlock(node)
     def visitUnorderedList(node: UnorderedList): A = visitBlock(node)
     def visitOrderedList(node: OrderedList): A     = visitBlock(node)
+    def visitAdmonition(node: Admonition): A       = visitBlock(node)
     def visitTable(node: Table): A                 = visitBlock(node)
     def visitTableRow(node: TableRow): A           = visitNode(node)
     def visitTableCell(node: TableCell): A         = visitNode(node)
@@ -72,6 +73,7 @@ object AstVisitor:
         case n: Pass            => visitor.visitPass(n)
         case n: UnorderedList   => visitor.visitUnorderedList(n)
         case n: OrderedList     => visitor.visitOrderedList(n)
+        case n: Admonition      => visitor.visitAdmonition(n)
         case n: Table           => visitor.visitTable(n)
         case n: TableRow        => visitor.visitTableRow(n)
         case n: TableCell       => visitor.visitTableCell(n)
@@ -101,6 +103,7 @@ object AstVisitor:
         case ob: Open           => ob.blocks
         case u: UnorderedList   => u.items
         case o: OrderedList     => o.items
+        case a: Admonition      => a.blocks
         case tb: Table          => tb.title.toList ++ tb.attributes.toList ++ tb.rows
         case tr: TableRow       => tr.cells
         case tc: TableCell =>

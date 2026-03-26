@@ -148,5 +148,18 @@ object AstVisitorSpec extends ZIOSpecDefault:
 
             val count = doc.foldRight(0) { (_, n) => n + 1 }
             assertTrue(count == depth + 3)
+        },
+        test("visitAdmonition dispatches correctly") {
+            val admonition = Admonition(AdmonitionKind.Note, List(Paragraph(Nil)(u)))(u)
+            val visitor = new AstVisitor[String]:
+                def visitNode(node: AstNode): String = "node"
+                override def visitAdmonition(node: Admonition): String = s"admonition:${node.kind}"
+            assertTrue(admonition.visit(visitor) == "admonition:Note")
+        },
+        test("admonition children are traversable") {
+            val para       = Paragraph(List(Text("warn")(u)))(u)
+            val admonition = Admonition(AdmonitionKind.Warning, List(para))(u)
+            val texts = admonition.collect { case Text(c) => c }
+            assertTrue(texts.contains("warn"))
         }
     )
