@@ -158,9 +158,9 @@ object CstLowering:
     private def lowerHeader(h: CstDocumentHeader): DocumentHeader =
         DocumentHeader(
             title = h.title.title.map {
-                case t: CstText          => Text(t.content)(t.span)
-                case r: CstAttributeRef  => Text(s"{${r.name}}")(r.span)
-                case other               => Text(other.toString)(other.span)
+                case t: CstText         => Text(t.content)(t.span)
+                case r: CstAttributeRef => Text(s"{${r.name}}")(r.span)
+                case other              => Text(other.toString)(other.span)
             },
             attributes = h.attributes.filterNot(_.unset).map(e => (e.name, e.value))
         )(h.span)
