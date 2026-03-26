@@ -3,6 +3,7 @@ package io.eleven19.ascribe.cst
 import zio.test.*
 import io.eleven19.ascribe.ast.{Heading, Section, Span}
 import io.eleven19.ascribe.ast.dsl.{*, given}
+import io.eleven19.ascribe.cst.{CstAttributeEntry, CstAttributeRef, CstDocumentHeader, CstDocument, CstParagraph, CstParagraphLine, CstHeading, CstText}
 
 object CstLoweringSpec extends ZIOSpecDefault:
     private val u = Span.unknown
@@ -84,6 +85,60 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 ))(u)))(u)
                 assertTrue(CstLowering.toAst(cst) ==
                     document(paragraph(mono(text("m")))))
+            }
+        ),
+        suite("attribute references")(
+            test("resolves attribute ref defined in header") {
+                val entry = CstAttributeEntry("version", "1.0", false)(u)
+                val ref   = CstAttributeRef("version")(u)
+                val cst   = CstDocument(
+                    Some(CstDocumentHeader(
+                        CstHeading(1, "=", List(CstText("Doc")(u)))(u),
+                        List(entry)
+                    )(u)),
+                    List(CstParagraph(List(CstParagraphLine(List(ref))(u)))(u))
+                )(u)
+                assertTrue(CstLowering.toAst(cst) == document(documentHeader(List(text("Doc")), List("version" -> "1.0")), paragraph(text("1.0"))))
+            },
+            test("resolves attribute ref defined in body") {
+                val entry = CstAttributeEntry("foo", "bar", false)(u)
+                val ref   = CstAttributeRef("foo")(u)
+                val cst = CstDocument(None, List(
+                    entry,
+                    CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
+                ))(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(text("bar"))))
+            },
+            test("unresolved attribute ref passes through as {name}") {
+                val ref = CstAttributeRef("unknown")(u)
+                val cst = CstDocument(None, List(
+                    CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
+                ))(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(text("{unknown}"))))
+            },
+            test("unset body entry removes attribute from scope") {
+                val set   = CstAttributeEntry("foo", "bar", false)(u)
+                val unset = CstAttributeEntry("foo", "", true)(u)
+                val ref   = CstAttributeRef("foo")(u)
+                val cst = CstDocument(None, List(
+                    set, unset,
+                    CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
+                ))(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(text("{foo}"))))
+            },
+            test("built-in {empty} resolves to empty string") {
+                val ref = CstAttributeRef("empty")(u)
+                val cst = CstDocument(None, List(
+                    CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
+                ))(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(text(""))))
+            },
+            test("built-in {sp} resolves to space") {
+                val ref = CstAttributeRef("sp")(u)
+                val cst = CstDocument(None, List(
+                    CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
+                ))(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(text(" "))))
             }
         ),
         suite("heading and section restructuring")(
