@@ -55,5 +55,12 @@ object CstVisitorSpec extends ZIOSpecDefault:
                 case Success(doc) =>
                     assertTrue(doc.count > 3)  // document + paragraph + line + ref
                 case _ => assertTrue(false)
+        },
+        test("collect finds CstAdmonitionParagraph nodes") {
+            Ascribe.parseCst("NOTE: Watch out.\n") match
+                case Success(doc) =>
+                    val kinds = doc.collect { case a: CstAdmonitionParagraph => a.kind }
+                    assertTrue(kinds == List("NOTE"))
+                case _ => assertTrue(false)
         }
     )
