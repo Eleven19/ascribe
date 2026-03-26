@@ -139,6 +139,26 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                 ))(u)
                 assertTrue(CstLowering.toAst(cst) == document(paragraph(text(" "))))
+            },
+            test("attribute ref in block title is resolved via lowerInlines") {
+                import io.eleven19.ascribe.ast.{Listing, Title, Text as AstText}
+                val entry = CstAttributeEntry("lang", "ruby", false)(u)
+                val titleRef = CstAttributeRef("lang")(u)
+                val cst = CstDocument(None, List(
+                    entry,
+                    CstDelimitedBlock(
+                        DelimitedBlockKind.Listing,
+                        "----",
+                        CstVerbatimContent("puts 'hi'")(u),
+                        None,
+                        Some(CstBlockTitle(List(titleRef))(u))
+                    )(u)
+                ))(u)
+                val doc = CstLowering.toAst(cst)
+                doc.blocks match
+                    case List(l: Listing) =>
+                        assertTrue(l.title.exists(t => t.content.exists { case AstText(c) => c == "ruby"; case _ => false }))
+                    case other => assertTrue(s"unexpected: $other" == "")
             }
         ),
         suite("admonition paragraphs")(

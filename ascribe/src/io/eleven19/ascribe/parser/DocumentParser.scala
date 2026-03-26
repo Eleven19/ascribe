@@ -29,14 +29,17 @@ object DocumentParser:
     private val cstTopLevelItem: Parsley[CstTopLevel] =
         cstBlankLine | lineCommentBlock | includeDirective | attributeEntryBlock | block
 
-    /** Parses `:key: value` lines inside a document header. */
+    /** Parses `:key: value` or `:!key:` (unset) lines inside a document header. */
     private val headerAttributeEntry: Parsley[CstAttributeEntry] =
         (pos <~>
-            (char(':') *> stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(
-                char(' ')
-            )) <~>
+            (char(':') *> option(char('!')).map(_.isDefined) <~>
+                stringOfSome(satisfy(c => c != ':' && c != '\n' && c != '\r')) <* char(':') <* option(
+                    char(' ')
+                )) <~>
             many(nonEolChar).map(_.mkString) <~> pos <* eolOrEof)
-            .map { case (((s, name), value), e) => CstAttributeEntry(name, value, false)(mkSpan(s, e)) }
+            .map { case ((((s, (unset, name)), value), e)) =>
+                CstAttributeEntry(name, if unset then "" else value, unset)(mkSpan(s, e))
+            }
 
     /** Parses a document header: `= Title` followed by optional attribute entries. */
     private val documentHeader: Parsley[CstDocumentHeader] =

@@ -52,6 +52,9 @@ object CstLowering:
 
         def lowerInlines(inlines: List[CstInline]): List[Inline] = inlines.map(lowerInline)
 
+        def lowerBlockTitle(bt: CstBlockTitle): Title =
+            Title(lowerInlines(bt.content))(bt.span)
+
         def lowerBlock(block: CstBlock): Option[Block] = block match
             case _: CstLineComment    => None
             case _: CstAttributeEntry => None
@@ -155,8 +158,9 @@ object CstLowering:
     private def lowerHeader(h: CstDocumentHeader): DocumentHeader =
         DocumentHeader(
             title = h.title.title.map {
-                case t: CstText => Text(t.content)(t.span)
-                case other      => Text(other.toString)(other.span)
+                case t: CstText          => Text(t.content)(t.span)
+                case r: CstAttributeRef  => Text(s"{${r.name}}")(r.span)
+                case other               => Text(other.toString)(other.span)
             },
             attributes = h.attributes.filterNot(_.unset).map(e => (e.name, e.value))
         )(h.span)
@@ -168,12 +172,6 @@ object CstLowering:
             options = al.options.map(OptionName(_)),
             roles = al.roles.map(RoleName(_))
         )(al.span)
-
-    private def lowerBlockTitle(bt: CstBlockTitle): Title =
-        Title(bt.content.map {
-            case t: CstText => Text(t.content)(t.span)
-            case other      => Text(other.toString)(other.span)
-        })(bt.span)
 
     private def restructure(blocks: List[Block]): List[Block] =
         blocks match

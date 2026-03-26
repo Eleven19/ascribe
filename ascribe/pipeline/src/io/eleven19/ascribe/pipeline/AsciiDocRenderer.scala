@@ -121,6 +121,7 @@ object AsciiDocRenderer extends Renderer[Any]:
                 case List(Paragraph(content)) =>
                     sb.append(label).append(": ").append(renderInlines(content)).append('\n'): Unit
                 case _ =>
+                    sb.append(label).append(":\n"): Unit
                     renderBlocks(blocks, sb)
 
     private def renderCellContent(cell: TableCell): String =
