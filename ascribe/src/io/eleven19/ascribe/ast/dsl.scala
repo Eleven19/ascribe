@@ -78,6 +78,10 @@ object dsl:
     def tableCell(inlines: Inline*): TableCell = TableCell(CellContent.Inlines(inlines.toList))(u)
     def blockCell(blocks: Block*): TableCell   = TableCell(CellContent.Blocks(blocks.toList))(u)
 
+    // --- Admonitions ---
+    def admonition(kind: AdmonitionKind, blocks: Block*): Admonition =
+        Admonition(kind, blocks.toList)(u)
+
     // --- Lists ---
     def listItem(inlines: Inline*): ListItem           = ListItem(inlines.toList)(u)
     def unorderedList(items: ListItem*): UnorderedList = UnorderedList(items.toList)(u)

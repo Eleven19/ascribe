@@ -91,6 +91,30 @@ class AstToAsgSpec extends FunSuite:
       case other => fail(s"Expected List, got $other")
   }
 
+  test("converts ast.Admonition (paragraph form) to asg.Admonition") {
+    val astDoc = document(admonition(ast.AdmonitionKind.Note, paragraph(text("Watch out."))))
+    val asgDoc = AstToAsg.convert(astDoc)
+    assertEquals(asgDoc.blocks.size, 1)
+    asgDoc.blocks.head match
+      case a: asg.Admonition =>
+        assertEquals(a.form, "paragraph")
+        assertEquals(a.variant, "note")
+        assertEquals(a.delimiter, "")
+        assertEquals(a.blocks.size, 1)
+      case other => fail(s"Expected Admonition, got $other")
+  }
+
+  test("converts ast.Admonition with all kinds") {
+    import ast.AdmonitionKind.*
+    val kinds = List(Note -> "note", Tip -> "tip", Important -> "important", Caution -> "caution", Warning -> "warning")
+    for (kind, expected) <- kinds do
+      val astDoc = document(admonition(kind, paragraph(text("text"))))
+      val asgDoc = AstToAsg.convert(astDoc)
+      asgDoc.blocks.head match
+        case a: asg.Admonition => assertEquals(a.variant, expected)
+        case other             => fail(s"Expected Admonition for $kind, got $other")
+  }
+
   test("converts position spans") {
     val span = ast.Span(ast.Position(1, 1), ast.Position(1, 10))
     val astDoc = ast.Document(

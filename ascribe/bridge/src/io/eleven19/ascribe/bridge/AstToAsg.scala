@@ -282,6 +282,14 @@ object AstToAsg:
                 items = Chunk.from(items.map(convertListItem("."))),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
+        case ast.Admonition(kind, blocks) =>
+            asg.Admonition(
+                form = "paragraph",
+                delimiter = "",
+                variant = kind.toString.toLowerCase,
+                blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
+                location = inclusiveLocation(block.span)
+            )
 
     /** Convert a block, filtering out comment blocks (which are not preserved in the ASG per spec). */
     private def convertBlockOpt(block: ast.Block): Option[asg.Block] = block match
@@ -407,8 +415,9 @@ object AstToAsg:
             tc.content match
                 case ast.CellContent.Inlines(content) => content.lastOption.map(lastContentPos).getOrElse(tc.span.end)
                 case ast.CellContent.Blocks(blocks)   => blocks.lastOption.map(lastContentPos).getOrElse(tc.span.end)
-        case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
-        case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
+        case ul: ast.UnorderedList  => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
+        case ol: ast.OrderedList    => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
+        case ad: ast.Admonition     => ad.blocks.lastOption.map(lastContentPos).getOrElse(ad.span.end)
         case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)
         case i: ast.Inline         => i.span.end
 
