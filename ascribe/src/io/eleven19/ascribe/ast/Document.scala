@@ -249,11 +249,10 @@ case class UnorderedList(items: List[ListItem])(val span: Span) extends Block de
 /** A numbered list (items prefixed with ". "). */
 case class OrderedList(items: List[ListItem])(val span: Span) extends Block derives CanEqual
 
-/** A paragraph-form admonition: `NOTE: text`. The `blocks` list contains a single `Paragraph`.
-  * For delimited admonitions (`[NOTE]\n====`), see `Example` with positional attribute.
+/** A paragraph-form admonition: `NOTE: text`. The `blocks` list contains a single `Paragraph`. For delimited
+  * admonitions (`[NOTE]\n====`), see `Example` with positional attribute.
   */
-case class Admonition(kind: AdmonitionKind, blocks: List[Block])(val span: Span)
-    extends Block derives CanEqual
+case class Admonition(kind: AdmonitionKind, blocks: List[Block])(val span: Span) extends Block derives CanEqual
 
 object Heading extends PosParserBridge2[Int, InlineContent, Heading]:
     def apply(level: Int, title: InlineContent)(span: Span): Heading = new Heading(level, title)(span)

@@ -7,8 +7,10 @@ import kyo.*
 enum RewriteAction[+A]:
     /** Replace the node with a new node. */
     case Replace(node: A)
+
     /** Remove the node from its parent. */
     case Remove
+
     /** Keep the node unchanged. */
     case Retain
 

@@ -415,9 +415,9 @@ object AstToAsg:
             tc.content match
                 case ast.CellContent.Inlines(content) => content.lastOption.map(lastContentPos).getOrElse(tc.span.end)
                 case ast.CellContent.Blocks(blocks)   => blocks.lastOption.map(lastContentPos).getOrElse(tc.span.end)
-        case ul: ast.UnorderedList  => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
-        case ol: ast.OrderedList    => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
-        case ad: ast.Admonition     => ad.blocks.lastOption.map(lastContentPos).getOrElse(ad.span.end)
+        case ul: ast.UnorderedList => ul.items.lastOption.map(lastContentPos).getOrElse(ul.span.end)
+        case ol: ast.OrderedList   => ol.items.lastOption.map(lastContentPos).getOrElse(ol.span.end)
+        case ad: ast.Admonition    => ad.blocks.lastOption.map(lastContentPos).getOrElse(ad.span.end)
         case li: ast.ListItem      => li.content.lastOption.map(lastContentPos).getOrElse(li.span.end)
         case i: ast.Inline         => i.span.end
 

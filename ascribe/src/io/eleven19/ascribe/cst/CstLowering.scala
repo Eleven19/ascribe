@@ -6,6 +6,7 @@ import io.eleven19.ascribe.ast.AttributeList.{AttributeName, AttributeValue, Opt
 opaque type AttributeMap = Map[String, String]
 
 object AttributeMap:
+
     val builtIns: AttributeMap =
         Map("empty" -> "", "sp" -> " ", "nbsp" -> "\u00A0", "zwsp" -> "\u200B")
 
@@ -52,8 +53,8 @@ object CstLowering:
         def lowerInlines(inlines: List[CstInline]): List[Inline] = inlines.map(lowerInline)
 
         def lowerBlock(block: CstBlock): Option[Block] = block match
-            case _: CstLineComment         => None
-            case _: CstAttributeEntry      => None
+            case _: CstLineComment    => None
+            case _: CstAttributeEntry => None
             case CstAdmonitionParagraph(kind, content) =>
                 val k = kind match
                     case "NOTE"      => AdmonitionKind.Note
