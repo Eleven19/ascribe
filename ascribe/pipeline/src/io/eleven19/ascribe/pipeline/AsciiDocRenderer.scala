@@ -115,6 +115,14 @@ object AsciiDocRenderer extends Renderer[Any]:
                 sb.append(". ").append(renderInlines(item.content)).append('\n'): Unit
             }
 
+        case Admonition(kind, blocks) =>
+            val label = kind.toString.toUpperCase
+            blocks match
+                case List(Paragraph(content)) =>
+                    sb.append(label).append(": ").append(renderInlines(content)).append('\n'): Unit
+                case _ =>
+                    renderBlocks(blocks, sb)
+
     private def renderCellContent(cell: TableCell): String =
         cell.content match
             case CellContent.Inlines(inlines) => renderInlines(inlines)
