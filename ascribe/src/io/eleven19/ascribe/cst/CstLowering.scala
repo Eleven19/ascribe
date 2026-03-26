@@ -171,8 +171,8 @@ object CstLowering:
 
     private def lowerBlockTitle(bt: CstBlockTitle): Title =
         Title(bt.content.map {
-            case CstText(content) => Text(content)(bt.span)
-            case other            => Text(other.toString)(bt.span)
+            case t: CstText => Text(t.content)(t.span)
+            case other      => Text(other.toString)(other.span)
         })(bt.span)
 
     private def restructure(blocks: List[Block]): List[Block] =
