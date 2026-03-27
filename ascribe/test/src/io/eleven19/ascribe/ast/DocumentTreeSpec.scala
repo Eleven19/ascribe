@@ -24,18 +24,20 @@ object DocumentTreeSpec extends ZIOSpecDefault:
         test("fromDocuments creates a flat tree") {
             val doc1 = document(paragraph("one"))
             val doc2 = document(paragraph("two"))
-            val tree = DocumentTree.fromDocuments(List(
-                (DocumentPath("a.adoc"), doc1),
-                (DocumentPath("b.adoc"), doc2)
-            ))
+            val tree = DocumentTree.fromDocuments(
+                List(
+                    (DocumentPath("a.adoc"), doc1),
+                    (DocumentPath("b.adoc"), doc2)
+                )
+            )
             assertTrue(tree.size == 2)
         },
         test("fromDocuments preserves full paths") {
-            val doc1 = document(paragraph("one"))
-            val doc2 = document(paragraph("two"))
+            val doc1  = document(paragraph("one"))
+            val doc2  = document(paragraph("two"))
             val path1 = DocumentPath("chapters", "intro.adoc")
             val path2 = DocumentPath("chapters", "conclusion.adoc")
-            val tree = DocumentTree.fromDocuments(List((path1, doc1), (path2, doc2)))
+            val tree  = DocumentTree.fromDocuments(List((path1, doc1), (path2, doc2)))
             assertTrue(
                 tree.get(path1).isDefined,
                 tree.get(path2).isDefined
@@ -47,35 +49,35 @@ object DocumentTreeSpec extends ZIOSpecDefault:
         test("allDocuments returns all leaf documents") {
             val doc1 = document(paragraph("one"))
             val doc2 = document(paragraph("two"))
-            val tree = DocumentTree.fromDocuments(List(
-                (DocumentPath("a.adoc"), doc1),
-                (DocumentPath("b.adoc"), doc2)
-            ))
+            val tree = DocumentTree.fromDocuments(
+                List(
+                    (DocumentPath("a.adoc"), doc1),
+                    (DocumentPath("b.adoc"), doc2)
+                )
+            )
             val docs = tree.allDocuments
             assertTrue(docs.size == 2)
         },
         test("mapDocuments transforms every document") {
-            val doc = document(paragraph("hello"))
-            val tree = DocumentTree.single(doc)
-            val mapped = tree.mapDocuments(d =>
-                Document(d.header, d.blocks ++ scala.List(paragraph("added")))(d.span)
-            )
+            val doc    = document(paragraph("hello"))
+            val tree   = DocumentTree.single(doc)
+            val mapped = tree.mapDocuments(d => Document(d.header, d.blocks ++ scala.List(paragraph("added")))(d.span))
             val blocks = mapped.allDocuments.head._2.blocks
             assertTrue(blocks.size == 2)
         },
         test("mapDocuments on empty tree returns empty") {
-            val mapped = DocumentTree.empty.mapDocuments(d =>
-                Document(d.header, Nil)(d.span)
-            )
+            val mapped = DocumentTree.empty.mapDocuments(d => Document(d.header, Nil)(d.span))
             assertTrue(mapped.size == 0)
         },
         test("filter removes non-matching documents") {
             val doc1 = document(paragraph("keep"))
             val doc2 = document(paragraph("drop"))
-            val tree = DocumentTree.fromDocuments(List(
-                (DocumentPath("keep.adoc"), doc1),
-                (DocumentPath("drop.adoc"), doc2)
-            ))
+            val tree = DocumentTree.fromDocuments(
+                List(
+                    (DocumentPath("keep.adoc"), doc1),
+                    (DocumentPath("drop.adoc"), doc2)
+                )
+            )
             val filtered = tree.filter(_.name == "keep.adoc")
             assertTrue(filtered.size == 1)
         },
@@ -84,12 +86,12 @@ object DocumentTreeSpec extends ZIOSpecDefault:
             assertTrue(filtered.size == 0)
         },
         test("filter removing root leaf returns empty tree") {
-            val tree = DocumentTree.single(document(paragraph("x")))
+            val tree     = DocumentTree.single(document(paragraph("x")))
             val filtered = tree.filter(_ => false)
             assertTrue(filtered.size == 0)
         },
         test("get finds document by path") {
-            val doc = document(paragraph("found"))
+            val doc  = document(paragraph("found"))
             val path = DocumentPath("chapters", "intro.adoc")
             val tree = DocumentTree.single(path, doc)
             assertTrue(tree.get(path).isDefined)
@@ -101,15 +103,17 @@ object DocumentTreeSpec extends ZIOSpecDefault:
         test("collect extracts values from matching documents") {
             val doc1 = document(paragraph("one"))
             val doc2 = document(paragraph("two"))
-            val tree = DocumentTree.fromDocuments(List(
-                (DocumentPath("a.adoc"), doc1),
-                (DocumentPath("b.adoc"), doc2)
-            ))
+            val tree = DocumentTree.fromDocuments(
+                List(
+                    (DocumentPath("a.adoc"), doc1),
+                    (DocumentPath("b.adoc"), doc2)
+                )
+            )
             val names = tree.collect { case (p, _) => p.name }
             assertTrue(names == scala.List("a.adoc", "b.adoc"))
         },
         test("TreeNode.nodePath accessor works for both variants") {
-            val leaf = TreeNode.DocLeaf(DocumentPath("a.adoc"), document())
+            val leaf   = TreeNode.DocLeaf(DocumentPath("a.adoc"), document())
             val branch = TreeNode.TreeBranch(DocumentPath("dir"), Nil)
             assertTrue(
                 leaf.nodePath == DocumentPath("a.adoc"),

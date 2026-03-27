@@ -21,22 +21,22 @@ object BlockParserSpec extends ZIOSpecDefault:
             test("parses TIP: paragraph") {
                 admonitionParagraphBlock.parse("TIP: Try this.\n") match
                     case Success(CstAdmonitionParagraph("TIP", _)) => assertTrue(true)
-                    case other => assertTrue(s"unexpected: $other" == "")
+                    case other                                     => assertTrue(s"unexpected: $other" == "")
             },
             test("parses IMPORTANT: paragraph") {
                 admonitionParagraphBlock.parse("IMPORTANT: Read this.\n") match
                     case Success(CstAdmonitionParagraph("IMPORTANT", _)) => assertTrue(true)
-                    case other => assertTrue(s"unexpected: $other" == "")
+                    case other                                           => assertTrue(s"unexpected: $other" == "")
             },
             test("parses CAUTION: paragraph") {
                 admonitionParagraphBlock.parse("CAUTION: Be careful.\n") match
                     case Success(CstAdmonitionParagraph("CAUTION", _)) => assertTrue(true)
-                    case other => assertTrue(s"unexpected: $other" == "")
+                    case other                                         => assertTrue(s"unexpected: $other" == "")
             },
             test("parses WARNING: paragraph") {
                 admonitionParagraphBlock.parse("WARNING: Danger.\n") match
                     case Success(CstAdmonitionParagraph("WARNING", _)) => assertTrue(true)
-                    case other => assertTrue(s"unexpected: $other" == "")
+                    case other                                         => assertTrue(s"unexpected: $other" == "")
             },
             test("NOTE without colon+space is NOT an admonition") {
                 admonitionParagraphBlock.parse("NOTE something\n") match
@@ -54,14 +54,14 @@ object BlockParserSpec extends ZIOSpecDefault:
             test("parses unset attribute entry :!name:") {
                 parse(":!my-attr:\n") match
                     case Success(CstAttributeEntry("my-attr", "", true)) => assertTrue(true)
-                    case Success(other) => assertTrue(s"unexpected: $other" == "")
-                    case Failure(msg)   => assertTrue(s"Expected Success but got: $msg" == "")
+                    case Success(other)                                  => assertTrue(s"unexpected: $other" == "")
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses empty-value attribute entry") {
                 parse(":my-attr:\n") match
                     case Success(CstAttributeEntry("my-attr", "", false)) => assertTrue(true)
-                    case Success(other) => assertTrue(s"unexpected: $other" == "")
-                    case Failure(msg)   => assertTrue(s"Expected Success but got: $msg" == "")
+                    case Success(other)                                   => assertTrue(s"unexpected: $other" == "")
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         )
     )

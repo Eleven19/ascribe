@@ -31,6 +31,45 @@ case class Mono(content: List[Inline])(val span: Span) extends Inline derives Ca
 /** Constrained bold span, surrounded by single asterisks: *bold*. */
 case class ConstrainedBold(content: List[Inline])(val span: Span) extends Inline derives CanEqual
 
+/** Distinguishes the kind of inline macro that produced a link. */
+enum MacroKind derives CanEqual:
+    /** URL macro: `https://example.com[text]` */
+    case Url(scheme: String)
+
+    /** Explicit link macro: `link:target[text]` */
+    case Link
+
+    /** Mailto macro: `mailto:user@host[text]` */
+    case MailTo
+
+/** Distinguishes auto-detected bare URLs from explicit macro invocations. */
+enum LinkVariant derives CanEqual:
+    /** Bare URL auto-detected by scheme prefix. */
+    case Auto
+
+    /** An inline macro with `target[text]` syntax. */
+    case Macro(kind: MacroKind)
+
+/** A hyperlink inline node. Covers bare autolinks, URL macros, link: macros, and mailto: macros.
+  *
+  * The `variant` field captures how the link was authored. The `target` is the URL or path. An empty `text` list means
+  * no display text was provided (renderer decides display).
+  */
+case class Link(variant: LinkVariant, target: String, text: List[Inline])(val span: Span) extends Inline
+    derives CanEqual:
+
+    /** Extracts the URL scheme from the target, if present. */
+    lazy val scheme: Option[String] =
+        target.indexOf("://") match
+            case -1  => None
+            case idx => Some(target.substring(0, idx))
+
+object Link:
+
+    /** Extractor for pattern-matching on the scheme: `case Link.Scheme(s) => ...` */
+    object Scheme:
+        def unapply(link: Link): Option[String] = link.scheme
+
 object Text extends PosParserBridge1[String, Text]:
     def apply(content: String)(span: Span): Text = new Text(content)(span)
 

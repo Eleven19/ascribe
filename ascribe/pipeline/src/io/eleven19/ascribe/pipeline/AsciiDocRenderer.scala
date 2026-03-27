@@ -153,8 +153,15 @@ object AsciiDocRenderer extends Renderer[Any]:
 
     /** Render a single inline element to AsciiDoc source. */
     def renderInline(inline: Inline): String = inline match
-        case Text(content)            => content
-        case Bold(content)            => s"**${renderInlines(content)}**"
-        case ConstrainedBold(content) => s"*${renderInlines(content)}*"
-        case Italic(content)          => s"__${renderInlines(content)}__"
-        case Mono(content)            => s"``${renderInlines(content)}``"
+        case Text(content)                     => content
+        case Bold(content)                     => s"**${renderInlines(content)}**"
+        case ConstrainedBold(content)          => s"*${renderInlines(content)}*"
+        case Italic(content)                   => s"__${renderInlines(content)}__"
+        case Mono(content)                     => s"``${renderInlines(content)}``"
+        case Link(LinkVariant.Auto, target, _) => target
+        case Link(LinkVariant.Macro(MacroKind.Link), target, text) =>
+            s"link:$target[${renderInlines(text)}]"
+        case Link(LinkVariant.Macro(MacroKind.MailTo), target, text) =>
+            s"mailto:$target[${renderInlines(text)}]"
+        case Link(LinkVariant.Macro(MacroKind.Url(_)), target, text) =>
+            s"$target[${renderInlines(text)}]"

@@ -42,6 +42,11 @@ trait CstVisitor[A]:
     def visitItalic(node: CstItalic): A             = visitInline(node)
     def visitMono(node: CstMono): A                 = visitInline(node)
     def visitAttributeRef(node: CstAttributeRef): A = visitInline(node)
+    def visitLink(node: CstLink): A                 = visitInline(node)
+    def visitAutolink(node: CstAutolink): A         = visitLink(node)
+    def visitUrlMacro(node: CstUrlMacro): A         = visitLink(node)
+    def visitLinkMacro(node: CstLinkMacro): A       = visitLink(node)
+    def visitMailtoMacro(node: CstMailtoMacro): A   = visitLink(node)
 
     def visitVerbatimContent(node: CstVerbatimContent): A = visitNode(node)
     def visitNestedContent(node: CstNestedContent): A     = visitNode(node)
@@ -80,6 +85,10 @@ object CstVisitor:
         case n: CstItalic              => visitor.visitItalic(n)
         case n: CstMono                => visitor.visitMono(n)
         case n: CstAttributeRef        => visitor.visitAttributeRef(n)
+        case n: CstAutolink            => visitor.visitAutolink(n)
+        case n: CstUrlMacro            => visitor.visitUrlMacro(n)
+        case n: CstLinkMacro           => visitor.visitLinkMacro(n)
+        case n: CstMailtoMacro         => visitor.visitMailtoMacro(n)
         case n: CstVerbatimContent     => visitor.visitVerbatimContent(n)
         case n: CstNestedContent       => visitor.visitNestedContent(n)
         case n: CstCellInlines         => visitor.visitCellInlines(n)
@@ -114,6 +123,10 @@ object CstVisitor:
         case i: CstItalic               => i.content
         case m: CstMono                 => m.content
         case _: CstAttributeRef         => Nil
+        case _: CstAutolink             => Nil
+        case n: CstUrlMacro             => n.text
+        case n: CstLinkMacro            => n.text
+        case n: CstMailtoMacro          => n.text
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.

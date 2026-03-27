@@ -16,8 +16,8 @@ object RewriteRuleSpec extends ZIOSpecDefault:
 
     def spec = suite("RewriteRule")(
         test("block rule replaces matching blocks") {
-            val rule = RewriteRule.forBlocks {
-                case _: Paragraph => RewriteAction.Replace(paragraph("replaced"))
+            val rule = RewriteRule.forBlocks { case _: Paragraph =>
+                RewriteAction.Replace(paragraph("replaced"))
             }
             val doc    = document(paragraph("original"))
             val result = rewriteDoc(doc, rule)
@@ -25,24 +25,25 @@ object RewriteRuleSpec extends ZIOSpecDefault:
             assertTrue(text == "replaced")
         },
         test("block rule removes matching blocks") {
-            val rule = RewriteRule.forBlocks {
-                case _: Comment => RewriteAction.Remove
+            val rule = RewriteRule.forBlocks { case _: Comment =>
+                RewriteAction.Remove
             }
-            val doc = Document(None, scala.List(paragraph("keep"), Comment("////", "a comment")(Span.unknown)))(Span.unknown)
+            val doc =
+                Document(None, scala.List(paragraph("keep"), Comment("////", "a comment")(Span.unknown)))(Span.unknown)
             val result = rewriteDoc(doc, rule)
             assertTrue(result.blocks.size == 1)
         },
         test("unmatched blocks are retained") {
-            val rule = RewriteRule.forBlocks {
-                case _: Comment => RewriteAction.Remove
+            val rule = RewriteRule.forBlocks { case _: Comment =>
+                RewriteAction.Remove
             }
             val doc    = document(paragraph("stay"))
             val result = rewriteDoc(doc, rule)
             assertTrue(result.blocks.size == 1)
         },
         test("inline rule replaces matching inlines") {
-            val rule = RewriteRule.forInlines {
-                case Bold(content) => RewriteAction.Replace(Italic(content)(Span.unknown))
+            val rule = RewriteRule.forInlines { case Bold(content) =>
+                RewriteAction.Replace(Italic(content)(Span.unknown))
             }
             val doc    = document(paragraph(bold(text("emphasis"))))
             val result = rewriteDoc(doc, rule)
@@ -50,8 +51,8 @@ object RewriteRuleSpec extends ZIOSpecDefault:
             assertTrue(para.content.head.isInstanceOf[Italic])
         },
         test("inline rule removes matching inlines") {
-            val rule = RewriteRule.forInlines {
-                case _: Bold => RewriteAction.Remove
+            val rule = RewriteRule.forInlines { case _: Bold =>
+                RewriteAction.Remove
             }
             val doc    = document(paragraph(text("keep "), bold(text("drop")), text(" this")))
             val result = rewriteDoc(doc, rule)
@@ -59,11 +60,11 @@ object RewriteRuleSpec extends ZIOSpecDefault:
             assertTrue(para.content.size == 2) // bold removed, two Text nodes remain
         },
         test("compose applies first matching rule") {
-            val rule1 = RewriteRule.forBlocks {
-                case _: Paragraph => RewriteAction.Replace(paragraph("from rule1"))
+            val rule1 = RewriteRule.forBlocks { case _: Paragraph =>
+                RewriteAction.Replace(paragraph("from rule1"))
             }
-            val rule2 = RewriteRule.forBlocks {
-                case _: Paragraph => RewriteAction.Replace(paragraph("from rule2"))
+            val rule2 = RewriteRule.forBlocks { case _: Paragraph =>
+                RewriteAction.Replace(paragraph("from rule2"))
             }
             val composed = RewriteRule.compose(rule1, rule2)
             val doc      = document(paragraph("original"))
@@ -72,8 +73,8 @@ object RewriteRuleSpec extends ZIOSpecDefault:
             assertTrue(text == "from rule1")
         },
         test("rewrite traverses nested sections") {
-            val rule = RewriteRule.forInlines {
-                case Text(content) => RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
+            val rule = RewriteRule.forInlines { case Text(content) =>
+                RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
             }
             val doc = document(
                 section(1, scala.List(text("title")), paragraph(text("body")))
@@ -86,8 +87,8 @@ object RewriteRuleSpec extends ZIOSpecDefault:
             assertTrue(titleText == "TITLE", bodyText == "BODY")
         },
         test("rewrite traverses nested inlines") {
-            val rule = RewriteRule.forInlines {
-                case Text(content) => RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
+            val rule = RewriteRule.forInlines { case Text(content) =>
+                RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
             }
             val doc    = document(paragraph(bold(text("nested"))))
             val result = rewriteDoc(doc, rule)
@@ -103,11 +104,11 @@ object RewriteRuleSpec extends ZIOSpecDefault:
             assertTrue(result.blocks.isEmpty)
         },
         test("rewrite traverses list items") {
-            val rule = RewriteRule.forInlines {
-                case Text(content) => RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
+            val rule = RewriteRule.forInlines { case Text(content) =>
+                RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
             }
-            val doc    = document(unorderedList(listItem(text("item"))))
-            val result = rewriteDoc(doc, rule)
+            val doc      = document(unorderedList(listItem(text("item"))))
+            val result   = rewriteDoc(doc, rule)
             val list     = result.blocks.head.asInstanceOf[UnorderedList]
             val itemText = list.items.head.content.head.asInstanceOf[Text].content
             assertTrue(itemText == "ITEM")

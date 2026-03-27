@@ -45,4 +45,5 @@ object dsl:
             case ConstrainedBold(content) => flattenInlines(content)
             case Italic(content)          => flattenInlines(content)
             case Mono(content)            => flattenInlines(content)
+            case Link(_, target, text)    => if text.nonEmpty then flattenInlines(text) else target
         }.mkString

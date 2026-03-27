@@ -9,16 +9,15 @@ import parsley.Success
 object IncludeResolverSpec extends KyoSpecDefault:
 
     private def makeTempDir: Path < Sync =
-        Sync.defer { Path(java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test").toString) }
+        Sync.defer(Path(java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test").toString))
 
     private def writeFile(dir: Path, name: String, content: String): Unit < Sync =
-        Sync.defer { java.nio.file.Files.writeString(dir.toJava.resolve(name), content): Unit }
+        Sync.defer(java.nio.file.Files.writeString(dir.toJava.resolve(name), content): Unit)
 
     private def cleanup(dir: Path): Unit < Sync =
         Sync.defer {
             def go(p: java.nio.file.Path): Unit =
-                if java.nio.file.Files.isDirectory(p) then
-                    java.nio.file.Files.list(p).forEach(go(_)): Unit
+                if java.nio.file.Files.isDirectory(p) then java.nio.file.Files.list(p).forEach(go(_)): Unit
                 java.nio.file.Files.deleteIfExists(p): Unit
             go(dir.toJava)
         }
@@ -30,7 +29,7 @@ object IncludeResolverSpec extends KyoSpecDefault:
                 Resource.ensure(cleanup(tmpDir)).now
                 writeFile(tmpDir, "partial.adoc", "Included content.\n").now
                 val source = "Before.\n\ninclude::partial.adoc[]\n\nAfter.\n"
-                val cst    = Ascribe.parseCst(source) match
+                val cst = Ascribe.parseCst(source) match
                     case Success(c) => c
                     case _          => sys.error("parse failed")
                 val result = Abort.run[PipelineError](IncludeResolver.resolve(cst, tmpDir)).now
@@ -50,7 +49,7 @@ object IncludeResolverSpec extends KyoSpecDefault:
                 val tmpDir = makeTempDir.now
                 Resource.ensure(cleanup(tmpDir)).now
                 val source = "include::missing.adoc[]\n"
-                val cst    = Ascribe.parseCst(source) match
+                val cst = Ascribe.parseCst(source) match
                     case Success(c) => c
                     case _          => sys.error("parse failed")
                 val result = Abort.run[PipelineError](IncludeResolver.resolve(cst, tmpDir)).now
@@ -62,14 +61,14 @@ object IncludeResolverSpec extends KyoSpecDefault:
                 val tmpDir = makeTempDir.now
                 Resource.ensure(cleanup(tmpDir)).now
                 val source = "Before.\n\ninclude::missing.adoc[opts=optional]\n\nAfter.\n"
-                val cst    = Ascribe.parseCst(source) match
+                val cst = Ascribe.parseCst(source) match
                     case Success(c) => c
                     case _          => sys.error("parse failed")
                 val result = Abort.run[PipelineError](IncludeResolver.resolve(cst, tmpDir)).now
                 result match
                     case Result.Success(resolved) =>
                         val hasInclude = resolved.content.exists(_.isInstanceOf[CstInclude])
-                        val texts = resolved.collect { case t: CstText => t.content }
+                        val texts      = resolved.collect { case t: CstText => t.content }
                         zio.test.assertTrue(
                             !hasInclude,
                             texts.exists(_.contains("Before.")),
@@ -85,7 +84,7 @@ object IncludeResolverSpec extends KyoSpecDefault:
                 writeFile(tmpDir, "inner.adoc", "Inner content.\n").now
                 writeFile(tmpDir, "outer.adoc", "Outer start.\n\ninclude::inner.adoc[]\n\nOuter end.\n").now
                 val source = "Doc start.\n\ninclude::outer.adoc[]\n\nDoc end.\n"
-                val cst    = Ascribe.parseCst(source) match
+                val cst = Ascribe.parseCst(source) match
                     case Success(c) => c
                     case _          => sys.error("parse failed")
                 val result = Abort.run[PipelineError](IncludeResolver.resolve(cst, tmpDir)).now

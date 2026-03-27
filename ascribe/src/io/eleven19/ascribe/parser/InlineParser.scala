@@ -1,14 +1,25 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.{atomic, many}
-import parsley.character.{char, satisfy, string, stringOfMany}
+import parsley.Parsley.{atomic, many, notFollowedBy, some}
+import parsley.character.{char, satisfy, string, stringOfMany, stringOfSome}
 import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
 
 import io.eleven19.ascribe.ast.{Span, mkSpan}
-import io.eleven19.ascribe.cst.{CstAttributeRef, CstBold, CstInline, CstItalic, CstMono, CstText}
+import io.eleven19.ascribe.cst.{
+    CstAttributeRef,
+    CstAutolink,
+    CstBold,
+    CstInline,
+    CstItalic,
+    CstLinkMacro,
+    CstMailtoMacro,
+    CstMono,
+    CstText,
+    CstUrlMacro
+}
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 
 /** Parsers for inline AsciiDoc elements.
@@ -100,9 +111,87 @@ object InlineParser:
             }
             .label("constrained bold span")
 
-    /** Parses one or more unadorned prose characters as a [[CstText]] node. */
+    // -----------------------------------------------------------------------
+    // Link and URL parsers
+    // -----------------------------------------------------------------------
+
+    /** Characters valid in a macro target (everything up to `[`). */
+    private val macroTargetChars: Parsley[String] =
+        stringOfSome(satisfy(c => c != '[' && c != '\n' && c != '\r' && c != ' ' && c != '\t'))
+
+    /** Parses inline content between `[` and `]` for link text. */
+    private val bracketedInlineContent: Parsley[List[CstInline]] =
+        char('[') *> many(
+            boldSpan | constrainedBoldSpan | italicSpan | monoSpan | attrRefInline |
+                (pos <~> stringOfSome(
+                    satisfy(c =>
+                        c != ']' && c != '\n' && c != '\r' && c != '*' && c != '_' && c != '`' && c != '{' && c != '}'
+                    )
+                ) <~> pos)
+                    .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)): CstInline }
+        ) <* char(']')
+
+    /** Parses `link:target[text]`. */
+    val linkMacro: Parsley[CstInline] =
+        atomic(
+            (pos <~> (string("link:") *> macroTargetChars) <~> bracketedInlineContent <~> pos)
+                .map { case (((s, target), text), e) =>
+                    CstLinkMacro(target, text)(mkSpan(s, e))
+                }
+        ).label("link macro")
+            .explain("Link macro syntax: link:target[text]")
+
+    /** Parses `mailto:addr[text]`. */
+    val mailtoMacro: Parsley[CstInline] =
+        atomic(
+            (pos <~> (string("mailto:") *> macroTargetChars) <~> bracketedInlineContent <~> pos)
+                .map { case (((s, target), text), e) =>
+                    CstMailtoMacro(target, text)(mkSpan(s, e))
+                }
+        ).label("mailto macro")
+            .explain("Mailto macro syntax: mailto:address[text]")
+
+    /** Recognized URL schemes for autolinks and URL macros. */
+    private val urlScheme: Parsley[String] =
+        atomic(string("https://")) | atomic(string("http://")) | atomic(string("ftp://")) | atomic(string("irc://"))
+
+    /** Characters valid in a URL (after the scheme). Stops at whitespace, `[`, `]`, newlines. */
+    private val urlChars: Parsley[String] =
+        stringOfSome(satisfy(c => c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '[' && c != ']'))
+
+    /** Parses a URL macro: `scheme://target[text]`. */
+    val urlMacro: Parsley[CstInline] =
+        atomic(
+            (pos <~> (urlScheme <~> urlChars).map(_ + _) <~> bracketedInlineContent <~> pos)
+                .map { case (((s, target), text), e) =>
+                    CstUrlMacro(target, text)(mkSpan(s, e))
+                }
+        ).label("URL macro")
+
+    /** Parses a bare autolink: `scheme://target` (not followed by `[`). Trailing punctuation stripping is deferred to a
+      * follow-up issue.
+      */
+    val autolink: Parsley[CstInline] =
+        atomic(
+            (pos <~> (urlScheme <~> urlChars).map(_ + _) <~> pos)
+                .map { case ((s, target), e) =>
+                    CstAutolink(target)(mkSpan(s, e))
+                }
+        ).label("autolink")
+
+    /** Lookahead that recognises the start of a link or URL prefix within prose. */
+    private val linkOrUrlPrefix: Parsley[Unit] =
+        (atomic(string("link:")) | atomic(string("mailto:")) | atomic(string("https://")) | atomic(
+            string("http://")
+        ) | atomic(string("ftp://")) | atomic(string("irc://"))).void
+
+    /** Parses one or more unadorned prose characters as a [[CstText]] node.
+      *
+      * Stops before any character sequence that could begin a link macro or URL so that the higher-priority link
+      * parsers get a chance to match.
+      */
     val plainTextInline: Parsley[CstInline] =
-        (pos <~> plainText <~> pos)
+        (pos <~> some(notFollowedBy(linkOrUrlPrefix) *> contentChar).map(_.mkString) <~> pos)
             .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)) }
             .label("text")
 
@@ -115,6 +204,7 @@ object InlineParser:
       */
     val inlineElement: Parsley[CstInline] =
         boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+            linkMacro | mailtoMacro | urlMacro | autolink |
             attrRefInline | plainTextInline | unpairedMarkupInline
 
     /** Parses zero or more inline elements, stopping naturally at a newline or end-of-input. */

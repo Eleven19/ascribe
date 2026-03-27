@@ -22,9 +22,8 @@ object PipelineSpec extends ZIOSpecDefault:
             assertTrue(result == Result.Success("Hello world.\n"))
         },
         test("pipeline with rewrite rule modifies output") {
-            val rule = RewriteRule.forInlines {
-                case Text(content) =>
-                    RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
+            val rule = RewriteRule.forInlines { case Text(content) =>
+                RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
             }
             val result = runAbort(Pipeline.fromString("hello.\n").rewrite(rule).runToString)
             assertTrue(result == Result.Success("HELLO.\n"))
@@ -39,20 +38,22 @@ object PipelineSpec extends ZIOSpecDefault:
             assertTrue(tree.allDocuments.head._2.blocks.size == 1)
         },
         test("pipeline with composed rules applies in order") {
-            val rule1 = RewriteRule.forInlines {
-                case Text("hello.") => RewriteAction.Replace(Text("world.")(Span.unknown))
+            val rule1 = RewriteRule.forInlines { case Text("hello.") =>
+                RewriteAction.Replace(Text("world.")(Span.unknown))
             }
-            val rule2 = RewriteRule.forInlines {
-                case Text("hello.") => RewriteAction.Replace(Text("ignored.")(Span.unknown))
+            val rule2 = RewriteRule.forInlines { case Text("hello.") =>
+                RewriteAction.Replace(Text("ignored.")(Span.unknown))
             }
             val result = runAbort(Pipeline.fromString("hello.\n").rewrite(rule1).rewrite(rule2).runToString)
             assertTrue(result == Result.Success("world.\n"))
         },
         test("runToStrings returns map of all rendered documents") {
-            val tree = DocumentTree.fromDocuments(scala.List(
-                (DocumentPath("a.adoc"), document(paragraph("one"))),
-                (DocumentPath("b.adoc"), document(paragraph("two")))
-            ))
+            val tree = DocumentTree.fromDocuments(
+                scala.List(
+                    (DocumentPath("a.adoc"), document(paragraph("one"))),
+                    (DocumentPath("b.adoc"), document(paragraph("two")))
+                )
+            )
             val result = runPure(Pipeline.fromTree(tree).runToStrings)
             assertTrue(
                 result.size == 2,
@@ -72,7 +73,8 @@ object PipelineSpec extends ZIOSpecDefault:
         },
         test("renderWith switches renderer") {
             val result = runPure(
-                Pipeline.fromDocument(document(paragraph("hello")))
+                Pipeline
+                    .fromDocument(document(paragraph("hello")))
                     .renderWith(AsgJsonRenderer.asInstanceOf[Renderer[Any]])
                     .runToString
             )
@@ -80,10 +82,12 @@ object PipelineSpec extends ZIOSpecDefault:
         },
         test("Source.fromStrings creates multi-document tree") {
             val result = runAbort(
-                Source.fromStrings(
-                    (DocumentPath("a.adoc"), "Hello.\n"),
-                    (DocumentPath("b.adoc"), "World.\n")
-                ).read
+                Source
+                    .fromStrings(
+                        (DocumentPath("a.adoc"), "Hello.\n"),
+                        (DocumentPath("b.adoc"), "World.\n")
+                    )
+                    .read
             )
             assertTrue(result.map(_.size) == Result.Success(2))
         },
@@ -93,7 +97,8 @@ object PipelineSpec extends ZIOSpecDefault:
         },
         test("runToTargets renders through multiple renderers in a single run") {
             val results = runPure(
-                Pipeline.fromDocument(document(paragraph("hello")))
+                Pipeline
+                    .fromDocument(document(paragraph("hello")))
                     .runToTargets(
                         "adoc" -> AsciiDocRenderer,
                         "json" -> AsgJsonRenderer
@@ -107,7 +112,8 @@ object PipelineSpec extends ZIOSpecDefault:
         },
         test("renderAll returns a list of results per renderer") {
             val results = runPure(
-                Pipeline.fromDocument(document(paragraph("hello")))
+                Pipeline
+                    .fromDocument(document(paragraph("hello")))
                     .renderAll(AsciiDocRenderer, AsgJsonRenderer)
             )
             assertTrue(
@@ -117,10 +123,12 @@ object PipelineSpec extends ZIOSpecDefault:
             )
         },
         test("runToTargets works with multi-document tree") {
-            val tree = DocumentTree.fromDocuments(scala.List(
-                (DocumentPath("a.adoc"), document(paragraph("one"))),
-                (DocumentPath("b.adoc"), document(paragraph("two")))
-            ))
+            val tree = DocumentTree.fromDocuments(
+                scala.List(
+                    (DocumentPath("a.adoc"), document(paragraph("one"))),
+                    (DocumentPath("b.adoc"), document(paragraph("two")))
+                )
+            )
             val results = runPure(
                 Pipeline.fromTree(tree).runToTargets("adoc" -> AsciiDocRenderer)
             )

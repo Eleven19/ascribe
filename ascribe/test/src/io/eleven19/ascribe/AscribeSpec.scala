@@ -56,7 +56,7 @@ object AscribeSpec extends ZIOSpecDefault:
                     case Success(doc) =>
                         doc.blocks match
                             case List(Admonition(AdmonitionKind.Note, _)) => assertTrue(true)
-                            case other => assertTrue(s"unexpected: $other" == "")
+                            case other                                    => assertTrue(s"unexpected: $other" == "")
                     case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
             },
             test("all five admonition kinds are parsed") {
@@ -72,7 +72,7 @@ object AscribeSpec extends ZIOSpecDefault:
                         case Success(doc) =>
                             doc.blocks match
                                 case List(Admonition(kind, _)) => kind == expected
-                                case _ => false
+                                case _                         => false
                         case _ => false
                 }
                 assertTrue(results.forall(identity))

@@ -10,6 +10,7 @@ import zio.json.ast.Json
 import io.eleven19.ascribe.Ascribe
 
 given CanEqual[Json, Json] = CanEqual.derived
+
 import io.eleven19.ascribe.asg
 import io.eleven19.ascribe.asg.AsgCodecs
 import io.eleven19.ascribe.bridge.AstToAsg
@@ -20,9 +21,9 @@ class TckSteps extends ScalaDsl with EN {
         val relPath = Paths.get(relative)
         if (relPath.isAbsolute) relPath
         else {
-            var current     = Paths.get("").toAbsolutePath
-            var attempts    = 0
-            val maxAttempts = 6
+            var current             = Paths.get("").toAbsolutePath
+            var attempts            = 0
+            val maxAttempts         = 6
             var found: Option[Path] = None
 
             while (attempts <= maxAttempts && found.isEmpty && current != null) {
@@ -38,9 +39,9 @@ class TckSteps extends ScalaDsl with EN {
         }
     }
 
-    var asciidocInput: String          = uninitialized
+    var asciidocInput: String              = uninitialized
     var parsedAsgDoc: Option[asg.Document] = None
-    var parseError: Option[String]     = None
+    var parseError: Option[String]         = None
 
     Given("""the AsciiDoc input from {string}""") { (inputFile: String) =>
         val path = resolvePath(inputFile)

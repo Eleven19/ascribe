@@ -9,8 +9,8 @@ object AstVisitorSpec extends ZIOSpecDefault:
     def spec = suite("AstVisitor")(
         test("visit dispatches to correct visitor method") {
             val visitor = new AstVisitor[String]:
-                def visitNode(node: AstNode): String = "node"
-                override def visitText(node: Text): String = s"text:${node.content}"
+                def visitNode(node: AstNode): String                 = "node"
+                override def visitText(node: Text): String           = s"text:${node.content}"
                 override def visitParagraph(node: Paragraph): String = "paragraph"
 
             assertTrue(
@@ -21,8 +21,8 @@ object AstVisitorSpec extends ZIOSpecDefault:
         test("visitor defaults delegate up the hierarchy") {
             var visited = ""
             val visitor = new AstVisitor[Unit]:
-                def visitNode(node: AstNode): Unit = visited = "node"
-                override def visitBlock(node: Block): Unit = visited = "block"
+                def visitNode(node: AstNode): Unit           = visited = "node"
+                override def visitBlock(node: Block): Unit   = visited = "block"
                 override def visitInline(node: Inline): Unit = visited = "inline"
 
             Text("hi")(u).visit(visitor)
@@ -131,7 +131,7 @@ object AstVisitorSpec extends ZIOSpecDefault:
             assertTrue(texts == scala.List("a", "b"))
         },
         test("fold is stack-safe for deeply nested trees") {
-            val depth = 10000
+            val depth          = 10000
             var inline: Inline = Text("leaf")(u)
             for _ <- 1 to depth do inline = Bold(scala.List(inline))(u)
             val para = Paragraph(scala.List(inline))(u)
@@ -140,26 +140,54 @@ object AstVisitorSpec extends ZIOSpecDefault:
             assertTrue(doc.count == depth + 3)
         },
         test("foldRight is stack-safe for deeply nested trees") {
-            val depth = 10000
+            val depth          = 10000
             var inline: Inline = Text("leaf")(u)
             for _ <- 1 to depth do inline = Bold(scala.List(inline))(u)
             val para = Paragraph(scala.List(inline))(u)
             val doc  = Document(scala.List(para))(u)
 
-            val count = doc.foldRight(0) { (_, n) => n + 1 }
+            val count = doc.foldRight(0)((_, n) => n + 1)
             assertTrue(count == depth + 3)
         },
         test("visitAdmonition dispatches correctly") {
             val admonition = Admonition(AdmonitionKind.Note, List(Paragraph(Nil)(u)))(u)
             val visitor = new AstVisitor[String]:
-                def visitNode(node: AstNode): String = "node"
+                def visitNode(node: AstNode): String                   = "node"
                 override def visitAdmonition(node: Admonition): String = s"admonition:${node.kind}"
             assertTrue(admonition.visit(visitor) == "admonition:Note")
         },
         test("admonition children are traversable") {
             val para       = Paragraph(List(Text("warn")(u)))(u)
             val admonition = Admonition(AdmonitionKind.Warning, List(para))(u)
-            val texts = admonition.collect { case Text(c) => c }
+            val texts      = admonition.collect { case Text(c) => c }
             assertTrue(texts.contains("warn"))
+        },
+        test("visitLink dispatches correctly") {
+            import io.eleven19.ascribe.ast.dsl.{autoLink, link, mailtoLink}
+            val visitor = new AstVisitor[String]:
+                def visitNode(node: AstNode): String       = "node"
+                override def visitLink(node: Link): String = s"link:${node.target}"
+
+            assertTrue(
+                autoLink("https://example.com").visit(visitor) == "link:https://example.com",
+                link("report.pdf", Text("R")(u)).visit(visitor) == "link:report.pdf",
+                mailtoLink("a@b.com", Text("E")(u)).visit(visitor) == "link:a@b.com"
+            )
+        },
+        test("Link children returns text inlines") {
+            import io.eleven19.ascribe.ast.dsl.link
+            val t = Text("click")(u)
+            val l = link("path", t)
+            assertTrue(l.children == scala.List(t))
+        },
+        test("Link children is empty for autolinks") {
+            import io.eleven19.ascribe.ast.dsl.autoLink
+            assertTrue(autoLink("https://example.com").children.isEmpty)
+        },
+        test("collect finds Link nodes in document") {
+            import io.eleven19.ascribe.ast.dsl.{document, paragraph, autoLink, text}
+            val doc   = document(paragraph(text("See "), autoLink("https://example.com")))
+            val links = doc.collect { case l: Link => l.target }
+            assertTrue(links == scala.List("https://example.com"))
         }
     )
