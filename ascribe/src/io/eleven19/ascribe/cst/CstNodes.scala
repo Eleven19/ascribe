@@ -177,6 +177,17 @@ case class CstMono(
 
 case class CstAttributeRef(name: String)(val span: Span) extends CstInline derives CanEqual
 
+case class CstAutolink(target: String)(val span: Span) extends CstInline derives CanEqual
+
+case class CstUrlMacro(target: String, text: List[CstInline])(val span: Span)
+    extends CstInline derives CanEqual
+
+case class CstLinkMacro(target: String, text: List[CstInline])(val span: Span)
+    extends CstInline derives CanEqual
+
+case class CstMailtoMacro(target: String, text: List[CstInline])(val span: Span)
+    extends CstInline derives CanEqual
+
 // ── Table sub-nodes ───────────────────────────────────────────────────────────
 
 case class CstTableRow(

@@ -49,6 +49,17 @@ object CstLowering:
             case CstItalic(content)      => Italic(lowerInlines(content))(inline.span)
             case CstMono(content)        => Mono(lowerInlines(content))(inline.span)
             case CstAttributeRef(name)   => Text(attrs.resolve(name))(inline.span)
+            case CstAutolink(target) =>
+                Link(LinkVariant.Auto, target, Nil)(inline.span)
+            case CstUrlMacro(target, text) =>
+                val scheme = target.indexOf("://") match
+                    case -1  => ""
+                    case idx => target.substring(0, idx)
+                Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, lowerInlines(text))(inline.span)
+            case CstLinkMacro(target, text) =>
+                Link(LinkVariant.Macro(MacroKind.Link), target, lowerInlines(text))(inline.span)
+            case CstMailtoMacro(target, text) =>
+                Link(LinkVariant.Macro(MacroKind.MailTo), target, lowerInlines(text))(inline.span)
 
         def lowerInlines(inlines: List[CstInline]): List[Inline] = inlines.map(lowerInline)
 
