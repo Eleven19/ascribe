@@ -128,7 +128,9 @@ object AsciiDocRendererSpec extends ZIOSpecDefault:
                 )
             },
             test("roundtrip: URL macro") {
-                assertTrue(roundtrip("Go to https://example.com[the site].\n") == "Go to https://example.com[the site].\n")
+                assertTrue(
+                    roundtrip("Go to https://example.com[the site].\n") == "Go to https://example.com[the site].\n"
+                )
             }
         )
     )

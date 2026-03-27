@@ -2,6 +2,7 @@ package io.eleven19.ascribe.cst
 
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.ast.AttributeList.{AttributeName, AttributeValue, OptionName, RoleName}
+import io.eleven19.ascribe.ast.{LinkAttributes, LinkOption, WindowTarget, CssRole, ElementId}
 
 opaque type AttributeMap = Map[String, String]
 
@@ -53,16 +54,51 @@ object CstLowering:
             case CstMono(content, true)    => ConstrainedMono(lowerInlines(content))(inline.span)
             case CstAttributeRef(name)     => Text(attrs.resolve(name))(inline.span)
             case CstAutolink(target) =>
-                Link(LinkVariant.Auto, target, Nil)(inline.span)
-            case CstUrlMacro(target, text) =>
+                Link(LinkVariant.Auto, target, Nil, LinkAttributes.empty)(inline.span)
+            case CstUrlMacro(target, attrList) =>
                 val scheme = target.indexOf("://") match
                     case -1  => ""
                     case idx => target.substring(0, idx)
-                Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, lowerInlines(text))(inline.span)
-            case CstLinkMacro(target, text) =>
-                Link(LinkVariant.Macro(MacroKind.Link), target, lowerInlines(text))(inline.span)
-            case CstMailtoMacro(target, text) =>
-                Link(LinkVariant.Macro(MacroKind.MailTo), target, lowerInlines(text))(inline.span)
+                Link(
+                    LinkVariant.Macro(MacroKind.Url(scheme)),
+                    target,
+                    lowerInlines(attrList.text),
+                    lowerMacroAttrs(attrList)
+                )(inline.span)
+            case CstLinkMacro(target, attrList) =>
+                Link(LinkVariant.Macro(MacroKind.Link), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(
+                    inline.span
+                )
+            case CstMailtoMacro(target, attrList) =>
+                Link(
+                    LinkVariant.Macro(MacroKind.MailTo),
+                    target,
+                    lowerInlines(attrList.text),
+                    lowerMacroAttrs(attrList)
+                )(inline.span)
+
+        def lowerMacroAttrs(attrList: CstMacroAttrList): LinkAttributes =
+            var la = LinkAttributes.empty
+            if attrList.hasCaretShorthand then
+                la = la.copy(window = Some(WindowTarget.Blank), options = la.options + LinkOption.NoOpener)
+            attrList.named.foreach { (key, value) =>
+                key match
+                    case "window" =>
+                        val wt = WindowTarget(value)
+                        la = la.copy(window = Some(wt))
+                        if wt == WindowTarget.Blank then la = la.copy(options = la.options + LinkOption.NoOpener)
+                    case "role"  => la = la.copy(roles = la.roles :+ CssRole(value))
+                    case "id"    => la = la.copy(id = Some(ElementId(value)))
+                    case "title" => la = la.copy(title = Some(value))
+                    case "opts" =>
+                        value.split("[,\\s]+").foreach {
+                            case "nofollow" => la = la.copy(options = la.options + LinkOption.NoFollow)
+                            case "noopener" => la = la.copy(options = la.options + LinkOption.NoOpener)
+                            case _          => ()
+                        }
+                    case _ => ()
+            }
+            la
 
         def lowerInlines(inlines: List[CstInline]): List[Inline] = inlines.map(lowerInline)
 

@@ -10,6 +10,7 @@ import io.eleven19.ascribe.cst.{
     CstBold,
     CstItalic,
     CstLinkMacro,
+    CstMacroAttrList,
     CstMailtoMacro,
     CstMono,
     CstText,
@@ -133,13 +134,20 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses link:target[text]") {
                 parse("link:report.pdf[Get Report]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)))
+                        assertTrue(
+                            inlines == List(
+                                CstLinkMacro(
+                                    "report.pdf",
+                                    CstMacroAttrList.textOnly(List(CstText("Get Report")(u)))(u)
+                                )(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses link:target[] with empty text") {
                 parse("link:report.pdf[]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstLinkMacro("report.pdf", Nil)(u)))
+                        assertTrue(inlines == List(CstLinkMacro("report.pdf", CstMacroAttrList.textOnly(Nil)(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses link macro embedded in text") {
@@ -148,7 +156,10 @@ object InlineParserSpec extends ZIOSpecDefault:
                         assertTrue(
                             inlines == List(
                                 CstText("See ")(u),
-                                CstLinkMacro("report.pdf", List(CstText("the report")(u)))(u),
+                                CstLinkMacro(
+                                    "report.pdf",
+                                    CstMacroAttrList.textOnly(List(CstText("the report")(u)))(u)
+                                )(u),
                                 CstText(" for details")(u)
                             )
                         )
@@ -159,13 +170,22 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses mailto:addr[text]") {
                 parse("mailto:user@example.com[Email me]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", List(CstText("Email me")(u)))(u)))
+                        assertTrue(
+                            inlines == List(
+                                CstMailtoMacro(
+                                    "user@example.com",
+                                    CstMacroAttrList.textOnly(List(CstText("Email me")(u)))(u)
+                                )(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses mailto:addr[] with empty text") {
                 parse("mailto:user@example.com[]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", Nil)(u)))
+                        assertTrue(
+                            inlines == List(CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(Nil)(u))(u))
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -174,20 +194,34 @@ object InlineParserSpec extends ZIOSpecDefault:
                 parse("https://example.com[click here]") match
                     case Success(inlines) =>
                         assertTrue(
-                            inlines == List(CstUrlMacro("https://example.com", List(CstText("click here")(u)))(u))
+                            inlines == List(
+                                CstUrlMacro(
+                                    "https://example.com",
+                                    CstMacroAttrList.textOnly(List(CstText("click here")(u)))(u)
+                                )(u)
+                            )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses http://url[text]") {
                 parse("http://example.com[visit]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstUrlMacro("http://example.com", List(CstText("visit")(u)))(u)))
+                        assertTrue(
+                            inlines == List(
+                                CstUrlMacro(
+                                    "http://example.com",
+                                    CstMacroAttrList.textOnly(List(CstText("visit")(u)))(u)
+                                )(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses URL macro with empty text") {
                 parse("https://example.com[]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstUrlMacro("https://example.com", Nil)(u)))
+                        assertTrue(
+                            inlines == List(CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(Nil)(u))(u))
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -233,11 +267,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses _italic_ embedded in text") {
                 parse("hello _world_ end") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstText("hello ")(u),
-                            CstItalic(List(CstText("world")(u)), true)(u),
-                            CstText(" end")(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstText("hello ")(u),
+                                CstItalic(List(CstText("world")(u)), true)(u),
+                                CstText(" end")(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("does not parse _italic_ mid-word") {
@@ -263,11 +299,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses `code` embedded in text") {
                 parse("use `cmd` now") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstText("use ")(u),
-                            CstMono(List(CstText("cmd")(u)), true)(u),
-                            CstText(" now")(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstText("use ")(u),
+                                CstMono(List(CstText("cmd")(u)), true)(u),
+                                CstText(" now")(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("does not parse `code` mid-word") {
@@ -288,6 +326,108 @@ object InlineParserSpec extends ZIOSpecDefault:
                 parse("foo*bar*baz") match
                     case Success(inlines) =>
                         assertTrue(!inlines.exists { case CstBold(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("macro attribute parsing")(
+            test("plain text without commas/equals is text-only") {
+                parse("link:path[simple text]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.target == "path",
+                            link.attrList.text == List(CstText("simple text")(u)),
+                            link.attrList.positional == Nil,
+                            link.attrList.named == Nil,
+                            link.attrList.hasCaretShorthand == false
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("text with named attribute") {
+                parse("link:path[click here,window=_blank]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("click here")(u)),
+                            link.attrList.named == List(("window", "_blank")),
+                            link.attrList.positional == Nil
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("caret shorthand") {
+                parse("link:path[click here^]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("click here")(u)),
+                            link.attrList.hasCaretShorthand == true
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("quoted text with comma") {
+                parse("""link:path["text, with comma",role=btn]""") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("text, with comma")(u)),
+                            link.attrList.named == List(("role", "btn"))
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("first positional with equals is kept as text") {
+                parse("link:path[role=btn,window=_blank]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("role=btn")(u)),
+                            link.attrList.named == List(("window", "_blank")),
+                            link.attrList.positional == Nil
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("empty brackets") {
+                parse("link:path[]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == Nil,
+                            link.attrList.positional == Nil,
+                            link.attrList.named == Nil,
+                            link.attrList.hasCaretShorthand == false
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("mailto with positional params") {
+                parse("mailto:user@host[Subscribe,Subscribe me,I want to join]") match
+                    case Success(inlines) =>
+                        val mailto = inlines.collectFirst { case m: CstMailtoMacro => m }.get
+                        assertTrue(
+                            mailto.attrList.text == List(CstText("Subscribe")(u)),
+                            mailto.attrList.positional == List("Subscribe me", "I want to join"),
+                            mailto.attrList.named == Nil
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("URL macro with attributes") {
+                parse("https://example.com[Example,window=_blank,opts=nofollow]") match
+                    case Success(inlines) =>
+                        val urlNode = inlines.collectFirst { case um: CstUrlMacro => um }.get
+                        assertTrue(
+                            urlNode.attrList.text == List(CstText("Example")(u)),
+                            urlNode.attrList.named == List(("window", "_blank"), ("opts", "nofollow"))
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("quoted text without attribute signals should be unquoted") {
+                parse("""link:path["just quoted"]""") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("just quoted")(u)),
+                            link.attrList.positional == Nil,
+                            link.attrList.named == Nil,
+                            link.attrList.hasCaretShorthand == false
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),

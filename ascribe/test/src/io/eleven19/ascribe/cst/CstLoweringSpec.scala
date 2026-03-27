@@ -4,13 +4,18 @@ import zio.test.*
 import io.eleven19.ascribe.ast.{
     Admonition,
     AdmonitionKind,
+    CssRole,
+    ElementId,
     Heading,
     Link,
+    LinkAttributes,
+    LinkOption,
     LinkVariant,
     MacroKind,
     Paragraph,
     Section,
-    Span
+    Span,
+    WindowTarget
 }
 import io.eleven19.ascribe.ast.dsl.{*, given}
 import io.eleven19.ascribe.cst.{
@@ -21,6 +26,7 @@ import io.eleven19.ascribe.cst.{
     CstDocumentHeader,
     CstDocument,
     CstLinkMacro,
+    CstMacroAttrList,
     CstMailtoMacro,
     CstParagraph,
     CstParagraphLine,
@@ -171,36 +177,52 @@ object CstLoweringSpec extends ZIOSpecDefault:
             test("CstItalic(constrained=false) lowers to Italic") {
                 val cst = CstDocument(
                     None,
-                    List(CstParagraph(List(
-                        CstParagraphLine(List(CstItalic(List(CstText("em")(u)), constrained = false)(u)))(u)
-                    ))(u))
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstItalic(List(CstText("em")(u)), constrained = false)(u)))(u)
+                            )
+                        )(u)
+                    )
                 )(u)
                 assertTrue(CstLowering.toAst(cst) == document(paragraph(italic(text("em")))))
             },
             test("CstItalic(constrained=true) lowers to ConstrainedItalic") {
                 val cst = CstDocument(
                     None,
-                    List(CstParagraph(List(
-                        CstParagraphLine(List(CstItalic(List(CstText("em")(u)), constrained = true)(u)))(u)
-                    ))(u))
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstItalic(List(CstText("em")(u)), constrained = true)(u)))(u)
+                            )
+                        )(u)
+                    )
                 )(u)
                 assertTrue(CstLowering.toAst(cst) == document(paragraph(constrainedItalic(text("em")))))
             },
             test("CstMono(constrained=false) lowers to Mono") {
                 val cst = CstDocument(
                     None,
-                    List(CstParagraph(List(
-                        CstParagraphLine(List(CstMono(List(CstText("cd")(u)), constrained = false)(u)))(u)
-                    ))(u))
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstMono(List(CstText("cd")(u)), constrained = false)(u)))(u)
+                            )
+                        )(u)
+                    )
                 )(u)
                 assertTrue(CstLowering.toAst(cst) == document(paragraph(mono(text("cd")))))
             },
             test("CstMono(constrained=true) lowers to ConstrainedMono") {
                 val cst = CstDocument(
                     None,
-                    List(CstParagraph(List(
-                        CstParagraphLine(List(CstMono(List(CstText("cd")(u)), constrained = true)(u)))(u)
-                    ))(u))
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstMono(List(CstText("cd")(u)), constrained = true)(u)))(u)
+                            )
+                        )(u)
+                    )
                 )(u)
                 assertTrue(CstLowering.toAst(cst) == document(paragraph(constrainedMono(text("cd")))))
             }
@@ -416,7 +438,12 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(
                             List(
                                 CstParagraphLine(
-                                    List(CstUrlMacro("https://example.com", List(CstText("click")(u)))(u))
+                                    List(
+                                        CstUrlMacro(
+                                            "https://example.com",
+                                            CstMacroAttrList.textOnly(List(CstText("click")(u)))(u)
+                                        )(u)
+                                    )
                                 )(u)
                             )
                         )(u)
@@ -431,7 +458,14 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)))(u)
+                                CstParagraphLine(
+                                    List(
+                                        CstLinkMacro(
+                                            "report.pdf",
+                                            CstMacroAttrList.textOnly(List(CstText("Get Report")(u)))(u)
+                                        )(u)
+                                    )
+                                )(u)
                             )
                         )(u)
                     )
@@ -445,7 +479,14 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstMailtoMacro("user@host.com", List(CstText("Email")(u)))(u)))(u)
+                                CstParagraphLine(
+                                    List(
+                                        CstMailtoMacro(
+                                            "user@host.com",
+                                            CstMacroAttrList.textOnly(List(CstText("Email")(u)))(u)
+                                        )(u)
+                                    )
+                                )(u)
                             )
                         )(u)
                     )
@@ -459,13 +500,103 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstUrlMacro("https://example.com", Nil)(u)))(u)
+                                CstParagraphLine(
+                                    List(CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(Nil)(u))(u))
+                                )(u)
                             )
                         )(u)
                     )
                 )(u)
                 val result = CstLowering.toAst(cst)
                 assertTrue(result == document(paragraph(urlLink("https", "https://example.com"))))
+            }
+        ),
+        suite("link attribute lowering")(
+            test("caret shorthand produces window=_blank and NoOpener") {
+                val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, Nil, hasCaretShorthand = true)(u)
+                val cst = CstDocument(
+                    None,
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstLinkMacro("path", attrList)(u)))(u)
+                            )
+                        )(u)
+                    )
+                )(u)
+                val result   = CstLowering.toAst(cst)
+                val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
+                assertTrue(
+                    linkNode.attributes.window == Some(WindowTarget.Blank),
+                    linkNode.attributes.options.contains(LinkOption.NoOpener)
+                )
+            },
+            test("window=_blank named attr produces window and NoOpener") {
+                val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("window", "_blank")), false)(u)
+                val cst = CstDocument(
+                    None,
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstLinkMacro("path", attrList)(u)))(u)
+                            )
+                        )(u)
+                    )
+                )(u)
+                val result   = CstLowering.toAst(cst)
+                val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
+                assertTrue(
+                    linkNode.attributes.window == Some(WindowTarget.Blank),
+                    linkNode.attributes.options.contains(LinkOption.NoOpener)
+                )
+            },
+            test("role attr produces CssRole") {
+                val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("role", "btn")), false)(u)
+                val cst = CstDocument(
+                    None,
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstLinkMacro("path", attrList)(u)))(u)
+                            )
+                        )(u)
+                    )
+                )(u)
+                val result   = CstLowering.toAst(cst)
+                val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
+                assertTrue(linkNode.attributes.roles == List(CssRole("btn")))
+            },
+            test("opts=nofollow produces NoFollow") {
+                val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("opts", "nofollow")), false)(u)
+                val cst = CstDocument(
+                    None,
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstLinkMacro("path", attrList)(u)))(u)
+                            )
+                        )(u)
+                    )
+                )(u)
+                val result   = CstLowering.toAst(cst)
+                val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
+                assertTrue(linkNode.attributes.options.contains(LinkOption.NoFollow))
+            },
+            test("empty attrs produce LinkAttributes.empty") {
+                val attrList = CstMacroAttrList(Nil, Nil, Nil, false)(u)
+                val cst = CstDocument(
+                    None,
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstLinkMacro("path", attrList)(u)))(u)
+                            )
+                        )(u)
+                    )
+                )(u)
+                val result   = CstLowering.toAst(cst)
+                val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
+                assertTrue(linkNode.attributes == LinkAttributes.empty)
             }
         )
     )

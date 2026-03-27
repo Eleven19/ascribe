@@ -173,16 +173,33 @@ case class CstMono(
 
 case class CstAttributeRef(name: String)(val span: Span) extends CstInline derives CanEqual
 
+// ── Inline macro attribute list ──────────────────────────────────────────────
+
+case class CstMacroAttrList(
+    text: List[CstInline],
+    positional: List[String],
+    named: List[(String, String)],
+    hasCaretShorthand: Boolean
+)(val span: Span)
+    extends CstNode derives CanEqual
+
+object CstMacroAttrList:
+
+    def textOnly(text: List[CstInline])(span: Span): CstMacroAttrList =
+        CstMacroAttrList(text, Nil, Nil, false)(span)
+
+    val empty: Span => CstMacroAttrList = span => CstMacroAttrList(Nil, Nil, Nil, false)(span)
+
 sealed trait CstLink extends CstInline:
     def target: String
 
 case class CstAutolink(target: String)(val span: Span) extends CstLink derives CanEqual
 
-case class CstUrlMacro(target: String, text: List[CstInline])(val span: Span) extends CstLink derives CanEqual
+case class CstUrlMacro(target: String, attrList: CstMacroAttrList)(val span: Span) extends CstLink derives CanEqual
 
-case class CstLinkMacro(target: String, text: List[CstInline])(val span: Span) extends CstLink derives CanEqual
+case class CstLinkMacro(target: String, attrList: CstMacroAttrList)(val span: Span) extends CstLink derives CanEqual
 
-case class CstMailtoMacro(target: String, text: List[CstInline])(val span: Span) extends CstLink derives CanEqual
+case class CstMailtoMacro(target: String, attrList: CstMacroAttrList)(val span: Span) extends CstLink derives CanEqual
 
 // ── Table sub-nodes ───────────────────────────────────────────────────────────
 

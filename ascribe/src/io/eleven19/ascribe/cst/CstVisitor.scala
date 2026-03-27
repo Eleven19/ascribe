@@ -48,6 +48,7 @@ trait CstVisitor[A]:
     def visitLinkMacro(node: CstLinkMacro): A       = visitLink(node)
     def visitMailtoMacro(node: CstMailtoMacro): A   = visitLink(node)
 
+    def visitMacroAttrList(node: CstMacroAttrList): A     = visitNode(node)
     def visitVerbatimContent(node: CstVerbatimContent): A = visitNode(node)
     def visitNestedContent(node: CstNestedContent): A     = visitNode(node)
     def visitCellInlines(node: CstCellInlines): A         = visitNode(node)
@@ -89,6 +90,7 @@ object CstVisitor:
         case n: CstUrlMacro            => visitor.visitUrlMacro(n)
         case n: CstLinkMacro           => visitor.visitLinkMacro(n)
         case n: CstMailtoMacro         => visitor.visitMailtoMacro(n)
+        case n: CstMacroAttrList       => visitor.visitMacroAttrList(n)
         case n: CstVerbatimContent     => visitor.visitVerbatimContent(n)
         case n: CstNestedContent       => visitor.visitNestedContent(n)
         case n: CstCellInlines         => visitor.visitCellInlines(n)
@@ -118,15 +120,16 @@ object CstVisitor:
         case _: CstBlankLine            => Nil
         case _: CstAttributeList        => Nil
         case bt: CstBlockTitle          => bt.content
+        case mal: CstMacroAttrList      => mal.text
         case _: CstText                 => Nil
         case b: CstBold                 => b.content
         case i: CstItalic               => i.content
         case m: CstMono                 => m.content
         case _: CstAttributeRef         => Nil
         case _: CstAutolink             => Nil
-        case n: CstUrlMacro             => n.text
-        case n: CstLinkMacro            => n.text
-        case n: CstMailtoMacro          => n.text
+        case n: CstUrlMacro             => List(n.attrList)
+        case n: CstLinkMacro            => List(n.attrList)
+        case n: CstMailtoMacro          => List(n.attrList)
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.

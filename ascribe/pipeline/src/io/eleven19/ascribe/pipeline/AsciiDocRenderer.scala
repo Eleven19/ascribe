@@ -1,6 +1,7 @@
 package io.eleven19.ascribe.pipeline
 
 import io.eleven19.ascribe.ast.*
+import io.eleven19.ascribe.ast.{LinkAttributes, LinkOption}
 import kyo.<
 
 /** Renders AST nodes back to AsciiDoc source text.
@@ -153,17 +154,36 @@ object AsciiDocRenderer extends Renderer[Any]:
 
     /** Render a single inline element to AsciiDoc source. */
     def renderInline(inline: Inline): String = inline match
-        case Text(content)                     => content
-        case Bold(content)                     => s"**${renderInlines(content)}**"
-        case ConstrainedBold(content)          => s"*${renderInlines(content)}*"
-        case Italic(content)                   => s"__${renderInlines(content)}__"
-        case Mono(content)                     => s"``${renderInlines(content)}``"
-        case ConstrainedItalic(content)        => s"_${renderInlines(content)}_"
-        case ConstrainedMono(content)          => s"`${renderInlines(content)}`"
-        case Link(LinkVariant.Auto, target, _) => target
-        case Link(LinkVariant.Macro(MacroKind.Link), target, text) =>
-            s"link:$target[${renderInlines(text)}]"
-        case Link(LinkVariant.Macro(MacroKind.MailTo), target, text) =>
-            s"mailto:$target[${renderInlines(text)}]"
-        case Link(LinkVariant.Macro(MacroKind.Url(_)), target, text) =>
-            s"$target[${renderInlines(text)}]"
+        case Text(content)                        => content
+        case Bold(content)                        => s"**${renderInlines(content)}**"
+        case ConstrainedBold(content)             => s"*${renderInlines(content)}*"
+        case Italic(content)                      => s"__${renderInlines(content)}__"
+        case Mono(content)                        => s"``${renderInlines(content)}``"
+        case ConstrainedItalic(content)           => s"_${renderInlines(content)}_"
+        case ConstrainedMono(content)             => s"`${renderInlines(content)}`"
+        case Link(LinkVariant.Auto, target, _, _) => target
+        case Link(LinkVariant.Macro(MacroKind.Link), target, text, attrs) =>
+            s"link:$target[${renderLinkBracketContent(text, attrs)}]"
+        case Link(LinkVariant.Macro(MacroKind.MailTo), target, text, attrs) =>
+            s"mailto:$target[${renderLinkBracketContent(text, attrs)}]"
+        case Link(LinkVariant.Macro(MacroKind.Url(_)), target, text, attrs) =>
+            s"$target[${renderLinkBracketContent(text, attrs)}]"
+
+    private def renderLinkBracketContent(text: List[Inline], attrs: LinkAttributes): String =
+        if attrs == LinkAttributes.empty then renderInlines(text)
+        else
+            val parts = List.newBuilder[String]
+            if text.nonEmpty then parts += renderInlines(text)
+            attrs.id.foreach(id => parts += s"id=$id")
+            attrs.roles.foreach(r => parts += s"role=$r")
+            attrs.title.foreach(t => parts += s"title=$t")
+            attrs.window.foreach(w => parts += s"window=$w")
+            if attrs.options.nonEmpty then
+                val optStrs = List(LinkOption.NoOpener, LinkOption.NoFollow)
+                    .filter(attrs.options.contains)
+                    .map {
+                        case LinkOption.NoFollow => "nofollow"
+                        case LinkOption.NoOpener => "noopener"
+                    }
+                parts += s"opts=${optStrs.mkString(",")}"
+            parts.result().mkString(",")

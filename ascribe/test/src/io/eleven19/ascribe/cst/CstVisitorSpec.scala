@@ -3,6 +3,7 @@ package io.eleven19.ascribe.cst
 import zio.test.*
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.Span
+import io.eleven19.ascribe.cst.CstMacroAttrList
 import parsley.Success
 
 object CstVisitorSpec extends ZIOSpecDefault:
@@ -88,17 +89,18 @@ object CstVisitorSpec extends ZIOSpecDefault:
                     visited = visited :+ node.target
 
             CstVisitor.visit(CstAutolink("https://a.com")(u), visitor)
-            CstVisitor.visit(CstUrlMacro("https://b.com", Nil)(u), visitor)
-            CstVisitor.visit(CstLinkMacro("c.pdf", Nil)(u), visitor)
-            CstVisitor.visit(CstMailtoMacro("d@e.com", Nil)(u), visitor)
+            CstVisitor.visit(CstUrlMacro("https://b.com", CstMacroAttrList.textOnly(Nil)(u))(u), visitor)
+            CstVisitor.visit(CstLinkMacro("c.pdf", CstMacroAttrList.textOnly(Nil)(u))(u), visitor)
+            CstVisitor.visit(CstMailtoMacro("d@e.com", CstMacroAttrList.textOnly(Nil)(u))(u), visitor)
 
             assertTrue(visited == List("https://a.com", "https://b.com", "c.pdf", "d@e.com"))
         },
-        test("children returns text for CstUrlMacro") {
-            val u    = Span.unknown
-            val text = CstText("click")(u)
-            val link = CstUrlMacro("https://example.com", List(text))(u)
-            assertTrue(link.children == List(text))
+        test("children returns CstMacroAttrList for CstUrlMacro") {
+            val u        = Span.unknown
+            val text     = CstText("click")(u)
+            val attrList = CstMacroAttrList.textOnly(List(text))(u)
+            val link     = CstUrlMacro("https://example.com", attrList)(u)
+            assertTrue(link.children == List(attrList))
         },
         test("children is empty for CstAutolink") {
             val u = Span.unknown

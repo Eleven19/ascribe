@@ -16,6 +16,7 @@ import io.eleven19.ascribe.cst.{
     CstInline,
     CstItalic,
     CstLinkMacro,
+    CstMacroAttrList,
     CstMailtoMacro,
     CstMono,
     CstText,
@@ -175,26 +176,86 @@ object InlineParser:
     private val macroTargetChars: Parsley[String] =
         stringOfSome(satisfy(c => c != '[' && c != '\n' && c != '\r' && c != ' ' && c != '\t'))
 
-    /** Parses inline content between `[` and `]` for link text. */
-    private val bracketedInlineContent: Parsley[List[CstInline]] =
-        char('[') *> many(
-            boldSpan | italicSpan | monoSpan |
-                constrainedBoldSpan | constrainedItalicSpan | constrainedMonoSpan |
-                attrRefInline |
-                (pos <~> stringOfSome(
-                    satisfy(c =>
-                        c != ']' && c != '\n' && c != '\r' && c != '*' && c != '_' && c != '`' && c != '{' && c != '}'
-                    )
-                ) <~> pos)
-                    .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)): CstInline }
-        ) <* char(']')
+    /** Characters allowed in raw bracket content (everything except `]` and newlines). */
+    private val bracketRawChar: Parsley[Char] = satisfy(c => c != ']' && c != '\n' && c != '\r')
+
+    /** Parses raw content between `[` and `]`, then interprets as attribute list. */
+    private val macroAttrList: Parsley[CstMacroAttrList] =
+        (pos <~> (char('[') *> manyTill(bracketRawChar, char(']')).map(_.mkString)) <~> pos)
+            .map { case ((s, raw), e) => parseMacroAttrList(raw, mkSpan(s, e)) }
+
+    /** Interpret raw bracket content as a CstMacroAttrList. */
+    private def parseMacroAttrList(raw: String, span: Span): CstMacroAttrList =
+        if raw.isEmpty then CstMacroAttrList.empty(span)
+        else if !containsAttrSignal(raw) then
+            val (textStr, hasCaret) = stripTrailingCaret(raw)
+            val inlines             = parseInlineText(unquote(textStr), span)
+            CstMacroAttrList(inlines, Nil, Nil, hasCaret)(span)
+        else
+            val segments            = splitOnCommas(raw)
+            val (firstRaw, rest)    = (segments.headOption.getOrElse(""), segments.drop(1))
+            val (textRaw, hasCaret) = stripTrailingCaret(firstRaw)
+            val text                = if textRaw.isEmpty then Nil else parseInlineText(unquote(textRaw), span)
+            val (positional, named) =
+                rest.foldLeft((List.empty[String], List.empty[(String, String)])) { case ((positionals, named), seg) =>
+                    seg.indexOf('=') match
+                        case -1 => (positionals :+ seg.trim, named)
+                        case idx =>
+                            val key   = seg.substring(0, idx).trim
+                            val value = unquote(seg.substring(idx + 1).trim)
+                            (positionals, named :+ (key, value))
+                }
+            CstMacroAttrList(text, positional, named, hasCaret)(span)
+
+    private def containsAttrSignal(raw: String): Boolean =
+        var inQuote = false
+        var i       = 0
+        while i < raw.length do
+            val c = raw.charAt(i)
+            if c == '"' && (i == 0 || raw.charAt(i - 1) != '\\') then inQuote = !inQuote
+            else if !inQuote && (c == ',' || c == '=') then return true
+            i += 1
+        false
+
+    private def splitOnCommas(raw: String): List[String] =
+        val segments = List.newBuilder[String]
+        val current  = new StringBuilder
+        var inQuote  = false
+        var i        = 0
+        while i < raw.length do
+            val c = raw.charAt(i)
+            if c == '"' && (i == 0 || raw.charAt(i - 1) != '\\') then
+                inQuote = !inQuote
+                current.append(c)
+            else if c == ',' && !inQuote then
+                segments += current.toString
+                current.clear()
+            else current.append(c)
+            i += 1
+        segments += current.toString
+        segments.result()
+
+    private def stripTrailingCaret(s: String): (String, Boolean) =
+        if s.endsWith("^") then (s.dropRight(1), true)
+        else (s, false)
+
+    private def unquote(s: String): String =
+        if s.startsWith("\"") && s.endsWith("\"") then s.substring(1, s.length - 1).replace("\\\"", "\"")
+        else s
+
+    private def parseInlineText(s: String, span: Span): List[CstInline] =
+        if s.isEmpty then Nil
+        else
+            lineContent.parse(s) match
+                case parsley.Success(inlines) => inlines
+                case _                        => List(CstText(s)(span))
 
     /** Parses `link:target[text]`. */
     val linkMacro: Parsley[CstInline] =
         atomic(
-            (pos <~> (string("link:") *> macroTargetChars) <~> bracketedInlineContent <~> pos)
-                .map { case (((s, target), text), e) =>
-                    CstLinkMacro(target, text)(mkSpan(s, e))
+            (pos <~> (string("link:") *> macroTargetChars) <~> macroAttrList <~> pos)
+                .map { case (((s, target), attrList), e) =>
+                    CstLinkMacro(target, attrList)(mkSpan(s, e))
                 }
         ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
             .label("link macro")
@@ -203,9 +264,9 @@ object InlineParser:
     /** Parses `mailto:addr[text]`. */
     val mailtoMacro: Parsley[CstInline] =
         atomic(
-            (pos <~> (string("mailto:") *> macroTargetChars) <~> bracketedInlineContent <~> pos)
-                .map { case (((s, target), text), e) =>
-                    CstMailtoMacro(target, text)(mkSpan(s, e))
+            (pos <~> (string("mailto:") *> macroTargetChars) <~> macroAttrList <~> pos)
+                .map { case (((s, target), attrList), e) =>
+                    CstMailtoMacro(target, attrList)(mkSpan(s, e))
                 }
         ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
             .label("mailto macro")
@@ -222,9 +283,9 @@ object InlineParser:
     /** Parses a URL macro: `scheme://target[text]`. */
     val urlMacro: Parsley[CstInline] =
         atomic(
-            (pos <~> (urlScheme <~> urlChars).map(_ + _) <~> bracketedInlineContent <~> pos)
-                .map { case (((s, target), text), e) =>
-                    CstUrlMacro(target, text)(mkSpan(s, e))
+            (pos <~> (urlScheme <~> urlChars).map(_ + _) <~> macroAttrList <~> pos)
+                .map { case (((s, target), attrList), e) =>
+                    CstUrlMacro(target, attrList)(mkSpan(s, e))
                 }
         ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
             .label("URL macro")
