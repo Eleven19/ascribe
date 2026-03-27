@@ -69,7 +69,7 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses __italic__ text") {
                 parse("__italic__") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstItalic(List(CstText("italic")(u)))(u)))
+                        assertTrue(inlines == List(CstItalic(List(CstText("italic")(u)), false)(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -77,7 +77,7 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses ``mono`` text") {
                 parse("``mono``") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstMono(List(CstText("mono")(u)))(u)))
+                        assertTrue(inlines == List(CstMono(List(CstText("mono")(u)), false)(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -89,7 +89,7 @@ object InlineParserSpec extends ZIOSpecDefault:
                             inlines == List(
                                 CstBold(List(CstText("b")(u)), false)(u),
                                 CstText(" and ")(u),
-                                CstItalic(List(CstText("i")(u)))(u)
+                                CstItalic(List(CstText("i")(u)), false)(u)
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
@@ -220,6 +220,100 @@ object InlineParserSpec extends ZIOSpecDefault:
                 parse("irc://irc.freenode.org/#channel") match
                     case Success(inlines) =>
                         assertTrue(inlines == List(CstAutolink("irc://irc.freenode.org/#channel")(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("constrained italic")(
+            test("parses _italic_ at start of line") {
+                parse("_italic_") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstItalic(List(CstText("italic")(u)), true)(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses _italic_ embedded in text") {
+                parse("hello _world_ end") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(
+                            CstText("hello ")(u),
+                            CstItalic(List(CstText("world")(u)), true)(u),
+                            CstText(" end")(u)
+                        ))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("does not parse _italic_ mid-word") {
+                parse("foo_bar_baz") match
+                    case Success(inlines) =>
+                        assertTrue(!inlines.exists { case _: CstItalic => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses _italic_ after punctuation") {
+                parse("(_italic_)") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case _: CstItalic => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("constrained monospace")(
+            test("parses `code` at start of line") {
+                parse("`code`") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstMono(List(CstText("code")(u)), true)(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses `code` embedded in text") {
+                parse("use `cmd` now") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(
+                            CstText("use ")(u),
+                            CstMono(List(CstText("cmd")(u)), true)(u),
+                            CstText(" now")(u)
+                        ))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("does not parse `code` mid-word") {
+                parse("foo`bar`baz") match
+                    case Success(inlines) =>
+                        assertTrue(!inlines.exists { case _: CstMono => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("constrained bold boundary enforcement")(
+            test("*bold* at start of line still works") {
+                parse("*bold*") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstBold(List(CstText("bold")(u)), true)(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("does not parse *bold* mid-word") {
+                parse("foo*bar*baz") match
+                    case Success(inlines) =>
+                        assertTrue(!inlines.exists { case CstBold(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("constrained close before punctuation")(
+            test("parses *bold* before colon") {
+                parse("*bold*: rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstBold(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses *bold* before hyphen") {
+                parse("*bold*- rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstBold(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses _italic_ before colon") {
+                parse("_italic_: rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstItalic(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses `mono` before slash") {
+                parse("`mono`/ rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstMono(_, true) => true; case _ => false })
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         )

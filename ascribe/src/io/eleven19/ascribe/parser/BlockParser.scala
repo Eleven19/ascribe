@@ -304,7 +304,7 @@ object BlockParser:
 
     private val cellContent: Parsley[List[CstInline]] =
         many(
-            boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+            boldSpan | constrainedBoldSpan | italicSpan | constrainedItalicSpan | monoSpan | constrainedMonoSpan |
                 (pos <~> stringOfSome(satisfy(c => isContentChar(c) && c != '|')) <~> pos)
                     .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)) } |
                 (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
@@ -430,7 +430,7 @@ object BlockParser:
 
     private val nestedCellContent: Parsley[List[CstInline]] =
         many(
-            boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+            boldSpan | constrainedBoldSpan | italicSpan | constrainedItalicSpan | monoSpan | constrainedMonoSpan |
                 (pos <~> stringOfSome(satisfy(c => isContentChar(c) && c != '!')) <~> pos)
                     .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)) } |
                 (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) =>
@@ -475,7 +475,7 @@ object BlockParser:
             (pos <~> some(
                 (pos <~> (notFollowedBy(char('|')) *> notFollowedBy(string("!===")) *>
                     notCstBlockStart *>
-                    some(inlineElement) <* eolOrEof) <~> pos)
+                    InlineParser.resetLastChar *> some(inlineElement) <* eolOrEof) <~> pos)
                     .map { case ((ls, content), le) => CstParagraphLine(content)(mkSpan(ls, le)) }
             ).map(_.toList) <~> pos)
                 .map { case ((s, lines), e) => CstParagraph(lines)(mkSpan(s, e)) }
@@ -655,7 +655,7 @@ object BlockParser:
             notFollowedBy(char(':') *> satisfy(c => c != ':' && c != '\n')) // attribute entry
 
     private val cstParagraphLine: Parsley[CstParagraphLine] =
-        (pos <~> (notCstBlockStart *> some(inlineElement) <* eolOrEof) <~> pos)
+        (pos <~> (notCstBlockStart *> InlineParser.resetLastChar *> some(inlineElement) <* eolOrEof) <~> pos)
             .map { case ((s, content), e) => CstParagraphLine(content)(mkSpan(s, e)) }
             .label("paragraph line")
 

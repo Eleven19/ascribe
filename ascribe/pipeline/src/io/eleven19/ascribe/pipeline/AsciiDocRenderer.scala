@@ -158,6 +158,8 @@ object AsciiDocRenderer extends Renderer[Any]:
         case ConstrainedBold(content)          => s"*${renderInlines(content)}*"
         case Italic(content)                   => s"__${renderInlines(content)}__"
         case Mono(content)                     => s"``${renderInlines(content)}``"
+        case ConstrainedItalic(content)        => s"_${renderInlines(content)}_"
+        case ConstrainedMono(content)          => s"`${renderInlines(content)}`"
         case Link(LinkVariant.Auto, target, _) => target
         case Link(LinkVariant.Macro(MacroKind.Link), target, text) =>
             s"link:$target[${renderInlines(text)}]"

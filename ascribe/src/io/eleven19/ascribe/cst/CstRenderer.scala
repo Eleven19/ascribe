@@ -162,14 +162,22 @@ object CstRenderer:
             sb.append("*")
             renderInlines(content, sb)
             sb.append("*")
-        case CstItalic(content) =>
+        case CstItalic(content, false) =>
             sb.append("__")
             renderInlines(content, sb)
             sb.append("__")
-        case CstMono(content) =>
+        case CstItalic(content, true) =>
+            sb.append("_")
+            renderInlines(content, sb)
+            sb.append("_")
+        case CstMono(content, false) =>
             sb.append("``")
             renderInlines(content, sb)
             sb.append("``")
+        case CstMono(content, true) =>
+            sb.append("`")
+            renderInlines(content, sb)
+            sb.append("`")
         case CstAttributeRef(name) =>
             sb.append('{')
             sb.append(name)

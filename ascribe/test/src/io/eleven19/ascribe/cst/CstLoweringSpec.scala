@@ -140,7 +140,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstItalic(List(CstText("it")(u)))(u)))(u)
+                                CstParagraphLine(List(CstItalic(List(CstText("it")(u)), constrained = false)(u)))(u)
                             )
                         )(u)
                     )
@@ -156,7 +156,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstMono(List(CstText("m")(u)))(u)))(u)
+                                CstParagraphLine(List(CstMono(List(CstText("m")(u)), constrained = false)(u)))(u)
                             )
                         )(u)
                     )
@@ -165,6 +165,44 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     CstLowering.toAst(cst) ==
                         document(paragraph(mono(text("m"))))
                 )
+            }
+        ),
+        suite("constrained italic/mono lowering")(
+            test("CstItalic(constrained=false) lowers to Italic") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstItalic(List(CstText("em")(u)), constrained = false)(u)))(u)
+                    ))(u))
+                )(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(italic(text("em")))))
+            },
+            test("CstItalic(constrained=true) lowers to ConstrainedItalic") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstItalic(List(CstText("em")(u)), constrained = true)(u)))(u)
+                    ))(u))
+                )(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(constrainedItalic(text("em")))))
+            },
+            test("CstMono(constrained=false) lowers to Mono") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstMono(List(CstText("cd")(u)), constrained = false)(u)))(u)
+                    ))(u))
+                )(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(mono(text("cd")))))
+            },
+            test("CstMono(constrained=true) lowers to ConstrainedMono") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstMono(List(CstText("cd")(u)), constrained = true)(u)))(u)
+                    ))(u))
+                )(u)
+                assertTrue(CstLowering.toAst(cst) == document(paragraph(constrainedMono(text("cd")))))
             }
         ),
         suite("attribute references")(

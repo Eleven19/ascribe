@@ -32,18 +32,22 @@ object dsl:
     /** A built-in rule that strips all inline formatting, leaving plain text. */
     val stripFormatting: RewriteRule[Any] =
         RewriteRule.forInlines {
-            case Bold(content)            => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
-            case ConstrainedBold(content) => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
-            case Italic(content)          => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
-            case Mono(content)            => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
+            case Bold(content)              => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
+            case ConstrainedBold(content)   => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
+            case Italic(content)            => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
+            case Mono(content)              => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
+            case ConstrainedItalic(content) => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
+            case ConstrainedMono(content)   => RewriteAction.Replace(Text(flattenInlines(content))(Span.unknown))
         }
 
     private def flattenInlines(inlines: List[Inline]): String =
         inlines.map {
-            case Text(content)            => content
-            case Bold(content)            => flattenInlines(content)
-            case ConstrainedBold(content) => flattenInlines(content)
-            case Italic(content)          => flattenInlines(content)
-            case Mono(content)            => flattenInlines(content)
-            case Link(_, target, text)    => if text.nonEmpty then flattenInlines(text) else target
+            case Text(content)              => content
+            case Bold(content)              => flattenInlines(content)
+            case ConstrainedBold(content)   => flattenInlines(content)
+            case Italic(content)            => flattenInlines(content)
+            case Mono(content)              => flattenInlines(content)
+            case ConstrainedItalic(content) => flattenInlines(content)
+            case ConstrainedMono(content)   => flattenInlines(content)
+            case Link(_, target, text)      => if text.nonEmpty then flattenInlines(text) else target
         }.mkString

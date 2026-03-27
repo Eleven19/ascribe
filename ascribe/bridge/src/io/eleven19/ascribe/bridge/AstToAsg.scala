@@ -367,6 +367,20 @@ object AstToAsg:
                 inlines = Chunk.from(content.map(convertInline)),
                 location = inclusiveLocation(inline.span)
             )
+        case ast.ConstrainedItalic(content) =>
+            asg.Span(
+                variant = "emphasis",
+                form = "constrained",
+                inlines = Chunk.from(content.map(convertInline)),
+                location = inclusiveLocation(inline.span)
+            )
+        case ast.ConstrainedMono(content) =>
+            asg.Span(
+                variant = "code",
+                form = "constrained",
+                inlines = Chunk.from(content.map(convertInline)),
+                location = inclusiveLocation(inline.span)
+            )
         case ast.Link(variant, target, text) =>
             val asgTarget = variant match
                 case ast.LinkVariant.Macro(ast.MacroKind.MailTo) => "mailto:" + target
