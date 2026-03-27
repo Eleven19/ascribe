@@ -1,9 +1,9 @@
 package io.eleven19.ascribe.cst
 
 import zio.test.*
-import io.eleven19.ascribe.ast.{Admonition, AdmonitionKind, Heading, Paragraph, Section, Span}
+import io.eleven19.ascribe.ast.{Admonition, AdmonitionKind, Heading, Link, LinkVariant, MacroKind, Paragraph, Section, Span}
 import io.eleven19.ascribe.ast.dsl.{*, given}
-import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstAttributeRef, CstDocumentHeader, CstDocument, CstParagraph, CstParagraphLine, CstHeading, CstText}
+import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstAttributeRef, CstAutolink, CstDocumentHeader, CstDocument, CstLinkMacro, CstMailtoMacro, CstParagraph, CstParagraphLine, CstHeading, CstText, CstUrlMacro}
 
 object CstLoweringSpec extends ZIOSpecDefault:
     private val u = Span.unknown
@@ -227,6 +227,58 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 assertTrue(CstLowering.toAst(cst) ==
                     document(documentHeader(text("My Doc"))))
+            }
+        ),
+        suite("link lowering")(
+            test("CstAutolink lowers to Link(Auto, ...)") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstAutolink("https://example.com")(u)))(u)
+                    ))(u))
+                )(u)
+                val result = CstLowering.toAst(cst)
+                assertTrue(result == document(paragraph(autoLink("https://example.com"))))
+            },
+            test("CstUrlMacro lowers to Link(Macro(Url(...)), ...)") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstUrlMacro("https://example.com", List(CstText("click")(u)))(u)))(u)
+                    ))(u))
+                )(u)
+                val result = CstLowering.toAst(cst)
+                assertTrue(result == document(paragraph(urlLink("https", "https://example.com", text("click")))))
+            },
+            test("CstLinkMacro lowers to Link(Macro(Link), ...)") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)))(u)
+                    ))(u))
+                )(u)
+                val result = CstLowering.toAst(cst)
+                assertTrue(result == document(paragraph(link("report.pdf", text("Get Report")))))
+            },
+            test("CstMailtoMacro lowers to Link(Macro(MailTo), ...)") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstMailtoMacro("user@host.com", List(CstText("Email")(u)))(u)))(u)
+                    ))(u))
+                )(u)
+                val result = CstLowering.toAst(cst)
+                assertTrue(result == document(paragraph(mailtoLink("user@host.com", text("Email")))))
+            },
+            test("CstUrlMacro with empty text lowers to Link with empty text list") {
+                val cst = CstDocument(
+                    None,
+                    List(CstParagraph(List(
+                        CstParagraphLine(List(CstUrlMacro("https://example.com", Nil)(u)))(u)
+                    ))(u))
+                )(u)
+                val result = CstLowering.toAst(cst)
+                assertTrue(result == document(paragraph(urlLink("https", "https://example.com"))))
             }
         )
     )

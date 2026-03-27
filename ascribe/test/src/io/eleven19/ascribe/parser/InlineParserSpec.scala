@@ -4,7 +4,7 @@ import parsley.{Failure, Success}
 import zio.test.*
 
 import io.eleven19.ascribe.ast.Span
-import io.eleven19.ascribe.cst.{CstAttributeRef, CstBold, CstItalic, CstMono, CstText}
+import io.eleven19.ascribe.cst.{CstAttributeRef, CstAutolink, CstBold, CstItalic, CstLinkMacro, CstMailtoMacro, CstMono, CstText, CstUrlMacro}
 import io.eleven19.ascribe.parser.InlineParser.lineContent
 
 object InlineParserSpec extends ZIOSpecDefault:
@@ -110,6 +110,94 @@ object InlineParserSpec extends ZIOSpecDefault:
                     case Success(inlines) =>
                         val texts = inlines.collect { case CstText(c) => c }
                         assertTrue(texts.contains("{"))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("link macros")(
+            test("parses link:target[text]") {
+                parse("link:report.pdf[Get Report]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses link:target[] with empty text") {
+                parse("link:report.pdf[]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstLinkMacro("report.pdf", Nil)(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses link macro embedded in text") {
+                parse("See link:report.pdf[the report] for details") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(
+                            CstText("See ")(u),
+                            CstLinkMacro("report.pdf", List(CstText("the report")(u)))(u),
+                            CstText(" for details")(u)
+                        ))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("mailto macros")(
+            test("parses mailto:addr[text]") {
+                parse("mailto:user@example.com[Email me]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", List(CstText("Email me")(u)))(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses mailto:addr[] with empty text") {
+                parse("mailto:user@example.com[]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", Nil)(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("URL macros")(
+            test("parses https://url[text]") {
+                parse("https://example.com[click here]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstUrlMacro("https://example.com", List(CstText("click here")(u)))(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses http://url[text]") {
+                parse("http://example.com[visit]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstUrlMacro("http://example.com", List(CstText("visit")(u)))(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses URL macro with empty text") {
+                parse("https://example.com[]") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstUrlMacro("https://example.com", Nil)(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
+        suite("bare autolinks")(
+            test("parses bare https:// URL") {
+                parse("https://example.com") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstAutolink("https://example.com")(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses bare URL embedded in text") {
+                parse("Visit https://example.com today") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(
+                            CstText("Visit ")(u),
+                            CstAutolink("https://example.com")(u),
+                            CstText(" today")(u)
+                        ))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses ftp:// URL") {
+                parse("ftp://files.example.com/pub") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstAutolink("ftp://files.example.com/pub")(u)))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses irc:// URL") {
+                parse("irc://irc.freenode.org/#channel") match
+                    case Success(inlines) =>
+                        assertTrue(inlines == List(CstAutolink("irc://irc.freenode.org/#channel")(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         )
