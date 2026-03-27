@@ -7,19 +7,18 @@ import io.eleven19.ascribe.ast.*
 object FileSourceSinkSpec extends KyoSpecDefault:
 
     private def makeTempDir: Path < Sync =
-        Sync.defer { Path(java.nio.file.Files.createTempDirectory("ascribe-test").toString) }
+        Sync.defer(Path(java.nio.file.Files.createTempDirectory("ascribe-test").toString))
 
     private def writeFile(dir: Path, name: String, content: String): Unit < Sync =
-        Sync.defer { java.nio.file.Files.writeString(dir.toJava.resolve(name), content): Unit }
+        Sync.defer(java.nio.file.Files.writeString(dir.toJava.resolve(name), content): Unit)
 
     private def readFile(dir: Path, name: String): String < Sync =
-        Sync.defer { java.nio.file.Files.readString(dir.toJava.resolve(name)) }
+        Sync.defer(java.nio.file.Files.readString(dir.toJava.resolve(name)))
 
     private def cleanup(dir: Path): Unit < Sync =
         Sync.defer {
             def go(p: java.nio.file.Path): Unit =
-                if java.nio.file.Files.isDirectory(p) then
-                    java.nio.file.Files.list(p).forEach(go(_)): Unit
+                if java.nio.file.Files.isDirectory(p) then java.nio.file.Files.list(p).forEach(go(_)): Unit
                 java.nio.file.Files.deleteIfExists(p): Unit
             go(dir.toJava)
         }
@@ -30,9 +29,11 @@ object FileSourceSinkSpec extends KyoSpecDefault:
                 val tmpDir = makeTempDir.now
                 Resource.ensure(cleanup(tmpDir)).now
                 writeFile(tmpDir, "test.adoc", "Hello world.\n").now
-                val result = Abort.run[PipelineError](
-                    FileSource.fromFile(Path(tmpDir.toJava.resolve("test.adoc").toString)).read
-                ).now
+                val result = Abort
+                    .run[PipelineError](
+                        FileSource.fromFile(Path(tmpDir.toJava.resolve("test.adoc").toString)).read
+                    )
+                    .now
                 zio.test.assertTrue(result.isSuccess)
             }
         },
@@ -43,9 +44,11 @@ object FileSourceSinkSpec extends KyoSpecDefault:
                 writeFile(tmpDir, "a.adoc", "First.\n").now
                 writeFile(tmpDir, "b.adoc", "Second.\n").now
                 writeFile(tmpDir, "c.txt", "Ignored.\n").now
-                val result = Abort.run[PipelineError](
-                    FileSource.fromDirectory(tmpDir).read
-                ).now
+                val result = Abort
+                    .run[PipelineError](
+                        FileSource.fromDirectory(tmpDir).read
+                    )
+                    .now
                 result match
                     case Result.Success(tree) => zio.test.assertTrue(tree.size == 2)
                     case _                    => zio.test.assertTrue(false)
@@ -55,7 +58,7 @@ object FileSourceSinkSpec extends KyoSpecDefault:
             direct {
                 val tmpDir = makeTempDir.now
                 Resource.ensure(cleanup(tmpDir)).now
-                val tmpFile = tmpDir.toJava.resolve("output.adoc")
+                val tmpFile  = tmpDir.toJava.resolve("output.adoc")
                 val rendered = Map(DocumentPath("doc.adoc") -> "Hello world.\n")
                 FileSink.toFile(Path(tmpFile.toString)).write(rendered).now
                 val content = readFile(tmpDir, "output.adoc").now
@@ -81,9 +84,11 @@ object FileSourceSinkSpec extends KyoSpecDefault:
                 val tmpDir = makeTempDir.now
                 Resource.ensure(cleanup(tmpDir)).now
                 writeFile(tmpDir, "bad.adoc", "[invalid\n").now
-                val result = Abort.run[PipelineError](
-                    FileSource.fromFile(Path(tmpDir.toJava.resolve("bad.adoc").toString)).read
-                ).now
+                val result = Abort
+                    .run[PipelineError](
+                        FileSource.fromFile(Path(tmpDir.toJava.resolve("bad.adoc").toString)).read
+                    )
+                    .now
                 zio.test.assertTrue(!result.isSuccess)
             }
         },
@@ -94,9 +99,8 @@ object FileSourceSinkSpec extends KyoSpecDefault:
                 Resource.ensure(cleanup(srcDir)).now
                 Resource.ensure(cleanup(outDir)).now
                 writeFile(srcDir, "doc.adoc", "hello.\n").now
-                val rule = RewriteRule.forInlines {
-                    case Text(content) =>
-                        RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
+                val rule = RewriteRule.forInlines { case Text(content) =>
+                    RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
                 }
                 val pipeline = Pipeline.from(FileSource.fromDirectory(srcDir)).rewrite(rule)
                 val result   = Abort.run[PipelineError](pipeline.runToStrings).now

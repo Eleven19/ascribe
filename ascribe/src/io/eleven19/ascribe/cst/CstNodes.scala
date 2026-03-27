@@ -182,14 +182,11 @@ sealed trait CstLink extends CstInline:
 
 case class CstAutolink(target: String)(val span: Span) extends CstLink derives CanEqual
 
-case class CstUrlMacro(target: String, text: List[CstInline])(val span: Span)
-    extends CstLink derives CanEqual
+case class CstUrlMacro(target: String, text: List[CstInline])(val span: Span) extends CstLink derives CanEqual
 
-case class CstLinkMacro(target: String, text: List[CstInline])(val span: Span)
-    extends CstLink derives CanEqual
+case class CstLinkMacro(target: String, text: List[CstInline])(val span: Span) extends CstLink derives CanEqual
 
-case class CstMailtoMacro(target: String, text: List[CstInline])(val span: Span)
-    extends CstLink derives CanEqual
+case class CstMailtoMacro(target: String, text: List[CstInline])(val span: Span) extends CstLink derives CanEqual
 
 // ── Table sub-nodes ───────────────────────────────────────────────────────────
 

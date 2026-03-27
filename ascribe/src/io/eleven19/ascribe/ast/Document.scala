@@ -35,8 +35,10 @@ case class ConstrainedBold(content: List[Inline])(val span: Span) extends Inline
 enum MacroKind derives CanEqual:
     /** URL macro: `https://example.com[text]` */
     case Url(scheme: String)
+
     /** Explicit link macro: `link:target[text]` */
     case Link
+
     /** Mailto macro: `mailto:user@host[text]` */
     case MailTo
 
@@ -44,16 +46,18 @@ enum MacroKind derives CanEqual:
 enum LinkVariant derives CanEqual:
     /** Bare URL auto-detected by scheme prefix. */
     case Auto
+
     /** An inline macro with `target[text]` syntax. */
     case Macro(kind: MacroKind)
 
 /** A hyperlink inline node. Covers bare autolinks, URL macros, link: macros, and mailto: macros.
   *
-  * The `variant` field captures how the link was authored. The `target` is the URL or path.
-  * An empty `text` list means no display text was provided (renderer decides display).
+  * The `variant` field captures how the link was authored. The `target` is the URL or path. An empty `text` list means
+  * no display text was provided (renderer decides display).
   */
-case class Link(variant: LinkVariant, target: String, text: List[Inline])(val span: Span)
-    extends Inline derives CanEqual:
+case class Link(variant: LinkVariant, target: String, text: List[Inline])(val span: Span) extends Inline
+    derives CanEqual:
+
     /** Extracts the URL scheme from the target, if present. */
     lazy val scheme: Option[String] =
         target.indexOf("://") match
@@ -61,6 +65,7 @@ case class Link(variant: LinkVariant, target: String, text: List[Inline])(val sp
             case idx => Some(target.substring(0, idx))
 
 object Link:
+
     /** Extractor for pattern-matching on the scheme: `case Link.Scheme(s) => ...` */
     object Scheme:
         def unapply(link: Link): Option[String] = link.scheme

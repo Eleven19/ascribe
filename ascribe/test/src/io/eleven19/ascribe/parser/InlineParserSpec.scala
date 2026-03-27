@@ -4,11 +4,21 @@ import parsley.{Failure, Success}
 import zio.test.*
 
 import io.eleven19.ascribe.ast.Span
-import io.eleven19.ascribe.cst.{CstAttributeRef, CstAutolink, CstBold, CstItalic, CstLinkMacro, CstMailtoMacro, CstMono, CstText, CstUrlMacro}
+import io.eleven19.ascribe.cst.{
+    CstAttributeRef,
+    CstAutolink,
+    CstBold,
+    CstItalic,
+    CstLinkMacro,
+    CstMailtoMacro,
+    CstMono,
+    CstText,
+    CstUrlMacro
+}
 import io.eleven19.ascribe.parser.InlineParser.lineContent
 
 object InlineParserSpec extends ZIOSpecDefault:
-    private val u = Span.unknown
+    private val u                    = Span.unknown
     private def parse(input: String) = lineContent.parse(input)
 
     def spec = suite("InlineParser")(
@@ -39,11 +49,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses bold embedded in text") {
                 parse("hello **world** end") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstText("hello ")(u),
-                            CstBold(List(CstText("world")(u)), false)(u),
-                            CstText(" end")(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstText("hello ")(u),
+                                CstBold(List(CstText("world")(u)), false)(u),
+                                CstText(" end")(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("treats lone * as plain text") {
@@ -73,11 +85,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses bold and italic together") {
                 parse("**b** and __i__") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstBold(List(CstText("b")(u)), false)(u),
-                            CstText(" and ")(u),
-                            CstItalic(List(CstText("i")(u)))(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstBold(List(CstText("b")(u)), false)(u),
+                                CstText(" and ")(u),
+                                CstItalic(List(CstText("i")(u)))(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -91,11 +105,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses attribute ref embedded in text") {
                 parse("Release {version} now") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstText("Release ")(u),
-                            CstAttributeRef("version")(u),
-                            CstText(" now")(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstText("Release ")(u),
+                                CstAttributeRef("version")(u),
+                                CstText(" now")(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("attribute ref name must start with letter") {
@@ -129,11 +145,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses link macro embedded in text") {
                 parse("See link:report.pdf[the report] for details") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstText("See ")(u),
-                            CstLinkMacro("report.pdf", List(CstText("the report")(u)))(u),
-                            CstText(" for details")(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstText("See ")(u),
+                                CstLinkMacro("report.pdf", List(CstText("the report")(u)))(u),
+                                CstText(" for details")(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -155,7 +173,9 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses https://url[text]") {
                 parse("https://example.com[click here]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstUrlMacro("https://example.com", List(CstText("click here")(u)))(u)))
+                        assertTrue(
+                            inlines == List(CstUrlMacro("https://example.com", List(CstText("click here")(u)))(u))
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses http://url[text]") {
@@ -181,11 +201,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses bare URL embedded in text") {
                 parse("Visit https://example.com today") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(
-                            CstText("Visit ")(u),
-                            CstAutolink("https://example.com")(u),
-                            CstText(" today")(u)
-                        ))
+                        assertTrue(
+                            inlines == List(
+                                CstText("Visit ")(u),
+                                CstAutolink("https://example.com")(u),
+                                CstText(" today")(u)
+                            )
+                        )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses ftp:// URL") {

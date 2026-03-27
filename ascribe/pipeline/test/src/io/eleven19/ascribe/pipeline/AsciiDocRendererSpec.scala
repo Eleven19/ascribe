@@ -46,15 +46,19 @@ object AsciiDocRendererSpec extends ZIOSpecDefault:
             assertTrue(rendered == "``code``")
         },
         test("renders unordered list") {
-            val rendered = renderDoc(document(
-                unorderedList(listItem(text("first")), listItem(text("second")))
-            ))
+            val rendered = renderDoc(
+                document(
+                    unorderedList(listItem(text("first")), listItem(text("second")))
+                )
+            )
             assertTrue(rendered.contains("* first"), rendered.contains("* second"))
         },
         test("renders ordered list") {
-            val rendered = renderDoc(document(
-                orderedList(listItem(text("one")), listItem(text("two")))
-            ))
+            val rendered = renderDoc(
+                document(
+                    orderedList(listItem(text("one")), listItem(text("two")))
+                )
+            )
             assertTrue(rendered.contains(". one"), rendered.contains(". two"))
         },
         test("renders listing block with delimiter") {
@@ -77,16 +81,16 @@ object AsciiDocRendererSpec extends ZIOSpecDefault:
             assertTrue(roundtrip("----\nputs 'hello'\n----\n") == "----\nputs 'hello'\n----\n")
         },
         test("renders NOTE admonition paragraph") {
-            val para = Paragraph(List(Text("Watch out.")(Span.unknown)))(Span.unknown)
-            val adm  = Admonition(AdmonitionKind.Note, List(para))(Span.unknown)
-            val doc  = Document(None, List(adm))(Span.unknown)
+            val para     = Paragraph(List(Text("Watch out.")(Span.unknown)))(Span.unknown)
+            val adm      = Admonition(AdmonitionKind.Note, List(para))(Span.unknown)
+            val doc      = Document(None, List(adm))(Span.unknown)
             val rendered = renderDoc(doc)
             assertTrue(rendered.contains("NOTE: Watch out."))
         },
         test("renders WARNING admonition paragraph") {
-            val para = Paragraph(List(Text("Danger!")(Span.unknown)))(Span.unknown)
-            val adm  = Admonition(AdmonitionKind.Warning, List(para))(Span.unknown)
-            val doc  = Document(None, List(adm))(Span.unknown)
+            val para     = Paragraph(List(Text("Danger!")(Span.unknown)))(Span.unknown)
+            val adm      = Admonition(AdmonitionKind.Warning, List(para))(Span.unknown)
+            val doc      = Document(None, List(adm))(Span.unknown)
             val rendered = renderDoc(doc)
             assertTrue(rendered.contains("WARNING: Danger!"))
         }

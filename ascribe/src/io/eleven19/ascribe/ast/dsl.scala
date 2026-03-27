@@ -27,12 +27,16 @@ object dsl:
     def constrainedBold(inlines: Inline*): ConstrainedBold = ConstrainedBold(inlines.toList)(u)
     def italic(inlines: Inline*): Italic                   = Italic(inlines.toList)(u)
     def mono(inlines: Inline*): Mono                       = Mono(inlines.toList)(u)
+
     def autoLink(target: String): Link =
         Link(LinkVariant.Auto, target, Nil)(u)
+
     def urlLink(scheme: String, target: String, text: Inline*): Link =
         Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, text.toList)(u)
+
     def link(target: String, text: Inline*): Link =
         Link(LinkVariant.Macro(MacroKind.Link), target, text.toList)(u)
+
     def mailtoLink(target: String, text: Inline*): Link =
         Link(LinkVariant.Macro(MacroKind.MailTo), target, text.toList)(u)
 

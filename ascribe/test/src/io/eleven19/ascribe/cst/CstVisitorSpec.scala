@@ -12,15 +12,17 @@ object CstVisitorSpec extends ZIOSpecDefault:
             Ascribe.parseCst("= Title\n\n// comment\n\nPara.\n") match
                 case Success(doc) =>
                     val n = doc.count
-                    assertTrue(n > 5)  // document + header + heading + blank + comment + blank + paragraph + line + text
+                    assertTrue(n > 5) // document + header + heading + blank + comment + blank + paragraph + line + text
                 case _ => assertTrue(false)
         },
         test("foldLeft visits all nodes pre-order") {
             Ascribe.parseCst("Para one.\n") match
                 case Success(doc) =>
-                    val types = doc.foldLeft(List.empty[String]) { (acc, n) =>
-                        n.getClass.getSimpleName :: acc
-                    }.reverse
+                    val types = doc
+                        .foldLeft(List.empty[String]) { (acc, n) =>
+                            n.getClass.getSimpleName :: acc
+                        }
+                        .reverse
                     assertTrue(types.head == "CstDocument")
                 case _ => assertTrue(false)
         },
@@ -53,7 +55,7 @@ object CstVisitorSpec extends ZIOSpecDefault:
         test("count includes CstAttributeRef in total") {
             Ascribe.parseCst("{x}\n") match
                 case Success(doc) =>
-                    assertTrue(doc.count > 3)  // document + paragraph + line + ref
+                    assertTrue(doc.count > 3) // document + paragraph + line + ref
                 case _ => assertTrue(false)
         },
         test("collect finds CstAdmonitionParagraph nodes") {
@@ -78,7 +80,7 @@ object CstVisitorSpec extends ZIOSpecDefault:
                 case _ => assertTrue(false)
         },
         test("visitLink groups all link node types") {
-            val u = Span.unknown
+            val u       = Span.unknown
             var visited = List.empty[String]
             val visitor = new CstVisitor[Unit]:
                 def visitNode(node: CstNode): Unit = ()
@@ -93,7 +95,7 @@ object CstVisitorSpec extends ZIOSpecDefault:
             assertTrue(visited == List("https://a.com", "https://b.com", "c.pdf", "d@e.com"))
         },
         test("children returns text for CstUrlMacro") {
-            val u = Span.unknown
+            val u    = Span.unknown
             val text = CstText("click")(u)
             val link = CstUrlMacro("https://example.com", List(text))(u)
             assertTrue(link.children == List(text))
