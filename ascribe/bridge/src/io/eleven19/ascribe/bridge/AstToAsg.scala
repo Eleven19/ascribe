@@ -367,6 +367,16 @@ object AstToAsg:
                 inlines = Chunk.from(content.map(convertInline)),
                 location = inclusiveLocation(inline.span)
             )
+        case ast.Link(variant, target, text) =>
+            val asgTarget = variant match
+                case ast.LinkVariant.Macro(ast.MacroKind.MailTo) => "mailto:" + target
+                case _                                           => target
+            asg.Ref(
+                variant = "link",
+                target = asgTarget,
+                inlines = Chunk.from(text.map(convertInline)),
+                location = inclusiveLocation(inline.span)
+            )
 
     /** Convert a Parsley past-end span to an inclusive ASG location. Subtracts 1 from end col. */
     private def inclusiveLocation(span: ast.Span): asg.Location =

@@ -32,7 +32,7 @@ case class Mono(content: List[Inline])(val span: Span) extends Inline derives Ca
 case class ConstrainedBold(content: List[Inline])(val span: Span) extends Inline derives CanEqual
 
 /** Distinguishes the kind of inline macro that produced a link. */
-enum MacroKind:
+enum MacroKind derives CanEqual:
     /** URL macro: `https://example.com[text]` */
     case Url(scheme: String)
     /** Explicit link macro: `link:target[text]` */
@@ -41,7 +41,7 @@ enum MacroKind:
     case MailTo
 
 /** Distinguishes auto-detected bare URLs from explicit macro invocations. */
-enum LinkVariant:
+enum LinkVariant derives CanEqual:
     /** Bare URL auto-detected by scheme prefix. */
     case Auto
     /** An inline macro with `target[text]` syntax. */

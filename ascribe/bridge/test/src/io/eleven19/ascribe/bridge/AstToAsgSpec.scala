@@ -115,6 +115,48 @@ class AstToAsgSpec extends FunSuite:
         case other             => fail(s"Expected Admonition for $kind, got $other")
   }
 
+  test("converts AutoLink to Ref(link)") {
+    val astDoc = ast.dsl.document(ast.dsl.paragraph(ast.dsl.autoLink("https://example.com")))
+    val result = AstToAsg.convert(astDoc)
+    val para   = result.blocks.head.asInstanceOf[asg.Paragraph]
+    para.inlines.head match
+      case r: asg.Ref =>
+        assertEquals(r.variant, "link")
+        assertEquals(r.target, "https://example.com")
+        assertEquals(r.inlines.size, 0)
+      case other => fail(s"Expected Ref, got $other")
+  }
+
+  test("converts Link(Macro(Link)) to Ref(link)") {
+    val astDoc = ast.dsl.document(ast.dsl.paragraph(ast.dsl.link("report.pdf", ast.dsl.text("Get Report"))))
+    val result = AstToAsg.convert(astDoc)
+    val para   = result.blocks.head.asInstanceOf[asg.Paragraph]
+    para.inlines.head match
+      case r: asg.Ref =>
+        assertEquals(r.variant, "link")
+        assertEquals(r.target, "report.pdf")
+        assertEquals(r.inlines.size, 1)
+        r.inlines.head match
+          case t: asg.Text => assertEquals(t.value, "Get Report")
+          case other       => fail(s"Expected Text, got $other")
+      case other => fail(s"Expected Ref, got $other")
+  }
+
+  test("converts MailtoLink to Ref(link) with mailto: prefix") {
+    val astDoc = ast.dsl.document(ast.dsl.paragraph(ast.dsl.mailtoLink("user@host.com", ast.dsl.text("Email"))))
+    val result = AstToAsg.convert(astDoc)
+    val para   = result.blocks.head.asInstanceOf[asg.Paragraph]
+    para.inlines.head match
+      case r: asg.Ref =>
+        assertEquals(r.variant, "link")
+        assertEquals(r.target, "mailto:user@host.com")
+        assertEquals(r.inlines.size, 1)
+        r.inlines.head match
+          case t: asg.Text => assertEquals(t.value, "Email")
+          case other       => fail(s"Expected Text, got $other")
+      case other => fail(s"Expected Ref, got $other")
+  }
+
   test("converts position spans") {
     val span = ast.Span(ast.Position(1, 1), ast.Position(1, 10))
     val astDoc = ast.Document(
