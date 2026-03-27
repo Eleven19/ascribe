@@ -62,11 +62,6 @@ object InlineParser:
 
     private def isWordChar(c: Char): Boolean = c.isLetterOrDigit || c == '_'
 
-    private def isConstrainedCloseChar(c: Char): Boolean =
-        c == ' ' || c == '\t' || c == '\n' || c == '\r' ||
-            c == ',' || c == ';' || c == '"' || c == '.' || c == '?' || c == '!' ||
-            c == ')' || c == ']' || c == '}'
-
     private val atConstrainedOpen: Parsley[Unit] =
         lastChar.get.flatMap {
             case None                      => unit
@@ -75,7 +70,10 @@ object InlineParser:
         }
 
     private val atConstrainedClose: Parsley[Unit] =
-        lookAhead(satisfy(isConstrainedCloseChar)).void | eof
+        lookAhead(satisfy(c => !c.isLetterOrDigit)).void | eof
+
+    /** Resets the `lastChar` state to `None`. Useful when starting a new line of inline content. */
+    val resetLastChar: Parsley[Unit] = lastChar.set(None)
 
     // -----------------------------------------------------------------------
     // Inline element parsers

@@ -290,5 +290,31 @@ object InlineParserSpec extends ZIOSpecDefault:
                         assertTrue(!inlines.exists { case CstBold(_, true) => true; case _ => false })
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
+        ),
+        suite("constrained close before punctuation")(
+            test("parses *bold* before colon") {
+                parse("*bold*: rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstBold(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses *bold* before hyphen") {
+                parse("*bold*- rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstBold(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses _italic_ before colon") {
+                parse("_italic_: rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstItalic(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("parses `mono` before slash") {
+                parse("`mono`/ rest") match
+                    case Success(inlines) =>
+                        assertTrue(inlines.exists { case CstMono(_, true) => true; case _ => false })
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
         )
     )
