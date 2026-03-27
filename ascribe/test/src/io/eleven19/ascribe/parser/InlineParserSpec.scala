@@ -69,7 +69,7 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses __italic__ text") {
                 parse("__italic__") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstItalic(List(CstText("italic")(u)))(u)))
+                        assertTrue(inlines == List(CstItalic(List(CstText("italic")(u)), false)(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -77,7 +77,7 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses ``mono`` text") {
                 parse("``mono``") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstMono(List(CstText("mono")(u)))(u)))
+                        assertTrue(inlines == List(CstMono(List(CstText("mono")(u)), false)(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -89,7 +89,7 @@ object InlineParserSpec extends ZIOSpecDefault:
                             inlines == List(
                                 CstBold(List(CstText("b")(u)), false)(u),
                                 CstText(" and ")(u),
-                                CstItalic(List(CstText("i")(u)))(u)
+                                CstItalic(List(CstText("i")(u)), false)(u)
                             )
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")

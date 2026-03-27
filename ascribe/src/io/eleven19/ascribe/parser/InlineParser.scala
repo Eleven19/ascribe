@@ -72,7 +72,7 @@ object InlineParser:
         (pos <~> delimitedContent("__", "__") <~> pos)
             .map { case ((s, content), e) =>
                 val span = mkSpan(s, e)
-                CstItalic(List(CstText(content)(span)))(span)
+                CstItalic(List(CstText(content)(span)), constrained = false)(span)
             }
             .label("italic span")
             .explain("Italic text is surrounded by double underscores, e.g. __italic__")
@@ -82,7 +82,7 @@ object InlineParser:
         (pos <~> delimitedContent("``", "``") <~> pos)
             .map { case ((s, content), e) =>
                 val span = mkSpan(s, e)
-                CstMono(List(CstText(content)(span)))(span)
+                CstMono(List(CstText(content)(span)), constrained = false)(span)
             }
             .label("monospace span")
             .explain("Monospace text is surrounded by double backticks, e.g. ``mono``")

@@ -46,8 +46,8 @@ object CstLowering:
             case CstText(content)        => Text(content)(inline.span)
             case CstBold(content, false) => Bold(lowerInlines(content))(inline.span)
             case CstBold(content, true)  => ConstrainedBold(lowerInlines(content))(inline.span)
-            case CstItalic(content)      => Italic(lowerInlines(content))(inline.span)
-            case CstMono(content)        => Mono(lowerInlines(content))(inline.span)
+            case CstItalic(content, _)   => Italic(lowerInlines(content))(inline.span)
+            case CstMono(content, _)     => Mono(lowerInlines(content))(inline.span)
             case CstAttributeRef(name)   => Text(attrs.resolve(name))(inline.span)
             case CstAutolink(target) =>
                 Link(LinkVariant.Auto, target, Nil)(inline.span)

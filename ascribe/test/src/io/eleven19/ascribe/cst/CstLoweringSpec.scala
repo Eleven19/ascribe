@@ -140,7 +140,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstItalic(List(CstText("it")(u)))(u)))(u)
+                                CstParagraphLine(List(CstItalic(List(CstText("it")(u)), constrained = false)(u)))(u)
                             )
                         )(u)
                     )
@@ -156,7 +156,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstMono(List(CstText("m")(u)))(u)))(u)
+                                CstParagraphLine(List(CstMono(List(CstText("m")(u)), constrained = false)(u)))(u)
                             )
                         )(u)
                     )

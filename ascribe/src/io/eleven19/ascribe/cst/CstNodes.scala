@@ -159,19 +159,15 @@ case class CstBold(
 )(val span: Span)
     extends CstInline derives CanEqual
 
-// TODO: Add `constrained: Boolean` when constrained italic (`_text_`) is added
-// to the parser. Currently only unconstrained italic (`__text__`) is supported.
-// See spec Known Limitations.
 case class CstItalic(
-    content: List[CstInline]
+    content: List[CstInline],
+    constrained: Boolean
 )(val span: Span)
     extends CstInline derives CanEqual
 
-// TODO: Add `constrained: Boolean` when constrained monospace (`` `text` ``) is
-// added to the parser. Currently only unconstrained mono (` ``text`` `) is
-// supported. See spec Known Limitations.
 case class CstMono(
-    content: List[CstInline]
+    content: List[CstInline],
+    constrained: Boolean
 )(val span: Span)
     extends CstInline derives CanEqual
 
