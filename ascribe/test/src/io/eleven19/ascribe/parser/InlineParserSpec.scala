@@ -418,7 +418,7 @@ object InlineParserSpec extends ZIOSpecDefault:
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
-            test("quoted text without commas/equals is unquoted") {
+            test("quoted text without attribute signals should be unquoted") {
                 parse("""link:path["just quoted"]""") match
                     case Success(inlines) =>
                         val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
