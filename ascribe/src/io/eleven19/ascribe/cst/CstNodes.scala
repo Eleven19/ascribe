@@ -184,11 +184,11 @@ case class CstMacroAttrList(
     extends CstNode derives CanEqual
 
 object CstMacroAttrList:
+
     def textOnly(text: List[CstInline])(span: Span): CstMacroAttrList =
         CstMacroAttrList(text, Nil, Nil, false)(span)
 
-    val empty: Span => CstMacroAttrList = span =>
-        CstMacroAttrList(Nil, Nil, Nil, false)(span)
+    val empty: Span => CstMacroAttrList = span => CstMacroAttrList(Nil, Nil, Nil, false)(span)
 
 sealed trait CstLink extends CstInline:
     def target: String

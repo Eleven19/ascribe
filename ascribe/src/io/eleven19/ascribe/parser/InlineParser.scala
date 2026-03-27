@@ -192,10 +192,10 @@ object InlineParser:
             val inlines          = parseInlineText(text, span)
             CstMacroAttrList(inlines, Nil, Nil, hasCaret)(span)
         else
-            val segments         = splitOnCommas(raw)
-            val (firstRaw, rest) = (segments.headOption.getOrElse(""), segments.drop(1))
+            val segments            = splitOnCommas(raw)
+            val (firstRaw, rest)    = (segments.headOption.getOrElse(""), segments.drop(1))
             val (textRaw, hasCaret) = stripTrailingCaret(firstRaw)
-            val text = if textRaw.isEmpty then Nil else parseInlineText(unquote(textRaw), span)
+            val text                = if textRaw.isEmpty then Nil else parseInlineText(unquote(textRaw), span)
             val (positional, named) =
                 rest.foldLeft((List.empty[String], List.empty[(String, String)])) { case ((pos, nam), seg) =>
                     seg.indexOf('=') match

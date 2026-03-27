@@ -59,23 +59,26 @@ enum LinkVariant derives CanEqual:
 // ── Link attribute domain types ──────────────────────────────────────────────
 
 opaque type ElementId <: String = String
+
 object ElementId:
-    def apply(value: String): ElementId = value
+    def apply(value: String): ElementId      = value
     def unapply(id: ElementId): Some[String] = Some(id)
-    given CanEqual[ElementId, ElementId] = CanEqual.derived
+    given CanEqual[ElementId, ElementId]     = CanEqual.derived
 
 opaque type WindowTarget <: String = String
+
 object WindowTarget:
-    def apply(value: String): WindowTarget = value
+    def apply(value: String): WindowTarget          = value
     def unapply(target: WindowTarget): Some[String] = Some(target)
-    val Blank: WindowTarget = "_blank"
-    given CanEqual[WindowTarget, WindowTarget] = CanEqual.derived
+    val Blank: WindowTarget                         = "_blank"
+    given CanEqual[WindowTarget, WindowTarget]      = CanEqual.derived
 
 opaque type CssRole <: String = String
+
 object CssRole:
-    def apply(value: String): CssRole = value
+    def apply(value: String): CssRole        = value
     def unapply(role: CssRole): Some[String] = Some(role)
-    given CanEqual[CssRole, CssRole] = CanEqual.derived
+    given CanEqual[CssRole, CssRole]         = CanEqual.derived
 
 enum LinkOption derives CanEqual:
     case NoFollow, NoOpener
@@ -92,6 +95,7 @@ object LinkAttributes:
     val empty: LinkAttributes = LinkAttributes()
 
     object OpensInNewWindow:
+
         def unapply(attrs: LinkAttributes): Option[WindowTarget] =
             attrs.window.filter(_ == WindowTarget.Blank)
 
@@ -101,8 +105,7 @@ object LinkAttributes:
   * no display text was provided (renderer decides display).
   */
 case class Link(variant: LinkVariant, target: String, text: List[Inline], attributes: LinkAttributes)(val span: Span)
-    extends Inline
-    derives CanEqual:
+    extends Inline derives CanEqual:
 
     /** Extracts the URL scheme from the target, if present. */
     lazy val scheme: Option[String] =

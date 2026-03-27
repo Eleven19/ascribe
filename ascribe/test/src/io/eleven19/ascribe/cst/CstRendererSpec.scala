@@ -96,8 +96,9 @@ object CstRendererSpec extends ZIOSpecDefault:
                 assertTrue(CstRenderer.renderInline(node) == "https://example.com")
             },
             test("renders CstUrlMacro as url[text]") {
-                val u    = io.eleven19.ascribe.ast.Span.unknown
-                val node = CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(List(CstText("click")(u)))(u))(u)
+                val u = io.eleven19.ascribe.ast.Span.unknown
+                val node =
+                    CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(List(CstText("click")(u)))(u))(u)
                 assertTrue(CstRenderer.renderInline(node) == "https://example.com[click]")
             },
             test("renders CstUrlMacro with empty text as url[]") {
@@ -111,8 +112,9 @@ object CstRendererSpec extends ZIOSpecDefault:
                 assertTrue(CstRenderer.renderInline(node) == "link:report.pdf[Get Report]")
             },
             test("renders CstMailtoMacro as mailto:addr[text]") {
-                val u    = io.eleven19.ascribe.ast.Span.unknown
-                val node = CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(List(CstText("Email me")(u)))(u))(u)
+                val u = io.eleven19.ascribe.ast.Span.unknown
+                val node =
+                    CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(List(CstText("Email me")(u)))(u))(u)
                 assertTrue(CstRenderer.renderInline(node) == "mailto:user@example.com[Email me]")
             },
             test("bare autolink roundtrips") {

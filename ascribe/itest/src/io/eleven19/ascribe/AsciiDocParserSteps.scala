@@ -169,13 +169,13 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     /** Flattens an [[InlineContent]] list into a plain string for assertion comparison. */
     private def inlinesToText(inlines: List[Inline]): String =
         inlines.map {
-            case Text(s)               => s
-            case Bold(cs)              => inlinesToText(cs)
-            case ConstrainedBold(cs)   => inlinesToText(cs)
-            case Italic(cs)            => inlinesToText(cs)
-            case Mono(cs)              => inlinesToText(cs)
-            case ConstrainedItalic(cs) => inlinesToText(cs)
-            case ConstrainedMono(cs)   => inlinesToText(cs)
+            case Text(s)                  => s
+            case Bold(cs)                 => inlinesToText(cs)
+            case ConstrainedBold(cs)      => inlinesToText(cs)
+            case Italic(cs)               => inlinesToText(cs)
+            case Mono(cs)                 => inlinesToText(cs)
+            case ConstrainedItalic(cs)    => inlinesToText(cs)
+            case ConstrainedMono(cs)      => inlinesToText(cs)
             case Link(_, target, text, _) => if text.nonEmpty then inlinesToText(text) else target
         }.mkString
 

@@ -59,11 +59,23 @@ object CstLowering:
                 val scheme = target.indexOf("://") match
                     case -1  => ""
                     case idx => target.substring(0, idx)
-                Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(inline.span)
+                Link(
+                    LinkVariant.Macro(MacroKind.Url(scheme)),
+                    target,
+                    lowerInlines(attrList.text),
+                    lowerMacroAttrs(attrList)
+                )(inline.span)
             case CstLinkMacro(target, attrList) =>
-                Link(LinkVariant.Macro(MacroKind.Link), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(inline.span)
+                Link(LinkVariant.Macro(MacroKind.Link), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(
+                    inline.span
+                )
             case CstMailtoMacro(target, attrList) =>
-                Link(LinkVariant.Macro(MacroKind.MailTo), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(inline.span)
+                Link(
+                    LinkVariant.Macro(MacroKind.MailTo),
+                    target,
+                    lowerInlines(attrList.text),
+                    lowerMacroAttrs(attrList)
+                )(inline.span)
 
         def lowerMacroAttrs(attrList: CstMacroAttrList): LinkAttributes =
             var la = LinkAttributes.empty
@@ -78,7 +90,7 @@ object CstLowering:
                     case "role"  => la = la.copy(roles = la.roles :+ CssRole(value))
                     case "id"    => la = la.copy(id = Some(ElementId(value)))
                     case "title" => la = la.copy(title = Some(value))
-                    case "opts"  =>
+                    case "opts" =>
                         value.split("[,\\s]+").foreach {
                             case "nofollow" => la = la.copy(options = la.options + LinkOption.NoFollow)
                             case "noopener" => la = la.copy(options = la.options + LinkOption.NoOpener)
