@@ -184,20 +184,20 @@ object CstRenderer:
             sb.append('}')
         case CstAutolink(target) =>
             sb.append(target)
-        case CstUrlMacro(target, text) =>
+        case CstUrlMacro(target, attrList) =>
             sb.append(target)
             sb.append('[')
-            renderInlines(text, sb)
+            renderInlines(attrList.text, sb)
             sb.append(']')
-        case CstLinkMacro(target, text) =>
+        case CstLinkMacro(target, attrList) =>
             sb.append("link:")
             sb.append(target)
             sb.append('[')
-            renderInlines(text, sb)
+            renderInlines(attrList.text, sb)
             sb.append(']')
-        case CstMailtoMacro(target, text) =>
+        case CstMailtoMacro(target, attrList) =>
             sb.append("mailto:")
             sb.append(target)
             sb.append('[')
-            renderInlines(text, sb)
+            renderInlines(attrList.text, sb)
             sb.append(']')

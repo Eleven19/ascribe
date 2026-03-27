@@ -176,7 +176,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
             case Mono(cs)              => inlinesToText(cs)
             case ConstrainedItalic(cs) => inlinesToText(cs)
             case ConstrainedMono(cs)   => inlinesToText(cs)
-            case Link(_, target, text) => if text.nonEmpty then inlinesToText(text) else target
+            case Link(_, target, text, _) => if text.nonEmpty then inlinesToText(text) else target
         }.mkString
 
     /** Generic helper to assert that block `idx` is a Paragraph containing a span whose inner text equals `expected`.

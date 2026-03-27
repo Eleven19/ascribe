@@ -10,6 +10,7 @@ import io.eleven19.ascribe.cst.{
     CstBold,
     CstItalic,
     CstLinkMacro,
+    CstMacroAttrList,
     CstMailtoMacro,
     CstMono,
     CstText,
@@ -133,13 +134,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses link:target[text]") {
                 parse("link:report.pdf[Get Report]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)))
+                        assertTrue(inlines == List(CstLinkMacro("report.pdf", CstMacroAttrList.textOnly(List(CstText("Get Report")(u)))(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses link:target[] with empty text") {
                 parse("link:report.pdf[]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstLinkMacro("report.pdf", Nil)(u)))
+                        assertTrue(inlines == List(CstLinkMacro("report.pdf", CstMacroAttrList.textOnly(Nil)(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses link macro embedded in text") {
@@ -148,7 +149,7 @@ object InlineParserSpec extends ZIOSpecDefault:
                         assertTrue(
                             inlines == List(
                                 CstText("See ")(u),
-                                CstLinkMacro("report.pdf", List(CstText("the report")(u)))(u),
+                                CstLinkMacro("report.pdf", CstMacroAttrList.textOnly(List(CstText("the report")(u)))(u))(u),
                                 CstText(" for details")(u)
                             )
                         )
@@ -159,13 +160,13 @@ object InlineParserSpec extends ZIOSpecDefault:
             test("parses mailto:addr[text]") {
                 parse("mailto:user@example.com[Email me]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", List(CstText("Email me")(u)))(u)))
+                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(List(CstText("Email me")(u)))(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses mailto:addr[] with empty text") {
                 parse("mailto:user@example.com[]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", Nil)(u)))
+                        assertTrue(inlines == List(CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(Nil)(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
@@ -174,20 +175,20 @@ object InlineParserSpec extends ZIOSpecDefault:
                 parse("https://example.com[click here]") match
                     case Success(inlines) =>
                         assertTrue(
-                            inlines == List(CstUrlMacro("https://example.com", List(CstText("click here")(u)))(u))
+                            inlines == List(CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(List(CstText("click here")(u)))(u))(u))
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses http://url[text]") {
                 parse("http://example.com[visit]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstUrlMacro("http://example.com", List(CstText("visit")(u)))(u)))
+                        assertTrue(inlines == List(CstUrlMacro("http://example.com", CstMacroAttrList.textOnly(List(CstText("visit")(u)))(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             },
             test("parses URL macro with empty text") {
                 parse("https://example.com[]") match
                     case Success(inlines) =>
-                        assertTrue(inlines == List(CstUrlMacro("https://example.com", Nil)(u)))
+                        assertTrue(inlines == List(CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(Nil)(u))(u)))
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),

@@ -31,16 +31,16 @@ object dsl:
     def constrainedMono(inlines: Inline*): ConstrainedMono     = ConstrainedMono(inlines.toList)(u)
 
     def autoLink(target: String): Link =
-        Link(LinkVariant.Auto, target, Nil)(u)
+        Link(LinkVariant.Auto, target, Nil, LinkAttributes.empty)(u)
 
     def urlLink(scheme: String, target: String, text: Inline*): Link =
-        Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, text.toList)(u)
+        Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, text.toList, LinkAttributes.empty)(u)
 
     def link(target: String, text: Inline*): Link =
-        Link(LinkVariant.Macro(MacroKind.Link), target, text.toList)(u)
+        Link(LinkVariant.Macro(MacroKind.Link), target, text.toList, LinkAttributes.empty)(u)
 
     def mailtoLink(target: String, text: Inline*): Link =
-        Link(LinkVariant.Macro(MacroKind.MailTo), target, text.toList)(u)
+        Link(LinkVariant.Macro(MacroKind.MailTo), target, text.toList, LinkAttributes.empty)(u)
 
     // --- Blocks ---
     def paragraph(inlines: Inline*): Paragraph = Paragraph(inlines.toList)(u)

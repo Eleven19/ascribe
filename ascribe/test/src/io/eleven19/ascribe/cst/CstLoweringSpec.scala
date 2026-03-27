@@ -21,6 +21,7 @@ import io.eleven19.ascribe.cst.{
     CstDocumentHeader,
     CstDocument,
     CstLinkMacro,
+    CstMacroAttrList,
     CstMailtoMacro,
     CstParagraph,
     CstParagraphLine,
@@ -416,7 +417,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(
                             List(
                                 CstParagraphLine(
-                                    List(CstUrlMacro("https://example.com", List(CstText("click")(u)))(u))
+                                    List(CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(List(CstText("click")(u)))(u))(u))
                                 )(u)
                             )
                         )(u)
@@ -431,7 +432,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)))(u)
+                                CstParagraphLine(List(CstLinkMacro("report.pdf", CstMacroAttrList.textOnly(List(CstText("Get Report")(u)))(u))(u)))(u)
                             )
                         )(u)
                     )
@@ -445,7 +446,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstMailtoMacro("user@host.com", List(CstText("Email")(u)))(u)))(u)
+                                CstParagraphLine(List(CstMailtoMacro("user@host.com", CstMacroAttrList.textOnly(List(CstText("Email")(u)))(u))(u)))(u)
                             )
                         )(u)
                     )
@@ -459,7 +460,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     List(
                         CstParagraph(
                             List(
-                                CstParagraphLine(List(CstUrlMacro("https://example.com", Nil)(u)))(u)
+                                CstParagraphLine(List(CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(Nil)(u))(u)))(u)
                             )
                         )(u)
                     )

@@ -49,5 +49,5 @@ object dsl:
             case Mono(content)              => flattenInlines(content)
             case ConstrainedItalic(content) => flattenInlines(content)
             case ConstrainedMono(content)   => flattenInlines(content)
-            case Link(_, target, text)      => if text.nonEmpty then flattenInlines(text) else target
+            case Link(_, target, text, _)    => if text.nonEmpty then flattenInlines(text) else target
         }.mkString

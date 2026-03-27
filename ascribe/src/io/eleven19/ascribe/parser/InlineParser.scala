@@ -16,6 +16,7 @@ import io.eleven19.ascribe.cst.{
     CstInline,
     CstItalic,
     CstLinkMacro,
+    CstMacroAttrList,
     CstMailtoMacro,
     CstMono,
     CstText,
@@ -194,7 +195,7 @@ object InlineParser:
         atomic(
             (pos <~> (string("link:") *> macroTargetChars) <~> bracketedInlineContent <~> pos)
                 .map { case (((s, target), text), e) =>
-                    CstLinkMacro(target, text)(mkSpan(s, e))
+                    CstLinkMacro(target, CstMacroAttrList.textOnly(text)(mkSpan(s, e)))(mkSpan(s, e))
                 }
         ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
             .label("link macro")
@@ -205,7 +206,7 @@ object InlineParser:
         atomic(
             (pos <~> (string("mailto:") *> macroTargetChars) <~> bracketedInlineContent <~> pos)
                 .map { case (((s, target), text), e) =>
-                    CstMailtoMacro(target, text)(mkSpan(s, e))
+                    CstMailtoMacro(target, CstMacroAttrList.textOnly(text)(mkSpan(s, e)))(mkSpan(s, e))
                 }
         ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
             .label("mailto macro")
@@ -224,7 +225,7 @@ object InlineParser:
         atomic(
             (pos <~> (urlScheme <~> urlChars).map(_ + _) <~> bracketedInlineContent <~> pos)
                 .map { case (((s, target), text), e) =>
-                    CstUrlMacro(target, text)(mkSpan(s, e))
+                    CstUrlMacro(target, CstMacroAttrList.textOnly(text)(mkSpan(s, e)))(mkSpan(s, e))
                 }
         ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
             .label("URL macro")
