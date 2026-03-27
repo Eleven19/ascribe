@@ -161,5 +161,33 @@ object AstVisitorSpec extends ZIOSpecDefault:
             val admonition = Admonition(AdmonitionKind.Warning, List(para))(u)
             val texts = admonition.collect { case Text(c) => c }
             assertTrue(texts.contains("warn"))
+        },
+        test("visitLink dispatches correctly") {
+            import io.eleven19.ascribe.ast.dsl.{autoLink, link, mailtoLink}
+            val visitor = new AstVisitor[String]:
+                def visitNode(node: AstNode): String = "node"
+                override def visitLink(node: Link): String = s"link:${node.target}"
+
+            assertTrue(
+                autoLink("https://example.com").visit(visitor) == "link:https://example.com",
+                link("report.pdf", Text("R")(u)).visit(visitor) == "link:report.pdf",
+                mailtoLink("a@b.com", Text("E")(u)).visit(visitor) == "link:a@b.com"
+            )
+        },
+        test("Link children returns text inlines") {
+            import io.eleven19.ascribe.ast.dsl.link
+            val t = Text("click")(u)
+            val l = link("path", t)
+            assertTrue(l.children == scala.List(t))
+        },
+        test("Link children is empty for autolinks") {
+            import io.eleven19.ascribe.ast.dsl.autoLink
+            assertTrue(autoLink("https://example.com").children.isEmpty)
+        },
+        test("collect finds Link nodes in document") {
+            import io.eleven19.ascribe.ast.dsl.{document, paragraph, autoLink, text}
+            val doc = document(paragraph(text("See "), autoLink("https://example.com")))
+            val links = doc.collect { case l: Link => l.target }
+            assertTrue(links == scala.List("https://example.com"))
         }
     )
