@@ -41,8 +41,7 @@ object AttributeMap:
 object CstLowering:
 
     def toAst(cst: CstDocument): Document =
-        val header = cst.header.map(lowerHeader)
-        var attrs  = AttributeMap.fromHeader(cst.header.toList.flatMap(_.attributes))
+        var attrs = AttributeMap.fromHeader(cst.header.toList.flatMap(_.attributes))
 
         def lowerInline(inline: CstInline): Inline = inline match
             case CstText(content)          => Text(content)(inline.span)
@@ -168,15 +167,12 @@ object CstLowering:
                 case CstAttributeEntry(name, _, true)      => attrs = attrs.unset(name); None
                 case other                                 => lowerBlock(other)
             }
+        val header = cst.header.map(lowerHeader(_, lowerInlines))
         Document(header, restructure(blocks))(cst.span)
 
-    private def lowerHeader(h: CstDocumentHeader): DocumentHeader =
+    private def lowerHeader(h: CstDocumentHeader, lowerInlines: List[CstInline] => List[Inline]): DocumentHeader =
         DocumentHeader(
-            title = h.title.title.map {
-                case t: CstText         => Text(t.content)(t.span)
-                case r: CstAttributeRef => Text(s"{${r.name}}")(r.span)
-                case other              => Text(other.toString)(other.span)
-            },
+            title = lowerInlines(h.title.title),
             attributes = h.attributes.filterNot(_.unset).map(e => (e.name, e.value))
         )(h.span)
 
