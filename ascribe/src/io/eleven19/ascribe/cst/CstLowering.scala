@@ -27,6 +27,8 @@ object AttributeMap:
   *   - `CstDelimitedBlock(Comment, ...)` is dropped
   *   - `CstParagraphLine` sequences are flattened into `Paragraph`
   *   - `CstBold(constrained=true)` → `ConstrainedBold`, `false` → `Bold`
+  *   - `CstItalic(constrained=true)` → `ConstrainedItalic`, `false` → `Italic`
+  *   - `CstMono(constrained=true)` → `ConstrainedMono`, `false` → `Mono`
   *   - `CstDelimitedBlock(kind, ...)` → corresponding AST block type
   *   - `CstList(Unordered/Ordered, ...)` → `UnorderedList`/`OrderedList`
   *   - `CstTable` → `Table`
@@ -46,8 +48,10 @@ object CstLowering:
             case CstText(content)        => Text(content)(inline.span)
             case CstBold(content, false) => Bold(lowerInlines(content))(inline.span)
             case CstBold(content, true)  => ConstrainedBold(lowerInlines(content))(inline.span)
-            case CstItalic(content, _)   => Italic(lowerInlines(content))(inline.span)
-            case CstMono(content, _)     => Mono(lowerInlines(content))(inline.span)
+            case CstItalic(content, false) => Italic(lowerInlines(content))(inline.span)
+            case CstItalic(content, true)  => ConstrainedItalic(lowerInlines(content))(inline.span)
+            case CstMono(content, false)   => Mono(lowerInlines(content))(inline.span)
+            case CstMono(content, true)    => ConstrainedMono(lowerInlines(content))(inline.span)
             case CstAttributeRef(name)   => Text(attrs.resolve(name))(inline.span)
             case CstAutolink(target) =>
                 Link(LinkVariant.Auto, target, Nil)(inline.span)
