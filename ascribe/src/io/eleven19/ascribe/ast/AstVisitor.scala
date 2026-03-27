@@ -47,8 +47,10 @@ trait AstVisitor[A]:
     def visitBold(node: Bold): A                       = visitInline(node)
     def visitConstrainedBold(node: ConstrainedBold): A = visitInline(node)
     def visitItalic(node: Italic): A                   = visitInline(node)
-    def visitMono(node: Mono): A                       = visitInline(node)
-    def visitLink(node: Link): A                       = visitInline(node)
+    def visitMono(node: Mono): A                                 = visitInline(node)
+    def visitConstrainedItalic(node: ConstrainedItalic): A       = visitInline(node)
+    def visitConstrainedMono(node: ConstrainedMono): A           = visitInline(node)
+    def visitLink(node: Link): A                                 = visitInline(node)
 
 /** Utilities for visiting and folding over AST trees.
   *
@@ -84,8 +86,10 @@ object AstVisitor:
         case n: Bold            => visitor.visitBold(n)
         case n: ConstrainedBold => visitor.visitConstrainedBold(n)
         case n: Italic          => visitor.visitItalic(n)
-        case n: Mono            => visitor.visitMono(n)
-        case n: Link            => visitor.visitLink(n)
+        case n: Mono              => visitor.visitMono(n)
+        case n: ConstrainedItalic => visitor.visitConstrainedItalic(n)
+        case n: ConstrainedMono   => visitor.visitConstrainedMono(n)
+        case n: Link              => visitor.visitLink(n)
         case n: ListItem        => visitor.visitListItem(n)
 
     /** Return all direct child nodes of a node. */
@@ -118,8 +122,10 @@ object AstVisitor:
         case b: Bold             => b.content
         case cb: ConstrainedBold => cb.content
         case i: Italic           => i.content
-        case m: Mono             => m.content
-        case l: Link             => l.text
+        case m: Mono               => m.content
+        case ci: ConstrainedItalic => ci.content
+        case cm: ConstrainedMono   => cm.content
+        case l: Link               => l.text
         case li: ListItem        => li.content
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via

@@ -31,6 +31,12 @@ case class Mono(content: List[Inline])(val span: Span) extends Inline derives Ca
 /** Constrained bold span, surrounded by single asterisks: *bold*. */
 case class ConstrainedBold(content: List[Inline])(val span: Span) extends Inline derives CanEqual
 
+/** Constrained italic span, surrounded by single underscores: _italic_. */
+case class ConstrainedItalic(content: List[Inline])(val span: Span) extends Inline derives CanEqual
+
+/** Constrained monospace span, surrounded by single backticks: `mono`. */
+case class ConstrainedMono(content: List[Inline])(val span: Span) extends Inline derives CanEqual
+
 /** Distinguishes the kind of inline macro that produced a link. */
 enum MacroKind derives CanEqual:
     /** URL macro: `https://example.com[text]` */
@@ -84,6 +90,12 @@ object Mono extends PosParserBridge1[List[Inline], Mono]:
 
 object ConstrainedBold extends PosParserBridge1[List[Inline], ConstrainedBold]:
     def apply(content: List[Inline])(span: Span): ConstrainedBold = new ConstrainedBold(content)(span)
+
+object ConstrainedItalic extends PosParserBridge1[List[Inline], ConstrainedItalic]:
+    def apply(content: List[Inline])(span: Span): ConstrainedItalic = new ConstrainedItalic(content)(span)
+
+object ConstrainedMono extends PosParserBridge1[List[Inline], ConstrainedMono]:
+    def apply(content: List[Inline])(span: Span): ConstrainedMono = new ConstrainedMono(content)(span)
 
 /** A single item in a list block. */
 case class ListItem(content: InlineContent)(val span: Span) extends AstNode derives CanEqual
