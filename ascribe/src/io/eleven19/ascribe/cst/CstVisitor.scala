@@ -127,9 +127,9 @@ object CstVisitor:
         case m: CstMono                 => m.content
         case _: CstAttributeRef         => Nil
         case _: CstAutolink             => Nil
-        case n: CstUrlMacro             => n.attrList.text
-        case n: CstLinkMacro            => n.attrList.text
-        case n: CstMailtoMacro          => n.attrList.text
+        case n: CstUrlMacro             => List(n.attrList)
+        case n: CstLinkMacro            => List(n.attrList)
+        case n: CstMailtoMacro          => List(n.attrList)
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.
