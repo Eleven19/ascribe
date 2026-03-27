@@ -1,9 +1,0 @@
-extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
-artifactName: ascribe-pipeline-kyo
-moduleDeps:
-  - build.ascribePipelineCore
-  - build.ascribeCore
-  - build.ascribeCore.asg
-  - build.ascribeCore.bridge
-mvnDeps:
-  - io.getkyo::kyo-core::1.0-RC1

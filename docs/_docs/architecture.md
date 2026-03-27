@@ -37,15 +37,15 @@ Each stage is a pure function or a Kyo effect. The parser produces an AST with s
 
 ## Module Structure
 
-The project is organized into five modules:
+Mill modules live under the `ascribe/` directory (nested names use dots, e.g. `ascribe.core` for `ascribe/core/`):
 
-| Module | Artifact | Package | Purpose |
-|--------|----------|---------|---------|
-| Core | `ascribe` | `io.eleven19.ascribe` | Parser, lexer, AST types, AST visitor, DSL |
-| ASG | `ascribe-asg` | `io.eleven19.ascribe.asg` | ASG node types, JSON codecs, ASG visitor, DSL |
-| Bridge | `ascribe-bridge` | `io.eleven19.ascribe.bridge` | AST-to-ASG converter |
-| Pipeline | `ascribe-pipeline` | `io.eleven19.ascribe.pipeline` | Source, Sink, Pipeline, renderers, rewrite rules, file I/O |
-| TCK Runner | `ascribe-tck-runner` | `build.ascribe.tckrunner` | TCK test harness (Cucumber) — not published |
+| Module | Mill | Artifact | Package | Purpose |
+|--------|------|----------|---------|---------|
+| Core | `ascribe.core` | `ascribe-core` | `io.eleven19.ascribe` | Parser, lexer, AST types, AST visitor, DSL |
+| ASG | `ascribe.core.asg` | `ascribe-asg` | `io.eleven19.ascribe.asg` | ASG node types, JSON codecs, ASG visitor, DSL |
+| Bridge | `ascribe.core.bridge` | `ascribe-bridge` | `io.eleven19.ascribe.bridge` | AST-to-ASG converter |
+| Pipeline (Kyo) | `ascribe.pipelineKyo` | `ascribe-pipeline-kyo` | `io.eleven19.ascribe.pipeline` | Source, Sink, Pipeline, renderers, file I/O |
+| TCK Runner | `ascribe.core.tck-runner` | — | `build.ascribe.tckrunner` | TCK test harness (Cucumber) — not published |
 
 ## AST Type Hierarchy
 

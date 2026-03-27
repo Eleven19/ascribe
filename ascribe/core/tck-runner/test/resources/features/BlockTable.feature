@@ -1,0 +1,36 @@
+Feature: Block - Table
+  Scenario Outline: TCK validation for <test_name>
+    Given the AsciiDoc input from "<input_file>"
+    When the input is parsed
+    Then the resulting ASG should match the expected JSON in "<output_file>"
+
+    Examples:
+      | test_name     | input_file                                                                       | output_file                                                                        |
+      | basic-2x2     | ascribe/core/tck-runner/test/resources/tests/block/table/basic-2x2-input.adoc         | ascribe/core/tck-runner/test/resources/tests/block/table/basic-2x2-output.json          |
+      | header-row    | ascribe/core/tck-runner/test/resources/tests/block/table/header-row-input.adoc        | ascribe/core/tck-runner/test/resources/tests/block/table/header-row-output.json         |
+      | single-column | ascribe/core/tck-runner/test/resources/tests/block/table/single-column-input.adoc     | ascribe/core/tck-runner/test/resources/tests/block/table/single-column-output.json      |
+      | inline-markup | ascribe/core/tck-runner/test/resources/tests/block/table/inline-markup-input.adoc     | ascribe/core/tck-runner/test/resources/tests/block/table/inline-markup-output.json      |
+      | empty-cells   | ascribe/core/tck-runner/test/resources/tests/block/table/empty-cells-input.adoc       | ascribe/core/tck-runner/test/resources/tests/block/table/empty-cells-output.json        |
+      | cols-equal     | ascribe/core/tck-runner/test/resources/tests/block/table/cols-equal-input.adoc        | ascribe/core/tck-runner/test/resources/tests/block/table/cols-equal-output.json         |
+      | cols-widths    | ascribe/core/tck-runner/test/resources/tests/block/table/cols-widths-input.adoc       | ascribe/core/tck-runner/test/resources/tests/block/table/cols-widths-output.json        |
+      | cols-alignment | ascribe/core/tck-runner/test/resources/tests/block/table/cols-alignment-input.adoc    | ascribe/core/tck-runner/test/resources/tests/block/table/cols-alignment-output.json     |
+      | cols-valign    | ascribe/core/tck-runner/test/resources/tests/block/table/cols-valign-input.adoc       | ascribe/core/tck-runner/test/resources/tests/block/table/cols-valign-output.json        |
+      | cols-mixed        | ascribe/core/tck-runner/test/resources/tests/block/table/cols-mixed-input.adoc        | ascribe/core/tck-runner/test/resources/tests/block/table/cols-mixed-output.json         |
+      | table-title       | ascribe/core/tck-runner/test/resources/tests/block/table/table-title-input.adoc       | ascribe/core/tck-runner/test/resources/tests/block/table/table-title-output.json        |
+      | header-explicit   | ascribe/core/tck-runner/test/resources/tests/block/table/header-explicit-input.adoc   | ascribe/core/tck-runner/test/resources/tests/block/table/header-explicit-output.json    |
+      | header-noheader   | ascribe/core/tck-runner/test/resources/tests/block/table/header-noheader-input.adoc   | ascribe/core/tck-runner/test/resources/tests/block/table/header-noheader-output.json    |
+      | footer            | ascribe/core/tck-runner/test/resources/tests/block/table/footer-input.adoc            | ascribe/core/tck-runner/test/resources/tests/block/table/footer-output.json             |
+      | header-footer     | ascribe/core/tck-runner/test/resources/tests/block/table/header-footer-input.adoc     | ascribe/core/tck-runner/test/resources/tests/block/table/header-footer-output.json      |
+      | frame-grid            | ascribe/core/tck-runner/test/resources/tests/block/table/frame-grid-input.adoc            | ascribe/core/tck-runner/test/resources/tests/block/table/frame-grid-output.json             |
+      | stripes               | ascribe/core/tck-runner/test/resources/tests/block/table/stripes-input.adoc               | ascribe/core/tck-runner/test/resources/tests/block/table/stripes-output.json                |
+      | cols-multiplier-align | ascribe/core/tck-runner/test/resources/tests/block/table/cols-multiplier-align-input.adoc | ascribe/core/tck-runner/test/resources/tests/block/table/cols-multiplier-align-output.json  |
+      | stacked-attrs         | ascribe/core/tck-runner/test/resources/tests/block/table/stacked-attrs-input.adoc         | ascribe/core/tck-runner/test/resources/tests/block/table/stacked-attrs-output.json          |
+      | full-attrs            | ascribe/core/tck-runner/test/resources/tests/block/table/full-attrs-input.adoc            | ascribe/core/tck-runner/test/resources/tests/block/table/full-attrs-output.json             |
+      | cols-styles           | ascribe/core/tck-runner/test/resources/tests/block/table/cols-styles-input.adoc           | ascribe/core/tck-runner/test/resources/tests/block/table/cols-styles-output.json            |
+      | cell-styles           | ascribe/core/tck-runner/test/resources/tests/block/table/cell-styles-input.adoc           | ascribe/core/tck-runner/test/resources/tests/block/table/cell-styles-output.json            |
+      | span-columns          | ascribe/core/tck-runner/test/resources/tests/block/table/span-columns-input.adoc          | ascribe/core/tck-runner/test/resources/tests/block/table/span-columns-output.json           |
+      | span-rows             | ascribe/core/tck-runner/test/resources/tests/block/table/span-rows-input.adoc             | ascribe/core/tck-runner/test/resources/tests/block/table/span-rows-output.json              |
+      | dup-cells             | ascribe/core/tck-runner/test/resources/tests/block/table/dup-cells-input.adoc             | ascribe/core/tck-runner/test/resources/tests/block/table/dup-cells-output.json              |
+      | csv-basic             | ascribe/core/tck-runner/test/resources/tests/block/table/csv-basic-input.adoc             | ascribe/core/tck-runner/test/resources/tests/block/table/csv-basic-output.json              |
+      | dsv-basic             | ascribe/core/tck-runner/test/resources/tests/block/table/dsv-basic-input.adoc             | ascribe/core/tck-runner/test/resources/tests/block/table/dsv-basic-output.json              |
+      | nested-simple         | ascribe/core/tck-runner/test/resources/tests/block/table/nested-simple-input.adoc         | ascribe/core/tck-runner/test/resources/tests/block/table/nested-simple-output.json          |

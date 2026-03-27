@@ -1,9 +1,9 @@
 extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
-artifactName: ascribe
+artifactName: ascribe-pipeline-ox
 moduleDeps:
-  - build.ascribe.core
   - build.ascribe.pipelineCore
-  - build.ascribe.pipelineHtml
-  - build.ascribe.pipelineMarkdown
+  - build.ascribe.core
   - build.ascribe.core.asg
   - build.ascribe.core.bridge
+mvnDeps:
+  - com.softwaremill.ox::core::0.3.0

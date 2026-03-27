@@ -11,8 +11,8 @@ import mill.scalalib.*
   *
   * Usage:
   * {{{
-  * ./mill ascribeCore.docJar       # Generate docs as JAR
-  * ./mill ascribeCore.docSiteServe # Build and serve locally at http://localhost:8080
+   * ./mill ascribe.core.docJar       # Generate docs as JAR
+   * ./mill ascribe.core.docSiteServe # Build and serve locally at http://localhost:8080
   * }}}
   */
 trait DocSiteSupport extends ScalaModule {

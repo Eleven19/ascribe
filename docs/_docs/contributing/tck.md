@@ -36,11 +36,11 @@ For inline-only tests, the expected JSON is an array rather than an object. In t
 
 **78 out of 78 test scenarios passing**, including 22 official TCK test cases and 28 custom table test scenarios.
 
-Custom table tests live in `ascribeCore/tck-runner/test/resources/custom-tests/tables/` and cover PSV, CSV, and DSV formats, column specs, cell specifiers, header/footer rows, and nested tables.
+Custom table tests live in `ascribe/core/tck-runner/test/resources/custom-tests/tables/` and cover PSV, CSV, and DSV formats, column specs, cell specifiers, header/footer rows, and nested tables.
 
 ## Test Runner Implementation
 
-The TCK runner lives under `ascribeCore/tck-runner/`:
+The TCK runner lives under `ascribe/core/tck-runner/`:
 
 - **`TckSuite.scala`** -- JUnit Platform suite that discovers Cucumber features on the classpath.
 - **`TckSteps.scala`** -- Step definitions implementing the Given/When/Then flow:
@@ -53,8 +53,8 @@ The TCK runner lives under `ascribeCore/tck-runner/`:
 Refresh test data from the submodule, then run:
 
 ```bash
-./mill ascribe.tck-runner.tckRefresh
-./mill ascribe.tck-runner.test
+./mill ascribe.core.tck-runner.tckRefresh
+./mill ascribe.core.tck-runner.test
 ```
 
 ## Adding New TCK Coverage
@@ -62,10 +62,10 @@ Refresh test data from the submodule, then run:
 When new TCK test cases are added to the upstream TCK repository:
 
 1. Update the `submodules/asciidoc-tck` submodule to the latest version.
-2. Run `./mill ascribe.tck-runner.tckRefresh` to copy the new feature files and test data.
-3. Run `./mill ascribe.tck-runner.test` to see which new tests pass or fail.
+2. Run `./mill ascribe.core.tck-runner.tckRefresh` to copy the new feature files and test data.
+3. Run `./mill ascribe.core.tck-runner.test` to see which new tests pass or fail.
 4. For failing tests, implement the missing parser/bridge/ASG support:
-   - Add new AST node types in `ascribe/src/io/eleven19/ascribe/ast/Document.scala`
+   - Add new AST node types in `ascribe/core/src/io/eleven19/ascribe/ast/Document.scala`
    - Add parser support in `BlockParser.scala` or `InlineParser.scala`
    - Add bridge conversion in `AstToAsg.scala`
    - Add any new ASG types in `Node.scala`

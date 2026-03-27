@@ -1,4 +1,0 @@
-extends: [ascribeCore.ScalaTests, _root_.build.CommonScalaTestModule, TestModule.ZioTest]
-mvnDeps:
-  - dev.zio::zio-test::2.1.24
-  - dev.zio::zio-test-sbt::2.1.24

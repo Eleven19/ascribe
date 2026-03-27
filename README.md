@@ -27,6 +27,8 @@ Built against the [AsciiDoc Language Specification](https://gitlab.eclipse.org/e
 | ASG | `ascribe-asg` | Abstract Semantic Graph matching the AsciiDoc TCK schema |
 | Bridge | `ascribe-bridge` | AST-to-ASG converter |
 
+**Repository layout:** Mill modules are nested under [`ascribe/`](ascribe/) (for example `ascribe/core/` is `ascribe.core`, `ascribe/pipelineKyo/` is `ascribe.pipelineKyo`). Maven coordinates use hyphenated `artifactName` values as in the table above.
+
 **Migration:** the former parser artifact `ascribe` was split: use `ascribe-core` for the parser only, or the new `ascribe` umbrella for a single dependency that pulls the supported stack (without Kyo/Ox unless you add those artifacts).
 
 ## Installation
