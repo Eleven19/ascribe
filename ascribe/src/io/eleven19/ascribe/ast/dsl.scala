@@ -27,6 +27,8 @@ object dsl:
     def constrainedBold(inlines: Inline*): ConstrainedBold = ConstrainedBold(inlines.toList)(u)
     def italic(inlines: Inline*): Italic                   = Italic(inlines.toList)(u)
     def mono(inlines: Inline*): Mono                       = Mono(inlines.toList)(u)
+    def constrainedItalic(inlines: Inline*): ConstrainedItalic = ConstrainedItalic(inlines.toList)(u)
+    def constrainedMono(inlines: Inline*): ConstrainedMono     = ConstrainedMono(inlines.toList)(u)
 
     def autoLink(target: String): Link =
         Link(LinkVariant.Auto, target, Nil)(u)

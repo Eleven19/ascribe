@@ -174,6 +174,8 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
             case ConstrainedBold(cs)   => inlinesToText(cs)
             case Italic(cs)            => inlinesToText(cs)
             case Mono(cs)              => inlinesToText(cs)
+            case ConstrainedItalic(cs) => inlinesToText(cs)
+            case ConstrainedMono(cs)   => inlinesToText(cs)
             case Link(_, target, text) => if text.nonEmpty then inlinesToText(text) else target
         }.mkString
 
