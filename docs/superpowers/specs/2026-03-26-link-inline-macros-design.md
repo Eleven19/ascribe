@@ -33,15 +33,29 @@ case class CstMailtoMacro(target: String, text: List[CstInline]) extends CstInli
 
 ## AST Nodes (Document.scala)
 
-Single `Link` node with a variant enum. URL macro and link macro both lower to `Explicit`:
+Single `Link` node with a two-level variant hierarchy:
 
 ```scala
-enum LinkVariant:
-  case Auto     // bare URL — text is implicitly the target
-  case Explicit // URL macro or link: macro with explicit text
-  case Mailto   // mailto: macro
+enum MacroKind:
+  case MailTo
+  case Link
+  case Url(scheme: String)  // "https", "http", "ftp", "irc"
 
-case class Link(variant: LinkVariant, target: String, text: List[Inline]) extends Inline
+enum LinkVariant:
+  case Auto                   // bare URL — text is implicitly the target
+  case Macro(kind: MacroKind) // any macro form with target[text] syntax
+
+case class Link(variant: LinkVariant, target: String, text: List[Inline]) extends Inline:
+  /** Extracts the URL scheme from the target, if present. */
+  lazy val scheme: Option[String] =
+    target.indexOf("://") match
+      case -1  => None
+      case idx => Some(target.substring(0, idx))
+
+object Link:
+  /** Extractor for pattern-matching on the scheme: `case Link.Scheme(s) => ...` */
+  object Scheme:
+    def unapply(link: Link): Option[String] = link.scheme
 ```
 
 Empty `text` list means no display text was provided (e.g., `link:path[]`).
@@ -66,9 +80,9 @@ Priority ordering (check macros before bare URLs to avoid partial matches):
 
 ```
 CstAutolink(t)           → Link(Auto, t, Nil)
-CstUrlMacro(t, text)     → Link(Explicit, t, lowerInlines(text))
-CstLinkMacro(t, text)    → Link(Explicit, t, lowerInlines(text))
-CstMailtoMacro(t, text)  → Link(Mailto, t, lowerInlines(text))
+CstUrlMacro(t, text)     → Link(Macro(Url(scheme)), t, lowerInlines(text))
+CstLinkMacro(t, text)    → Link(Macro(Link), t, lowerInlines(text))
+CstMailtoMacro(t, text)  → Link(Macro(MailTo), t, lowerInlines(text))
 ```
 
 ## ASG Bridge (AstToAsg.scala)
@@ -76,8 +90,9 @@ CstMailtoMacro(t, text)  → Link(Mailto, t, lowerInlines(text))
 All variants map to `Ref(variant="link")`:
 
 - `Link(Auto, t, _)` → `Ref("link", t, [])`
-- `Link(Explicit, t, text)` → `Ref("link", t, convertInlines(text))`
-- `Link(Mailto, t, text)` → `Ref("link", "mailto:" + t, convertInlines(text))`
+- `Link(Macro(Url(_)), t, text)` → `Ref("link", t, convertInlines(text))`
+- `Link(Macro(Link), t, text)` → `Ref("link", t, convertInlines(text))`
+- `Link(Macro(MailTo), t, text)` → `Ref("link", "mailto:" + t, convertInlines(text))`
 
 ## CstRenderer (CstRenderer.scala)
 
@@ -98,11 +113,14 @@ Dedicated constructors per link kind, each returning `Link` with the appropriate
 def autoLink(target: String): Link =
   Link(LinkVariant.Auto, target, Nil)
 
+def urlLink(scheme: String, target: String, text: Inline*): Link =
+  Link(LinkVariant.Macro(MacroKind.Url(scheme)), target, text.toList)
+
 def link(target: String, text: Inline*): Link =
-  Link(LinkVariant.Explicit, target, text.toList)
+  Link(LinkVariant.Macro(MacroKind.Link), target, text.toList)
 
 def mailtoLink(target: String, text: Inline*): Link =
-  Link(LinkVariant.Mailto, target, text.toList)
+  Link(LinkVariant.Macro(MacroKind.MailTo), target, text.toList)
 ```
 
 ## Files Changed
@@ -115,7 +133,7 @@ def mailtoLink(target: String, text: Inline*): Link =
 | `CstLowering.scala` | Add 4 match cases |
 | `CstRenderer.scala` | Add 4 render cases |
 | `AstToAsg.scala` | Add variant-based `Ref` conversion |
-| `dsl.scala` | Add `autoLink`, `link`, `mailtoLink` constructors |
+| `dsl.scala` | Add `autoLink`, `urlLink`, `link`, `mailtoLink` constructors |
 | `InlineParserSpec.scala` | Tests for all 4 forms + edge cases |
 | `CstLoweringSpec.scala` | Lowering tests for link nodes |
 
