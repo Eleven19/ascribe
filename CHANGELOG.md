@@ -16,6 +16,39 @@ leading `v`.
 
 ### Documentation
 
+### CI
+
+## [0.3.0] - 2026-03-27
+
+### Added
+
+- Added Concrete Syntax Tree (CST) layer with full parser retargeting and pipeline integration.
+- Added attribute references and substitution (`{attr-name}`) with built-in attributes (`{empty}`, `{sp}`, `{nbsp}`, `{zwsp}`), document header and body-level attribute entries, and unset operations.
+- Added admonition paragraph blocks (NOTE, TIP, IMPORTANT, CAUTION, WARNING) with lowering to AST `Admonition` nodes.
+- Added inline link support for 4 AsciiDoc link forms: bare autolinks (`https://example.com`), URL macros (`https://example.com[text]`), `link:` macros (`link:path[text]`), and `mailto:` macros (`mailto:addr[text]`).
+- Added `Link` AST node with `LinkVariant`/`MacroKind` enum hierarchy, lazy `scheme` derivation, and `Link.Scheme` pattern match extractor.
+- Added `CstLink` sealed trait grouping all CST link node types with shared `target` def.
+- Added constrained italic (`_text_`) and monospace (`` `text` ``) inline formatting with spec-compliant word-boundary enforcement using Parsley Ref-based state tracking.
+- Added `ConstrainedItalic` and `ConstrainedMono` AST node types, matching the existing `ConstrainedBold` pattern.
+- Added generic inline macro attribute parsing (`CstMacroAttrList`) for bracket content with two-phase detection (comma/equals outside quotes triggers attribute mode).
+- Added domain-typed link attributes: `ElementId`, `WindowTarget`, `CssRole` opaque types with extractors, `LinkOption` enum (`NoFollow`, `NoOpener`), and `LinkAttributes` case class with `OpensInNewWindow` extractor.
+- Added `^` caret shorthand for `window=_blank` in link macros; `window=_blank` implicitly adds `NoOpener` (security best practice).
+- Added `visitLink` grouping in both CST and AST visitor hierarchies.
+
+### Changed
+
+- Added `constrained: Boolean` field to `CstItalic` and `CstMono` CST nodes, matching the existing `CstBold` pattern.
+- Retrofitted constrained bold (`*text*`) parser with word-boundary enforcement (previously had no boundary checking).
+- Replaced `bracketedInlineContent` parser with `macroAttrList` two-phase parser for structured attribute extraction.
+- CST link nodes (`CstUrlMacro`, `CstLinkMacro`, `CstMailtoMacro`) now carry `CstMacroAttrList` instead of `List[CstInline]`.
+- AST `Link` node now carries `LinkAttributes` field (defaults to `LinkAttributes.empty`).
+
+### Fixed
+
+- Fixed `lowerHeader` to use `lowerInlines` for document title content instead of `toString` fallback, so links, bold, italic etc. in document titles are now lowered correctly.
+
+### Documentation
+
 - Updated README with current v0.2.1 versions, usage examples, module table, and link to documentation site.
 - Added ascribe logo to repository.
 - Fixed broken logo image link in README.
