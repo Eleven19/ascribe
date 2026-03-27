@@ -1,0 +1,17 @@
+package build.ascribeCore.`tck-runner`
+
+import mill.*
+import mill.scalalib.*
+
+object `package` extends _root_.build.CommonScalaModule with _root_.build.TckSubmoduleSupport {
+
+  def moduleDeps = Seq(build.ascribeCore, build.ascribeCore.asg, build.ascribeCore.bridge)
+
+  def tckRefresh() = Task.Command {
+    val syncResult = tckSync()()
+    Task.log.info(s"TCK submodule synced: ${syncResult.path}")
+    val genResult = _root_.build_.ascribeCore.`tck-runner`.test.package_.generateTckFeatures()
+    Task.log.info(s"TCK features generated: ${genResult.path}")
+    genResult
+  }
+}

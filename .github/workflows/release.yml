@@ -49,17 +49,7 @@ jobs:
         run: ./mill __.compile
 
       - name: Run tests
-        run: ./mill ascribe.test
-
-      - name: Build JAR
-        run: ./mill ascribe.jar
-
-      - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ascribe-jar
-          path: out/ascribe/jar.dest/out.jar
-          if-no-files-found: error
+        run: ./mill __.test
 
   publish:
     needs:
@@ -81,13 +71,6 @@ jobs:
         shell: bash
         run: scripts/ci/create-release-tag.sh
 
-      - name: Download JAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          path: release-artifacts
-          pattern: ascribe-jar
-          merge-multiple: true
-
       - name: Install git-cliff
         shell: bash
         run: scripts/ci/install-git-cliff.sh "${{ env.GIT_CLIFF_VERSION }}"
@@ -97,16 +80,8 @@ jobs:
         shell: bash
         run: scripts/ci/build-release-notes.sh "${{ needs.metadata.outputs.version }}"
 
-      - name: Generate checksums
-        shell: bash
-        run: scripts/ci/generate-checksums.sh release-artifacts
-
       - name: Create or update GitHub release
         shell: bash
         env:
           RELEASE_NOTES_FILE: ${{ steps.release-notes.outputs.release_notes_file }}
         run: scripts/ci/create-or-update-github-release.sh
-
-      - name: Upload release assets
-        shell: bash
-        run: scripts/ci/upload-release-assets.sh release-artifacts

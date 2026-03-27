@@ -27,6 +27,7 @@ Use this skill for release workflow work, release docs, changelog promotion from
 - `scripts/ci/compute-publish-version.sh`
 - `.github/workflows/publish-central.yml`
 - `.github/workflows/publish-snapshot.yml`
+- `.github/workflows/release.yml` — creates/updates the GitHub Release from git-cliff notes only (no `out.jar` or other binary assets; libraries ship via Maven Central)
 - `mill-build/src/build/PublishSupport.scala`
 - `VERSION`
 

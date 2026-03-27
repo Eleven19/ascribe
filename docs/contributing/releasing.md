@@ -13,9 +13,14 @@ The project publishes Scala library artifacts to Maven Central under the group `
 
 ### Coordinates
 
-```
-io.eleven19.ascribe:ascribe_3:<version>
-```
+Published modules include (Scala 3 suffix `_3`):
+
+- `io.eleven19.ascribe:ascribe-core_3` — parser, AST, CST
+- `io.eleven19.ascribe:ascribe_3` — umbrella (convenience aggregate; optional)
+- `io.eleven19.ascribe:ascribe-pipeline-core_3`, `ascribe-pipeline-html_3`, `ascribe-pipeline-markdown_3`, `ascribe-pipeline-kyo_3`, `ascribe-pipeline-ox_3`
+- `io.eleven19.ascribe:ascribe-asg_3`, `ascribe-bridge_3`
+
+JARs are consumed from Maven Central. GitHub Releases carry release notes only (no Mill `out.jar` fat JAR).
 
 ### How it works
 

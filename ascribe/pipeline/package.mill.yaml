@@ -1,7 +1,0 @@
-extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
-moduleDeps:
-  - build.ascribe
-  - build.ascribe.asg
-  - build.ascribe.bridge
-mvnDeps:
-  - io.getkyo::kyo-core::1.0-RC1

@@ -5,7 +5,7 @@
 # ascribe
 
 [![CI](https://github.com/Eleven19/ascribe/actions/workflows/ci.yml/badge.svg)](https://github.com/Eleven19/ascribe/actions/workflows/ci.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/io.eleven19.ascribe/ascribe_3)](https://central.sonatype.com/artifact/io.eleven19.ascribe/ascribe_3)
+[![Maven Central](https://img.shields.io/maven-central/v/io.eleven19.ascribe/ascribe-core_3)](https://central.sonatype.com/artifact/io.eleven19.ascribe/ascribe-core_3)
 
 **[Documentation](https://eleven19.github.io/ascribe/)** | **[API Reference](https://eleven19.github.io/ascribe/io/eleven19/ascribe.html)** | **[Getting Started](https://eleven19.github.io/ascribe/docs/getting-started.html)**
 
@@ -17,10 +17,17 @@ Built against the [AsciiDoc Language Specification](https://gitlab.eclipse.org/e
 
 | Module | Artifact | Description |
 |--------|----------|-------------|
-| Core | `ascribe` | Parser, AST, and DSL for AsciiDoc documents |
+| Core | `ascribe-core` | Parser, AST, and DSL for AsciiDoc documents |
+| Umbrella | `ascribe` | Optional convenience aggregate (core + pipeline + HTML + Markdown + ASG + bridge) |
+| Pipeline (core) | `ascribe-pipeline-core` | Shared pipeline types, `PipelineOp`, pure rewrites |
+| Pipeline (Kyo) | `ascribe-pipeline-kyo` | Kyo-backed pipeline, file I/O, includes |
+| Pipeline (Ox) | `ascribe-pipeline-ox` | Ox-backed runtime (optional) |
+| HTML | `ascribe-pipeline-html` | scalatags HTML output |
+| Markdown | `ascribe-pipeline-markdown` | GFM via zio-blocks-docs (best-effort) |
 | ASG | `ascribe-asg` | Abstract Semantic Graph matching the AsciiDoc TCK schema |
 | Bridge | `ascribe-bridge` | AST-to-ASG converter |
-| Pipeline | `ascribe-pipeline` | Renderers, rewrite rules, file I/O, and include processing |
+
+**Migration:** the former parser artifact `ascribe` was split: use `ascribe-core` for the parser only, or the new `ascribe` umbrella for a single dependency that pulls the supported stack (without Kyo/Ox unless you add those artifacts).
 
 ## Installation
 
@@ -29,9 +36,7 @@ Built against the [AsciiDoc Language Specification](https://gitlab.eclipse.org/e
 ```scala
 def mvnDeps = Seq(
   mvn"io.eleven19.ascribe::ascribe:0.2.1",
-  mvn"io.eleven19.ascribe::ascribe-asg:0.2.1",
-  mvn"io.eleven19.ascribe::ascribe-bridge:0.2.1",
-  mvn"io.eleven19.ascribe::ascribe-pipeline:0.2.1"
+  mvn"io.eleven19.ascribe::ascribe-pipeline-kyo:0.2.1"
 )
 ```
 
@@ -39,10 +44,8 @@ def mvnDeps = Seq(
 
 ```scala
 libraryDependencies ++= Seq(
-  "io.eleven19.ascribe" %% "ascribe"          % "0.2.1",
-  "io.eleven19.ascribe" %% "ascribe-asg"      % "0.2.1",
-  "io.eleven19.ascribe" %% "ascribe-bridge"   % "0.2.1",
-  "io.eleven19.ascribe" %% "ascribe-pipeline" % "0.2.1"
+  "io.eleven19.ascribe" %% "ascribe"             % "0.2.1",
+  "io.eleven19.ascribe" %% "ascribe-pipeline-kyo" % "0.2.1"
 )
 ```
 
@@ -52,6 +55,7 @@ libraryDependencies ++= Seq(
 <dependency>
   <groupId>io.eleven19.ascribe</groupId>
   <artifactId>ascribe_3</artifactId>
+  <!-- Parser-only: use ascribe-core_3; full stack: ascribe_3 umbrella + optional ascribe-pipeline-kyo_3 / ascribe-pipeline-ox_3 -->
   <version>0.2.1</version>
 </dependency>
 ```
@@ -108,7 +112,7 @@ val doc = document(
 
 ### Process documents with the pipeline
 
-The pipeline module provides renderers, rewrite rules, and file I/O using [Kyo](https://getkyo.io) effects:
+Use the `ascribe-pipeline-kyo` artifact (in addition to `ascribe-core` or the `ascribe` umbrella). It provides renderers, rewrite rules, and file I/O using [Kyo](https://getkyo.io) effects:
 
 ```scala
 import io.eleven19.ascribe.pipeline.*

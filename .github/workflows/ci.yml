@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check formatting
-        run: ./mill ascribe.checkFormat
+        run: ./mill ascribeCore.checkFormat
 
   build:
     name: Build & Test
@@ -39,17 +39,5 @@ jobs:
       - name: Compile all modules
         run: ./mill __.compile
 
-      - name: Run unit tests
-        run: ./mill ascribe.test
-
-      - name: Run ASG tests
-        run: ./mill ascribe.asg.test
-
-      - name: Run bridge tests
-        run: ./mill ascribe.bridge.test
-
-      - name: Run integration tests
-        run: ./mill ascribe.itest
-
-      - name: Run TCK tests
-        run: ./mill ascribe.tck-runner.test
+      - name: Run all tests
+        run: ./mill __.test
