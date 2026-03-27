@@ -179,9 +179,11 @@ object AsciiDocRenderer extends Renderer[Any]:
             attrs.title.foreach(t => parts += s"title=$t")
             attrs.window.foreach(w => parts += s"window=$w")
             if attrs.options.nonEmpty then
-                val optStrs = attrs.options.map {
-                    case LinkOption.NoFollow => "nofollow"
-                    case LinkOption.NoOpener => "noopener"
-                }
+                val optStrs = List(LinkOption.NoOpener, LinkOption.NoFollow)
+                    .filter(attrs.options.contains)
+                    .map {
+                        case LinkOption.NoFollow => "nofollow"
+                        case LinkOption.NoOpener => "noopener"
+                    }
                 parts += s"opts=${optStrs.mkString(",")}"
             parts.result().mkString(",")

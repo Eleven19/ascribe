@@ -417,6 +417,18 @@ object InlineParserSpec extends ZIOSpecDefault:
                             urlNode.attrList.named == List(("window", "_blank"), ("opts", "nofollow"))
                         )
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("quoted text without commas/equals is unquoted") {
+                parse("""link:path["just quoted"]""") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("just quoted")(u)),
+                            link.attrList.positional == Nil,
+                            link.attrList.named == Nil,
+                            link.attrList.hasCaretShorthand == false
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
         suite("constrained close before punctuation")(

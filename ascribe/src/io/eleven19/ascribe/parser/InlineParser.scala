@@ -188,8 +188,8 @@ object InlineParser:
     private def parseMacroAttrList(raw: String, span: Span): CstMacroAttrList =
         if raw.isEmpty then CstMacroAttrList.empty(span)
         else if !containsAttrSignal(raw) then
-            val (text, hasCaret) = stripTrailingCaret(raw)
-            val inlines          = parseInlineText(text, span)
+            val (textStr, hasCaret) = stripTrailingCaret(raw)
+            val inlines             = parseInlineText(unquote(textStr), span)
             CstMacroAttrList(inlines, Nil, Nil, hasCaret)(span)
         else
             val segments            = splitOnCommas(raw)

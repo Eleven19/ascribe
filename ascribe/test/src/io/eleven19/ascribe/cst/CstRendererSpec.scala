@@ -117,6 +117,30 @@ object CstRendererSpec extends ZIOSpecDefault:
                     CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(List(CstText("Email me")(u)))(u))(u)
                 assertTrue(CstRenderer.renderInline(node) == "mailto:user@example.com[Email me]")
             },
+            test("renders CstLinkMacro with named attributes") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstLinkMacro(
+                    "target.html",
+                    CstMacroAttrList(List(CstText("click")(u)), Nil, List(("window", "_blank")), false)(u)
+                )(u)
+                assertTrue(CstRenderer.renderInline(node) == "link:target.html[click,window=_blank]")
+            },
+            test("renders CstLinkMacro with caret shorthand") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstLinkMacro(
+                    "target.html",
+                    CstMacroAttrList(List(CstText("click")(u)), Nil, Nil, hasCaretShorthand = true)(u)
+                )(u)
+                assertTrue(CstRenderer.renderInline(node) == "link:target.html[click^]")
+            },
+            test("renders CstLinkMacro with positional and named attributes") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstLinkMacro(
+                    "target.html",
+                    CstMacroAttrList(List(CstText("text")(u)), List("pos1"), List(("role", "btn")), false)(u)
+                )(u)
+                assertTrue(CstRenderer.renderInline(node) == "link:target.html[text,pos1,role=btn]")
+            },
             test("bare autolink roundtrips") {
                 roundtrip("Visit https://example.com today.\n")
             },

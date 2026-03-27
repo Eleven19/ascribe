@@ -187,17 +187,30 @@ object CstRenderer:
         case CstUrlMacro(target, attrList) =>
             sb.append(target)
             sb.append('[')
-            renderInlines(attrList.text, sb)
+            renderMacroAttrList(attrList, sb)
             sb.append(']')
         case CstLinkMacro(target, attrList) =>
             sb.append("link:")
             sb.append(target)
             sb.append('[')
-            renderInlines(attrList.text, sb)
+            renderMacroAttrList(attrList, sb)
             sb.append(']')
         case CstMailtoMacro(target, attrList) =>
             sb.append("mailto:")
             sb.append(target)
             sb.append('[')
-            renderInlines(attrList.text, sb)
+            renderMacroAttrList(attrList, sb)
             sb.append(']')
+
+    private def renderMacroAttrList(attrList: CstMacroAttrList, sb: StringBuilder): Unit =
+        val hasStructuredAttrs = attrList.positional.nonEmpty || attrList.named.nonEmpty
+        if !hasStructuredAttrs && !attrList.hasCaretShorthand then renderInlines(attrList.text, sb)
+        else
+            val parts   = List.newBuilder[String]
+            val textSb  = new StringBuilder
+            renderInlines(attrList.text, textSb)
+            val textStr = if attrList.hasCaretShorthand then textSb.toString + "^" else textSb.toString
+            parts += textStr
+            attrList.positional.foreach(p => parts += p)
+            attrList.named.foreach((k, v) => parts += s"$k=$v")
+            sb.append(parts.result().mkString(","))
