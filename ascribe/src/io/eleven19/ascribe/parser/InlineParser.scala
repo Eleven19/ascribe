@@ -1,11 +1,12 @@
 package io.eleven19.ascribe.parser
 
 import parsley.Parsley
-import parsley.Parsley.{atomic, many, notFollowedBy, some}
+import parsley.Parsley.{atomic, empty, eof, lookAhead, many, notFollowedBy, pure, some, unit}
 import parsley.character.{char, satisfy, string, stringOfMany, stringOfSome}
 import parsley.combinator.manyTill
 import parsley.errors.combinator.ErrorMethods
 import parsley.position.pos
+import parsley.state.Ref
 
 import io.eleven19.ascribe.ast.{Span, mkSpan}
 import io.eleven19.ascribe.cst.{
@@ -54,6 +55,29 @@ object InlineParser:
         atomic(string(open) *> manyTill(nonEolChar, string(close))).map(_.mkString)
 
     // -----------------------------------------------------------------------
+    // Word-boundary tracking for constrained formatting
+    // -----------------------------------------------------------------------
+
+    private val lastChar: Ref[Option[Char]] = Ref.make[Option[Char]]
+
+    private def isWordChar(c: Char): Boolean = c.isLetterOrDigit || c == '_'
+
+    private def isConstrainedCloseChar(c: Char): Boolean =
+        c == ' ' || c == '\t' || c == '\n' || c == '\r' ||
+            c == ',' || c == ';' || c == '"' || c == '.' || c == '?' || c == '!' ||
+            c == ')' || c == ']' || c == '}'
+
+    private val atConstrainedOpen: Parsley[Unit] =
+        lastChar.get.flatMap {
+            case None                      => unit
+            case Some(c) if !isWordChar(c) => unit
+            case _                         => empty
+        }
+
+    private val atConstrainedClose: Parsley[Unit] =
+        lookAhead(satisfy(isConstrainedCloseChar)).void | eof
+
+    // -----------------------------------------------------------------------
     // Inline element parsers
     // -----------------------------------------------------------------------
 
@@ -64,6 +88,7 @@ object InlineParser:
                 val span = mkSpan(s, e)
                 CstBold(List(CstText(content)(span)), constrained = false)(span)
             }
+            .flatMap(node => lastChar.set(Some('*')) *> pure(node: CstInline))
             .label("bold span")
             .explain("Bold text is surrounded by double asterisks, e.g. **bold**")
 
@@ -74,6 +99,7 @@ object InlineParser:
                 val span = mkSpan(s, e)
                 CstItalic(List(CstText(content)(span)), constrained = false)(span)
             }
+            .flatMap(node => lastChar.set(Some('_')) *> pure(node: CstInline))
             .label("italic span")
             .explain("Italic text is surrounded by double underscores, e.g. __italic__")
 
@@ -84,6 +110,7 @@ object InlineParser:
                 val span = mkSpan(s, e)
                 CstMono(List(CstText(content)(span)), constrained = false)(span)
             }
+            .flatMap(node => lastChar.set(Some('`')) *> pure(node: CstInline))
             .label("monospace span")
             .explain("Monospace text is surrounded by double backticks, e.g. ``mono``")
 
@@ -97,19 +124,50 @@ object InlineParser:
                     char('}')) <~>
                 pos)
                 .map { case ((s, name), e) => CstAttributeRef(name)(mkSpan(s, e)) }
-        ).label("attribute reference")
+        ).flatMap(node => lastChar.set(Some('}')) *> pure(node: CstInline))
+            .label("attribute reference")
 
     /** Parses a constrained *bold* span: `*content*`.
       *
-      * Must be tried after unconstrained `**` to avoid ambiguity.
+      * Must be tried after unconstrained `**` to avoid ambiguity. Requires non-word char (or SOL) before opening and
+      * space/punct/EOL after closing.
       */
     val constrainedBoldSpan: Parsley[CstInline] =
-        (pos <~> delimitedContent("*", "*") <~> pos)
+        atomic(atConstrainedOpen *> (pos <~> delimitedContent("*", "*") <~> pos) <* atConstrainedClose)
             .map { case ((s, content), e) =>
                 val span = mkSpan(s, e)
                 CstBold(List(CstText(content)(span)), constrained = true)(span)
             }
+            .flatMap(node => lastChar.set(Some('*')) *> pure(node: CstInline))
             .label("constrained bold span")
+
+    /** Parses a constrained _italic_ span: `_content_`.
+      *
+      * Must be tried after unconstrained `__` to avoid ambiguity. Requires non-word char (or SOL) before opening and
+      * space/punct/EOL after closing.
+      */
+    val constrainedItalicSpan: Parsley[CstInline] =
+        atomic(atConstrainedOpen *> (pos <~> delimitedContent("_", "_") <~> pos) <* atConstrainedClose)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                CstItalic(List(CstText(content)(span)), constrained = true)(span)
+            }
+            .flatMap(node => lastChar.set(Some('_')) *> pure(node: CstInline))
+            .label("constrained italic span")
+
+    /** Parses a constrained `mono` span: `` `content` ``.
+      *
+      * Must be tried after unconstrained ` `` ` to avoid ambiguity. Requires non-word char (or SOL) before opening and
+      * space/punct/EOL after closing.
+      */
+    val constrainedMonoSpan: Parsley[CstInline] =
+        atomic(atConstrainedOpen *> (pos <~> delimitedContent("`", "`") <~> pos) <* atConstrainedClose)
+            .map { case ((s, content), e) =>
+                val span = mkSpan(s, e)
+                CstMono(List(CstText(content)(span)), constrained = true)(span)
+            }
+            .flatMap(node => lastChar.set(Some('`')) *> pure(node: CstInline))
+            .label("constrained monospace span")
 
     // -----------------------------------------------------------------------
     // Link and URL parsers
@@ -122,7 +180,9 @@ object InlineParser:
     /** Parses inline content between `[` and `]` for link text. */
     private val bracketedInlineContent: Parsley[List[CstInline]] =
         char('[') *> many(
-            boldSpan | constrainedBoldSpan | italicSpan | monoSpan | attrRefInline |
+            boldSpan | italicSpan | monoSpan |
+                constrainedBoldSpan | constrainedItalicSpan | constrainedMonoSpan |
+                attrRefInline |
                 (pos <~> stringOfSome(
                     satisfy(c =>
                         c != ']' && c != '\n' && c != '\r' && c != '*' && c != '_' && c != '`' && c != '{' && c != '}'
@@ -138,7 +198,8 @@ object InlineParser:
                 .map { case (((s, target), text), e) =>
                     CstLinkMacro(target, text)(mkSpan(s, e))
                 }
-        ).label("link macro")
+        ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
+            .label("link macro")
             .explain("Link macro syntax: link:target[text]")
 
     /** Parses `mailto:addr[text]`. */
@@ -148,7 +209,8 @@ object InlineParser:
                 .map { case (((s, target), text), e) =>
                     CstMailtoMacro(target, text)(mkSpan(s, e))
                 }
-        ).label("mailto macro")
+        ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
+            .label("mailto macro")
             .explain("Mailto macro syntax: mailto:address[text]")
 
     /** Recognized URL schemes for autolinks and URL macros. */
@@ -166,7 +228,8 @@ object InlineParser:
                 .map { case (((s, target), text), e) =>
                     CstUrlMacro(target, text)(mkSpan(s, e))
                 }
-        ).label("URL macro")
+        ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
+            .label("URL macro")
 
     /** Parses a bare autolink: `scheme://target` (not followed by `[`). Trailing punctuation stripping is deferred to a
       * follow-up issue.
@@ -177,7 +240,10 @@ object InlineParser:
                 .map { case ((s, target), e) =>
                     CstAutolink(target)(mkSpan(s, e))
                 }
-        ).label("autolink")
+        ).flatMap { node =>
+            val al = node.asInstanceOf[CstAutolink]
+            lastChar.set(al.target.lastOption) *> pure(node: CstInline)
+        }.label("autolink")
 
     /** Lookahead that recognises the start of a link or URL prefix within prose. */
     private val linkOrUrlPrefix: Parsley[Unit] =
@@ -193,19 +259,29 @@ object InlineParser:
     val plainTextInline: Parsley[CstInline] =
         (pos <~> some(notFollowedBy(linkOrUrlPrefix) *> contentChar).map(_.mkString) <~> pos)
             .map { case ((s, content), e) => CstText(content)(mkSpan(s, e)) }
+            .flatMap { node =>
+                val text = node.asInstanceOf[CstText]
+                lastChar.set(text.content.lastOption) *> pure(node: CstInline)
+            }
             .label("text")
 
     /** Fallback for a single markup character that did not open a valid span. */
     val unpairedMarkupInline: Parsley[CstInline] =
-        (pos <~> unpairedMarkupChar <~> pos).map { case ((s, c), e) => CstText(c.toString)(mkSpan(s, e)) }.hide
+        (pos <~> unpairedMarkupChar <~> pos)
+            .map { case ((s, c), e) => (CstText(c.toString)(mkSpan(s, e)), c) }
+            .flatMap { case (node, c) =>
+                lastChar.set(Some(c)) *> pure(node: CstInline)
+            }
+            .hide
 
     /** Parses a single inline element (one of the above parsers in priority order). Unconstrained (`**`) is tried
       * before constrained (`*`) to avoid ambiguity.
       */
     val inlineElement: Parsley[CstInline] =
-        boldSpan | constrainedBoldSpan | italicSpan | monoSpan |
+        boldSpan | italicSpan | monoSpan |
+            constrainedBoldSpan | constrainedItalicSpan | constrainedMonoSpan |
             linkMacro | mailtoMacro | urlMacro | autolink |
             attrRefInline | plainTextInline | unpairedMarkupInline
 
     /** Parses zero or more inline elements, stopping naturally at a newline or end-of-input. */
-    val lineContent: Parsley[List[CstInline]] = many(inlineElement)
+    val lineContent: Parsley[List[CstInline]] = lastChar.set(None) *> many(inlineElement)
