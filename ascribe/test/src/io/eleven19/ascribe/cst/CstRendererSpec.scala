@@ -87,5 +87,44 @@ object CstRendererSpec extends ZIOSpecDefault:
                     val rendered = CstRenderer.render(cst)
                     assertTrue(rendered.startsWith("NOTE: "))
                 case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        }
+        },
+        suite("link node rendering")(
+            test("renders CstAutolink as bare URL") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstAutolink("https://example.com")(u)
+                assertTrue(CstRenderer.renderInline(node) == "https://example.com")
+            },
+            test("renders CstUrlMacro as url[text]") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstUrlMacro("https://example.com", List(CstText("click")(u)))(u)
+                assertTrue(CstRenderer.renderInline(node) == "https://example.com[click]")
+            },
+            test("renders CstUrlMacro with empty text as url[]") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstUrlMacro("https://example.com", Nil)(u)
+                assertTrue(CstRenderer.renderInline(node) == "https://example.com[]")
+            },
+            test("renders CstLinkMacro as link:target[text]") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstLinkMacro("report.pdf", List(CstText("Get Report")(u)))(u)
+                assertTrue(CstRenderer.renderInline(node) == "link:report.pdf[Get Report]")
+            },
+            test("renders CstMailtoMacro as mailto:addr[text]") {
+                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val node = CstMailtoMacro("user@example.com", List(CstText("Email me")(u)))(u)
+                assertTrue(CstRenderer.renderInline(node) == "mailto:user@example.com[Email me]")
+            },
+            test("bare autolink roundtrips") {
+                roundtrip("Visit https://example.com today.\n")
+            },
+            test("link macro roundtrips") {
+                roundtrip("See link:report.pdf[Get Report] here.\n")
+            },
+            test("mailto macro roundtrips") {
+                roundtrip("Contact mailto:user@example.com[Email me] now.\n")
+            },
+            test("URL macro roundtrips") {
+                roundtrip("Go to https://example.com[the site].\n")
+            }
+        )
     )

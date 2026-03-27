@@ -13,6 +13,12 @@ object CstRenderer:
         cst.content.foreach(n => renderTopLevel(n, sb))
         sb.toString
 
+    /** Render a single [[CstInline]] node to a string. Mirrors the public API of `AsciiDocRenderer.renderInline`. */
+    def renderInline(inline: CstInline): String =
+        val sb = new StringBuilder
+        renderInline(inline, sb)
+        sb.toString
+
     private def renderHeader(h: CstDocumentHeader, sb: StringBuilder): Unit =
         sb.append(h.title.marker)
         sb.append(' ')
