@@ -118,7 +118,7 @@ object CstRendererSpec extends ZIOSpecDefault:
                 assertTrue(CstRenderer.renderInline(node) == "mailto:user@example.com[Email me]")
             },
             test("renders CstLinkMacro with named attributes") {
-                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val u = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro(
                     "target.html",
                     CstMacroAttrList(List(CstText("click")(u)), Nil, List(("window", "_blank")), false)(u)
@@ -126,7 +126,7 @@ object CstRendererSpec extends ZIOSpecDefault:
                 assertTrue(CstRenderer.renderInline(node) == "link:target.html[click,window=_blank]")
             },
             test("renders CstLinkMacro with caret shorthand") {
-                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val u = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro(
                     "target.html",
                     CstMacroAttrList(List(CstText("click")(u)), Nil, Nil, hasCaretShorthand = true)(u)
@@ -134,7 +134,7 @@ object CstRendererSpec extends ZIOSpecDefault:
                 assertTrue(CstRenderer.renderInline(node) == "link:target.html[click^]")
             },
             test("renders CstLinkMacro with positional and named attributes") {
-                val u    = io.eleven19.ascribe.ast.Span.unknown
+                val u = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro(
                     "target.html",
                     CstMacroAttrList(List(CstText("text")(u)), List("pos1"), List(("role", "btn")), false)(u)

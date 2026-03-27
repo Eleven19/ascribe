@@ -96,10 +96,10 @@ object CstVisitorSpec extends ZIOSpecDefault:
             assertTrue(visited == List("https://a.com", "https://b.com", "c.pdf", "d@e.com"))
         },
         test("children returns CstMacroAttrList for CstUrlMacro") {
-            val u       = Span.unknown
-            val text    = CstText("click")(u)
+            val u        = Span.unknown
+            val text     = CstText("click")(u)
             val attrList = CstMacroAttrList.textOnly(List(text))(u)
-            val link    = CstUrlMacro("https://example.com", attrList)(u)
+            val link     = CstUrlMacro("https://example.com", attrList)(u)
             assertTrue(link.children == List(attrList))
         },
         test("children is empty for CstAutolink") {

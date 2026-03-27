@@ -206,8 +206,8 @@ object CstRenderer:
         val hasStructuredAttrs = attrList.positional.nonEmpty || attrList.named.nonEmpty
         if !hasStructuredAttrs && !attrList.hasCaretShorthand then renderInlines(attrList.text, sb)
         else
-            val parts   = List.newBuilder[String]
-            val textSb  = new StringBuilder
+            val parts  = List.newBuilder[String]
+            val textSb = new StringBuilder
             renderInlines(attrList.text, textSb)
             val textStr = if attrList.hasCaretShorthand then textSb.toString + "^" else textSb.toString
             parts += textStr
