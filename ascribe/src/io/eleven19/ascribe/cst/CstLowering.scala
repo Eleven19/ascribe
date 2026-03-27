@@ -45,14 +45,14 @@ object CstLowering:
         var attrs  = AttributeMap.fromHeader(cst.header.toList.flatMap(_.attributes))
 
         def lowerInline(inline: CstInline): Inline = inline match
-            case CstText(content)        => Text(content)(inline.span)
-            case CstBold(content, false) => Bold(lowerInlines(content))(inline.span)
-            case CstBold(content, true)  => ConstrainedBold(lowerInlines(content))(inline.span)
+            case CstText(content)          => Text(content)(inline.span)
+            case CstBold(content, false)   => Bold(lowerInlines(content))(inline.span)
+            case CstBold(content, true)    => ConstrainedBold(lowerInlines(content))(inline.span)
             case CstItalic(content, false) => Italic(lowerInlines(content))(inline.span)
             case CstItalic(content, true)  => ConstrainedItalic(lowerInlines(content))(inline.span)
             case CstMono(content, false)   => Mono(lowerInlines(content))(inline.span)
             case CstMono(content, true)    => ConstrainedMono(lowerInlines(content))(inline.span)
-            case CstAttributeRef(name)   => Text(attrs.resolve(name))(inline.span)
+            case CstAttributeRef(name)     => Text(attrs.resolve(name))(inline.span)
             case CstAutolink(target) =>
                 Link(LinkVariant.Auto, target, Nil)(inline.span)
             case CstUrlMacro(target, text) =>

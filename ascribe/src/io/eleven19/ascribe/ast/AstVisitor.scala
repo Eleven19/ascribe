@@ -43,14 +43,14 @@ trait AstVisitor[A]:
     def visitTitle(node: Title): A                 = visitNode(node)
 
     // --- Inline types ---
-    def visitText(node: Text): A                       = visitInline(node)
-    def visitBold(node: Bold): A                       = visitInline(node)
-    def visitConstrainedBold(node: ConstrainedBold): A = visitInline(node)
-    def visitItalic(node: Italic): A                   = visitInline(node)
-    def visitMono(node: Mono): A                                 = visitInline(node)
-    def visitConstrainedItalic(node: ConstrainedItalic): A       = visitInline(node)
-    def visitConstrainedMono(node: ConstrainedMono): A           = visitInline(node)
-    def visitLink(node: Link): A                                 = visitInline(node)
+    def visitText(node: Text): A                           = visitInline(node)
+    def visitBold(node: Bold): A                           = visitInline(node)
+    def visitConstrainedBold(node: ConstrainedBold): A     = visitInline(node)
+    def visitItalic(node: Italic): A                       = visitInline(node)
+    def visitMono(node: Mono): A                           = visitInline(node)
+    def visitConstrainedItalic(node: ConstrainedItalic): A = visitInline(node)
+    def visitConstrainedMono(node: ConstrainedMono): A     = visitInline(node)
+    def visitLink(node: Link): A                           = visitInline(node)
 
 /** Utilities for visiting and folding over AST trees.
   *
@@ -61,36 +61,36 @@ object AstVisitor:
 
     /** Dispatch a node to the appropriate visitor method. */
     def visit[A](node: AstNode, visitor: AstVisitor[A]): A = node match
-        case n: Document        => visitor.visitDocument(n)
-        case n: DocumentHeader  => visitor.visitDocumentHeader(n)
-        case n: Section         => visitor.visitSection(n)
-        case n: Heading         => visitor.visitHeading(n)
-        case n: Paragraph       => visitor.visitParagraph(n)
-        case n: Listing         => visitor.visitListing(n)
-        case n: Literal         => visitor.visitLiteral(n)
-        case n: Sidebar         => visitor.visitSidebar(n)
-        case n: Example         => visitor.visitExample(n)
-        case n: Quote           => visitor.visitQuote(n)
-        case n: Open            => visitor.visitOpen(n)
-        case n: Comment         => visitor.visitComment(n)
-        case n: Pass            => visitor.visitPass(n)
-        case n: UnorderedList   => visitor.visitUnorderedList(n)
-        case n: OrderedList     => visitor.visitOrderedList(n)
-        case n: Admonition      => visitor.visitAdmonition(n)
-        case n: Table           => visitor.visitTable(n)
-        case n: TableRow        => visitor.visitTableRow(n)
-        case n: TableCell       => visitor.visitTableCell(n)
-        case n: AttributeList   => visitor.visitAttributeList(n)
-        case n: Title           => visitor.visitTitle(n)
-        case n: Text            => visitor.visitText(n)
-        case n: Bold            => visitor.visitBold(n)
-        case n: ConstrainedBold => visitor.visitConstrainedBold(n)
-        case n: Italic          => visitor.visitItalic(n)
+        case n: Document          => visitor.visitDocument(n)
+        case n: DocumentHeader    => visitor.visitDocumentHeader(n)
+        case n: Section           => visitor.visitSection(n)
+        case n: Heading           => visitor.visitHeading(n)
+        case n: Paragraph         => visitor.visitParagraph(n)
+        case n: Listing           => visitor.visitListing(n)
+        case n: Literal           => visitor.visitLiteral(n)
+        case n: Sidebar           => visitor.visitSidebar(n)
+        case n: Example           => visitor.visitExample(n)
+        case n: Quote             => visitor.visitQuote(n)
+        case n: Open              => visitor.visitOpen(n)
+        case n: Comment           => visitor.visitComment(n)
+        case n: Pass              => visitor.visitPass(n)
+        case n: UnorderedList     => visitor.visitUnorderedList(n)
+        case n: OrderedList       => visitor.visitOrderedList(n)
+        case n: Admonition        => visitor.visitAdmonition(n)
+        case n: Table             => visitor.visitTable(n)
+        case n: TableRow          => visitor.visitTableRow(n)
+        case n: TableCell         => visitor.visitTableCell(n)
+        case n: AttributeList     => visitor.visitAttributeList(n)
+        case n: Title             => visitor.visitTitle(n)
+        case n: Text              => visitor.visitText(n)
+        case n: Bold              => visitor.visitBold(n)
+        case n: ConstrainedBold   => visitor.visitConstrainedBold(n)
+        case n: Italic            => visitor.visitItalic(n)
         case n: Mono              => visitor.visitMono(n)
         case n: ConstrainedItalic => visitor.visitConstrainedItalic(n)
         case n: ConstrainedMono   => visitor.visitConstrainedMono(n)
         case n: Link              => visitor.visitLink(n)
-        case n: ListItem        => visitor.visitListItem(n)
+        case n: ListItem          => visitor.visitListItem(n)
 
     /** Return all direct child nodes of a node. */
     def children(node: AstNode): List[AstNode] = node match
@@ -116,17 +116,17 @@ object AstVisitor:
             tc.content match
                 case CellContent.Inlines(content) => content
                 case CellContent.Blocks(blocks)   => blocks
-        case _: AttributeList    => Nil
-        case bt: Title           => bt.content
-        case t: Text             => Nil
-        case b: Bold             => b.content
-        case cb: ConstrainedBold => cb.content
-        case i: Italic           => i.content
+        case _: AttributeList      => Nil
+        case bt: Title             => bt.content
+        case t: Text               => Nil
+        case b: Bold               => b.content
+        case cb: ConstrainedBold   => cb.content
+        case i: Italic             => i.content
         case m: Mono               => m.content
         case ci: ConstrainedItalic => ci.content
         case cm: ConstrainedMono   => cm.content
         case l: Link               => l.text
-        case li: ListItem        => li.content
+        case li: ListItem          => li.content
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.
