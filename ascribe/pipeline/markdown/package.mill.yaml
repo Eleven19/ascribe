@@ -1,7 +1,7 @@
 extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
 artifactName: ascribe-pipeline-markdown
 moduleDeps:
-  - build.ascribe.pipelineCore
+  - build.ascribe.pipeline.core
   - build.ascribe.core
 mvnDeps:
   - dev.zio::zio-blocks-docs::0.0.29

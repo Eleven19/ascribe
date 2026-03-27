@@ -22,3 +22,6 @@ trait CommonScalaModule extends ScalaModule with scalafmt.ScalafmtModule {
 }
 
 trait CommonScalaTestModule extends ScalaModule
+
+/** Groups `ascribe/pipeline/{core,html,...}` so Mill discovers `ascribe.pipeline.*` children. */
+trait PipelineContainerModule extends Module

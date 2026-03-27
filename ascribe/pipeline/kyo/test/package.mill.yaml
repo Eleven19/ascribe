@@ -1,6 +1,6 @@
-extends: [ascribe.pipelineKyo.ScalaTests, _root_.build.CommonScalaTestModule, TestModule.ZioTest]
+extends: [ascribe.pipeline.kyo.ScalaTests, _root_.build.CommonScalaTestModule, TestModule.ZioTest]
 moduleDeps:
-  - build.ascribe.pipelineKyo
+  - build.ascribe.pipeline.kyo
 mvnDeps:
   - dev.zio::zio-test::2.1.24
   - dev.zio::zio-test-sbt::2.1.24

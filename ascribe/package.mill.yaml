@@ -2,8 +2,8 @@ extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
 artifactName: ascribe
 moduleDeps:
   - build.ascribe.core
-  - build.ascribe.pipelineCore
-  - build.ascribe.pipelineHtml
-  - build.ascribe.pipelineMarkdown
+  - build.ascribe.pipeline.core
+  - build.ascribe.pipeline.html
+  - build.ascribe.pipeline.markdown
   - build.ascribe.core.asg
   - build.ascribe.core.bridge
