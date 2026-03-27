@@ -292,6 +292,96 @@ object InlineParserSpec extends ZIOSpecDefault:
                     case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
+        suite("macro attribute parsing")(
+            test("plain text without commas/equals is text-only") {
+                parse("link:path[simple text]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.target == "path",
+                            link.attrList.text == List(CstText("simple text")(u)),
+                            link.attrList.positional == Nil,
+                            link.attrList.named == Nil,
+                            link.attrList.hasCaretShorthand == false
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("text with named attribute") {
+                parse("link:path[click here,window=_blank]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("click here")(u)),
+                            link.attrList.named == List(("window", "_blank")),
+                            link.attrList.positional == Nil
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("caret shorthand") {
+                parse("link:path[click here^]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("click here")(u)),
+                            link.attrList.hasCaretShorthand == true
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("quoted text with comma") {
+                parse("""link:path["text, with comma",role=btn]""") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("text, with comma")(u)),
+                            link.attrList.named == List(("role", "btn"))
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("first positional with equals is kept as text") {
+                parse("link:path[role=btn,window=_blank]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == List(CstText("role=btn")(u)),
+                            link.attrList.named == List(("window", "_blank")),
+                            link.attrList.positional == Nil
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("empty brackets") {
+                parse("link:path[]") match
+                    case Success(inlines) =>
+                        val link = inlines.collectFirst { case l: CstLinkMacro => l }.get
+                        assertTrue(
+                            link.attrList.text == Nil,
+                            link.attrList.positional == Nil,
+                            link.attrList.named == Nil,
+                            link.attrList.hasCaretShorthand == false
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("mailto with positional params") {
+                parse("mailto:user@host[Subscribe,Subscribe me,I want to join]") match
+                    case Success(inlines) =>
+                        val mailto = inlines.collectFirst { case m: CstMailtoMacro => m }.get
+                        assertTrue(
+                            mailto.attrList.text == List(CstText("Subscribe")(u)),
+                            mailto.attrList.positional == List("Subscribe me", "I want to join"),
+                            mailto.attrList.named == Nil
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("URL macro with attributes") {
+                parse("https://example.com[Example,window=_blank,opts=nofollow]") match
+                    case Success(inlines) =>
+                        val urlNode = inlines.collectFirst { case um: CstUrlMacro => um }.get
+                        assertTrue(
+                            urlNode.attrList.text == List(CstText("Example")(u)),
+                            urlNode.attrList.named == List(("window", "_blank"), ("opts", "nofollow"))
+                        )
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            }
+        ),
         suite("constrained close before punctuation")(
             test("parses *bold* before colon") {
                 parse("*bold*: rest") match
