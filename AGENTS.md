@@ -5,6 +5,24 @@ We should also note the TCK is here: [https://gitlab.eclipse.org/eclipse/asciido
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+## Branch and worktree workflow
+
+Substantive work (features, refactors, multi-module or build-layout changes, large test or doc updates) must be done on a **feature branch** using a **git worktree** under `.worktrees/` (gitignored), then merged via PR to `main`. Do not push large or risky changes directly to `main`.
+
+**Exceptions** (narrow cases where `main` is acceptable): small deployment or release CI/CD edits, one-line hotfixes explicitly requested for `main`, or other minimal maintenance agreed with maintainers.
+
+From the repository root:
+
+```bash
+git fetch origin main
+git worktree add .worktrees/<short-slug> -b feat/<topic> origin/main
+cd .worktrees/<short-slug>
+```
+
+When finished, open a PR from `feat/<topic>`, and remove the worktree after merge: `git worktree remove .worktrees/<short-slug>`.
+
+For directory choice and safety checks, follow the **using-git-worktrees** skill (`.agents/skills/...` or superpowers).
+
 ## Quick Reference
 
 ```bash
