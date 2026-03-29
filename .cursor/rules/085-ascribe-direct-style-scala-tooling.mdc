@@ -1,0 +1,31 @@
+---
+description: Ascribe norms for Scala 3 direct style, sbt/Metals, and Ox—pair with ox-*.mdc rules in this folder.
+globs:
+alwaysApply: true
+---
+
+# Direct-style Scala, tooling, and Ox (Ascribe)
+
+This project uses **Scala 3 in direct style** with **[Ox](https://github.com/softwaremill/ox)** for concurrency and streaming. Guidance below aligns with [VirtusLab’s notes on generating direct-style Scala 3 applications](https://virtuslab.com/blog/scala/generating-direct-style-scala-3-applications) and [Using Ox with AI coding assistants](https://ox.softwaremill.com/latest/info/ai.html).
+
+## Tooling preference
+
+- When **Metals MCP** (or Metals in the IDE) is available, use it for compile, test, import/build, symbol inspect, and dependency insight instead of shelling to sbt for every check.
+- For **sbt** from the terminal: prefer `sbt --client` so commands attach to a persistent server and stay fast. Use plain `sbt` (no `--client`) when **running long-lived apps** that must be interrupted with Ctrl+C reliably.
+
+## Scala style
+
+- Prefer **braceless** Scala 3 syntax in new and heavily touched code (consistent with common direct-style projects).
+- Default to **direct style** on the JVM (virtual threads): do **not** introduce `cats-effect` `IO`, `Future`-based stacks, or other async runtimes unless an existing module already depends on them and the change must integrate there.
+- Prefer **functional structure**: immutable data, explicit `State`-style values threaded through pure steps, and **local** mutability only when it clearly simplifies an algorithm. Avoid pervasive `var`, mutable collections, and `return` as control flow.
+
+## Ox
+
+- Follow the numbered **`ox-*.mdc`** rules in `.cursor/rules/` (fork/join, scopes, flows, error model). Request the relevant rule when implementing concurrency, channels, or resilience.
+- Structure concurrency with **nested Ox scopes** (`supervised`, resource scopes, etc.) so lifetimes stay obvious and leaks are impossible by construction.
+- Use Ox’s **dual error model**: exceptions for unexpected failures; `Either` (and `.ok()` in `either` blocks) for domain-level errors where appropriate.
+
+## Documentation and RAG for humans and agents
+
+- **Cursor**: Add `https://ox.softwaremill.com/latest/` under **Indexing & Docs** so `@Docs` can pull Ox documentation ([Ox AI guide](https://ox.softwaremill.com/latest/info/ai.html)).
+- **Context7**: Ox is indexed at [context7.com/softwaremill/ox](https://context7.com/softwaremill/ox); include `use context7` in prompts when you want up-to-date Ox API detail.
