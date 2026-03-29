@@ -3,7 +3,7 @@ artifactName: ascribe-pipeline-ox
 moduleDeps:
   - build.ascribe.pipeline.core
   - build.ascribe.core
-  - build.ascribe.core.asg
-  - build.ascribe.core.bridge
+  - build.ascribe.asg
+  - build.ascribe.bridge
 mvnDeps:
   - com.softwaremill.ox::core::0.3.0

@@ -1,4 +1,8 @@
-extends: [ascribe.core.ScalaTests, _root_.build.CommonScalaTestModule, TestModule.Junit5]
+extends: [_root_.build.CommonScalaModule, _root_.build.CommonScalaTestModule, TestModule.Junit5]
+moduleDeps:
+  - build.ascribe.core
+  - build.ascribe.asg
+  - build.ascribe.bridge
 mvnDeps:
   - org.scalameta::munit::1.0.4
   - io.cucumber::cucumber-scala::8.25.1
