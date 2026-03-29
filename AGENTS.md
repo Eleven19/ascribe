@@ -5,12 +5,13 @@ We should also note the TCK is here: [https://gitlab.eclipse.org/eclipse/asciido
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
-## Direct-style Scala, sbt, Metals, and Ox
+## Direct-style Scala, Mill, Metals, and Ox
 
-Ascribe uses **Scala 3 in direct style** with **[Ox](https://github.com/softwaremill/ox)** for structured concurrency, flows, and related utilities in applicable modules. When editing or generating Scala:
+Ascribe uses **Scala 3 in direct style** with **[Ox](https://github.com/softwaremill/ox)** for structured concurrency, flows, and related utilities in applicable modules. The build is **[Mill](https://com-lihaoyi.github.io/mill/)** (`./mill`). When editing or generating Scala:
 
-- Prefer **Metals** (IDE or MCP) for compile, test, import/build, and navigation instead of driving everything through raw sbt.
-- From the CLI, prefer **`sbt --client`** for speed; use plain **`sbt`** when running long-lived applications that need reliable Ctrl+C.
+- Prefer **Metals** (IDE or MCP) for compile, test, import/build, and navigation instead of driving everything through raw `./mill` when the IDE is enough.
+- From the CLI, use **`./mill`** for tasks; Mill’s **daemon** keeps incremental work fast (same spirit as sbt’s persistent server, without an `--client` switch).
+- For **long-running apps** or servers, use documented `mill` targets or run the JVM so **Ctrl+C** stays reliable—prioritize interruptible foreground runs over daemon convenience when debugging a live process.
 - Prefer **braceless** Scala 3 syntax and **functional** structure: immutable data, state passed through pure functions, local mutability only when it clarifies an algorithm—avoid pervasive `var`, mutable collections, and `return`.
 - Do **not** default to `cats-effect` `IO`, `Future` stacks, or similar unless you are in a module that already uses them.
 - Use Ox **nested scopes** and the **dual error model** (exceptions vs `Either` / `.ok()`); follow the **`ox-*.mdc`** Cursor rules in `.cursor/rules/` and project rule **`085-ascribe-direct-style-scala-tooling.mdc`**.

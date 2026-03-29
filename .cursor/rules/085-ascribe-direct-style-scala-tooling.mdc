@@ -1,5 +1,5 @@
 ---
-description: Ascribe norms for Scala 3 direct style, sbt/Metals, and Ox—pair with ox-*.mdc rules in this folder.
+description: Ascribe norms for Scala 3 direct style, Mill/Metals, and Ox—pair with ox-*.mdc rules in this folder.
 globs:
 alwaysApply: true
 ---
@@ -10,8 +10,9 @@ This project uses **Scala 3 in direct style** with **[Ox](https://github.com/sof
 
 ## Tooling preference
 
-- When **Metals MCP** (or Metals in the IDE) is available, use it for compile, test, import/build, symbol inspect, and dependency insight instead of shelling to sbt for every check.
-- For **sbt** from the terminal: prefer `sbt --client` so commands attach to a persistent server and stay fast. Use plain `sbt` (no `--client`) when **running long-lived apps** that must be interrupted with Ctrl+C reliably.
+- When **Metals MCP** (or Metals in the IDE) is available, use it for compile, test, import/build, symbol inspect, and dependency insight instead of shelling to **Mill** for every check.
+- This repository builds with **[Mill](https://com-lihaoyi.github.io/mill/)** (`./mill` from the repo root). Mill uses a **daemon** so repeated `mill` compile/test tasks stay warm and fast—the same *idea* as sbt’s persistent server, but there is no separate `--client` flag to learn.
+- For **long-lived foreground processes** (servers, local doc sites, anything you must stop with Ctrl+C): prefer the **project’s documented** `mill` targets or an explicit JVM run. If a Mill-launched process is awkward to interrupt, run the app entrypoint outside that path (the goal is reliable signals, not incremental compile speed).
 
 ## Scala style
 
