@@ -1,0 +1,32 @@
+---
+description: Ascribe norms for Scala 3 direct style, Mill/Metals, and Ox—pair with ox-*.mdc rules in this folder.
+globs:
+alwaysApply: true
+---
+
+# Direct-style Scala, tooling, and Ox (Ascribe)
+
+This project uses **Scala 3 in direct style** with **[Ox](https://github.com/softwaremill/ox)** for concurrency and streaming. Guidance below aligns with [VirtusLab’s notes on generating direct-style Scala 3 applications](https://virtuslab.com/blog/scala/generating-direct-style-scala-3-applications) and [Using Ox with AI coding assistants](https://ox.softwaremill.com/latest/info/ai.html).
+
+## Tooling preference
+
+- When **Metals MCP** (or Metals in the IDE) is available, use it for compile, test, import/build, symbol inspect, and dependency insight instead of shelling to **Mill** for every check.
+- This repository builds with **[Mill](https://com-lihaoyi.github.io/mill/)** (`./mill` from the repo root). Mill uses a **daemon** so repeated `mill` compile/test tasks stay warm and fast—the same *idea* as sbt’s persistent server, but there is no separate `--client` flag to learn.
+- For **long-lived foreground processes** (servers, local doc sites, anything you must stop with Ctrl+C): prefer the **project’s documented** `mill` targets or an explicit JVM run. If a Mill-launched process is awkward to interrupt, run the app entrypoint outside that path (the goal is reliable signals, not incremental compile speed).
+
+## Scala style
+
+- Prefer **braceless** Scala 3 syntax in new and heavily touched code (consistent with common direct-style projects).
+- Default to **direct style** on the JVM (virtual threads): do **not** introduce `cats-effect` `IO`, `Future`-based stacks, or other async runtimes unless an existing module already depends on them and the change must integrate there.
+- Prefer **functional structure**: immutable data, explicit `State`-style values threaded through pure steps, and **local** mutability only when it clearly simplifies an algorithm. Avoid pervasive `var`, mutable collections, and `return` as control flow.
+
+## Ox
+
+- Follow the numbered **`ox-*.mdc`** rules in `.cursor/rules/` (fork/join, scopes, flows, error model). Request the relevant rule when implementing concurrency, channels, or resilience.
+- Structure concurrency with **nested Ox scopes** (`supervised`, resource scopes, etc.) so lifetimes stay obvious and leaks are impossible by construction.
+- Use Ox’s **dual error model**: exceptions for unexpected failures; `Either` (and `.ok()` in `either` blocks) for domain-level errors where appropriate.
+
+## Documentation and RAG for humans and agents
+
+- **Cursor**: Add `https://ox.softwaremill.com/latest/` under **Indexing & Docs** so `@Docs` can pull Ox documentation ([Ox AI guide](https://ox.softwaremill.com/latest/info/ai.html)).
+- **Context7**: Ox is indexed at [context7.com/softwaremill/ox](https://context7.com/softwaremill/ox); include `use context7` in prompts when you want up-to-date Ox API detail.
