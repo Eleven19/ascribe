@@ -6,4 +6,5 @@ moduleDeps:
   - build.ascribe.asg
   - build.ascribe.bridge
 mvnDeps:
+  - com.lihaoyi::os-lib::0.11.8
   - com.softwaremill.ox::core::0.3.0

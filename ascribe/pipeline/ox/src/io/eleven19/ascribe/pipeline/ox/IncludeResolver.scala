@@ -5,16 +5,14 @@ import io.eleven19.ascribe.cst.*
 import io.eleven19.ascribe.pipeline.core.PipelineError
 import parsley.{Failure, Success}
 
-import java.nio.file.{Files, Path}
-
-/** Resolves `CstInclude` nodes using `java.nio.file` (direct style); behavior matches the Kyo
+/** Resolves `CstInclude` nodes using [[https://github.com/com-lihaoyi/os-lib os-lib]]; behavior matches the Kyo
   * [[io.eleven19.ascribe.pipeline.IncludeResolver]].
   */
 object IncludeResolver:
 
     def resolve(
         cst: CstDocument,
-        baseDir: Path,
+        baseDir: os.Path,
         maxDepth: Int = 64
     ): Either[PipelineError, CstDocument] =
         resolveContent(cst.content, baseDir, maxDepth, 0).map { resolved =>
@@ -23,7 +21,7 @@ object IncludeResolver:
 
     private def resolveContent(
         content: List[CstTopLevel],
-        baseDir: Path,
+        baseDir: os.Path,
         maxDepth: Int,
         depth: Int
     ): Either[PipelineError, List[CstTopLevel]] =
@@ -38,7 +36,7 @@ object IncludeResolver:
 
     private def resolveTopLevel(
         node: CstTopLevel,
-        baseDir: Path,
+        baseDir: os.Path,
         maxDepth: Int,
         depth: Int
     ): Either[PipelineError, List[CstTopLevel]] =
@@ -58,7 +56,7 @@ object IncludeResolver:
 
     private def resolveInclude(
         inc: CstInclude,
-        baseDir: Path,
+        baseDir: os.Path,
         maxDepth: Int,
         depth: Int
     ): Either[PipelineError, List[CstTopLevel]] =
@@ -72,7 +70,7 @@ object IncludeResolver:
                 }
             } ||
                 inc.attributes.named.get("opts").exists(v => v.split(",").map(_.trim).contains("optional"))
-        val targetPath = baseDir.resolve(inc.target).normalize()
+        val targetPath = baseDir / os.SubPath(inc.target)
         if depth >= maxDepth then
             Left(
                 PipelineError.ParseError(
@@ -80,7 +78,7 @@ object IncludeResolver:
                     None
                 )
             )
-        else if !Files.exists(targetPath) then
+        else if !os.exists(targetPath) then
             if isOptional then Right(Nil)
             else
                 Left(
@@ -90,24 +88,22 @@ object IncludeResolver:
                     )
                 )
         else
-            val parentDir = targetPath.getParent
-            if parentDir == null then Left(PipelineError.IOError(s"Include has no parent dir: ${inc.target}", None))
-            else
-                readString(targetPath).flatMap { content =>
-                    Ascribe.parseCst(content) match
-                        case Success(includedCst) =>
-                            resolveContent(includedCst.content, parentDir, maxDepth, depth + 1)
-                        case Failure(msg) =>
-                            Left(
-                                PipelineError.ParseError(
-                                    s"Failed to parse include file ${inc.target}: $msg",
-                                    None
-                                )
+            val parentDir = targetPath / os.up
+            readString(targetPath).flatMap { content =>
+                Ascribe.parseCst(content) match
+                    case Success(includedCst) =>
+                        resolveContent(includedCst.content, parentDir, maxDepth, depth + 1)
+                    case Failure(msg) =>
+                        Left(
+                            PipelineError.ParseError(
+                                s"Failed to parse include file ${inc.target}: $msg",
+                                None
                             )
-                }
+                        )
+            }
 
-    private def readString(path: Path): Either[PipelineError, String] =
-        try Right(Files.readString(path))
+    private def readString(path: os.Path): Either[PipelineError, String] =
+        try Right(os.read(path))
         catch
             case e: Exception =>
                 Left(PipelineError.IOError(Option(e.getMessage).getOrElse("read failed"), Some(e)))

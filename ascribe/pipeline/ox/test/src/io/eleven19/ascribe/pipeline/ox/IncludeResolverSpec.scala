@@ -5,22 +5,16 @@ import io.eleven19.ascribe.cst.*
 import zio.test.*
 import parsley.Success
 
-import java.nio.file.Path as JPath
-
 object IncludeResolverSpec extends ZIOSpecDefault:
 
-    private def deleteRecursively(root: JPath): Unit =
-        if java.nio.file.Files.isDirectory(root) then
-            val stream = java.nio.file.Files.list(root)
-            try stream.forEach(deleteRecursively(_))
-            finally stream.close()
-        java.nio.file.Files.deleteIfExists(root): Unit
+    private def cleanup(root: os.Path): Unit =
+        if os.exists(root) then os.remove.all(root)
 
     def spec = suite("IncludeResolver (Ox)")(
         test("resolves basic include directive") {
-            val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
+            val tmpDir = os.temp.dir()
             try
-                java.nio.file.Files.writeString(tmpDir.resolve("partial.adoc"), "Included content.\n")
+                os.write(tmpDir / "partial.adoc", "Included content.\n", createFolders = true)
                 val source = "Before.\n\ninclude::partial.adoc[]\n\nAfter.\n"
                 val cst = Ascribe.parseCst(source) match
                     case Success(c) => c
@@ -34,10 +28,10 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                             texts.exists(_.contains("After."))
                         )
                     case Left(_) => assertTrue(false)
-            finally deleteRecursively(tmpDir)
+            finally cleanup(tmpDir)
         },
         test("fails on missing include file") {
-            val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
+            val tmpDir = os.temp.dir()
             try
                 val source = "include::missing.adoc[]\n"
                 val cst = Ascribe.parseCst(source) match
@@ -45,10 +39,10 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                     case _          => throw new AssertionError("parse failed")
                 val result = IncludeResolver.resolve(cst, tmpDir)
                 assertTrue(result.isLeft)
-            finally deleteRecursively(tmpDir)
+            finally cleanup(tmpDir)
         },
         test("optional include silently skips missing file") {
-            val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
+            val tmpDir = os.temp.dir()
             try
                 val source = "Before.\n\ninclude::missing.adoc[opts=optional]\n\nAfter.\n"
                 val cst = Ascribe.parseCst(source) match
@@ -64,15 +58,16 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                             texts.exists(_.contains("After."))
                         )
                     case Left(_) => assertTrue(false)
-            finally deleteRecursively(tmpDir)
+            finally cleanup(tmpDir)
         },
         test("resolves nested includes") {
-            val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
+            val tmpDir = os.temp.dir()
             try
-                java.nio.file.Files.writeString(tmpDir.resolve("inner.adoc"), "Inner content.\n")
-                java.nio.file.Files.writeString(
-                    tmpDir.resolve("outer.adoc"),
-                    "Outer start.\n\ninclude::inner.adoc[]\n\nOuter end.\n"
+                os.write(tmpDir / "inner.adoc", "Inner content.\n", createFolders = true)
+                os.write(
+                    tmpDir / "outer.adoc",
+                    "Outer start.\n\ninclude::inner.adoc[]\n\nOuter end.\n",
+                    createFolders = true
                 )
                 val source = "Doc start.\n\ninclude::outer.adoc[]\n\nDoc end.\n"
                 val cst = Ascribe.parseCst(source) match
@@ -88,6 +83,6 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                             texts.exists(_.contains("Doc end."))
                         )
                     case Left(_) => assertTrue(false)
-            finally deleteRecursively(tmpDir)
+            finally cleanup(tmpDir)
         }
     )

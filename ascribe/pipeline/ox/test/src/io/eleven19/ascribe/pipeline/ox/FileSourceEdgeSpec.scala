@@ -3,74 +3,65 @@ package io.eleven19.ascribe.pipeline.ox
 import io.eleven19.ascribe.ast.DocumentPath
 import zio.test.*
 
-import java.nio.file.{Files as JFiles}
-
-/** File I/O branches: invalid inputs, empty trees, nested paths, subdirectory discovery.
-  *
-  * Uses `JFiles` because `zio.test.*` brings a conflicting `Files` symbol; keep `JFiles.*` calls outside
-  * `assertTrue(...)` when the macro would otherwise trip over Java interop.
-  */
+/** File I/O branches: invalid inputs, empty trees, nested paths, subdirectory discovery. */
 object FileSourceEdgeSpec extends ZIOSpecDefault:
 
-    private def deleteRecursively(root: java.nio.file.Path): Unit =
-        if JFiles.isDirectory(root) then
-            val stream = JFiles.list(root)
-            try stream.forEach(deleteRecursively(_))
-            finally stream.close()
-        JFiles.deleteIfExists(root): Unit
+    private def cleanup(root: os.Path): Unit =
+        if os.exists(root) then os.remove.all(root)
 
     def spec = suite("FileSource & FileSink (Ox) edge cases")(
         test("FileSource.fromDirectory fails when path is a regular file") {
-            val f = JFiles.createTempFile("ascribe-fs", ".adoc")
+            val d = os.temp.dir()
+            val f = d / "only.adoc"
+            os.write(f, "", createFolders = true)
             try
                 val r = FileSource.fromDirectory(f).read
                 assertTrue(r.isLeft)
-            finally JFiles.deleteIfExists(f): Unit
+            finally cleanup(d)
         },
         test("FileSource.fromDirectory with no .adoc files yields empty tree") {
-            val d = JFiles.createTempDirectory("ascribe-empty")
+            val d = os.temp.dir()
             try
-                JFiles.writeString(d.resolve("note.txt"), "not adoc")
+                os.write(d / "note.txt", "not adoc", createFolders = true)
                 FileSource.fromDirectory(d).read match
                     case Right(t) => assertTrue(t.size == 0)
                     case Left(_)  => assertTrue(false)
-            finally deleteRecursively(d)
+            finally cleanup(d)
         },
         test("FileSource.fromDirectory discovers .adoc in subdirectories") {
-            val d = JFiles.createTempDirectory("ascribe-nested")
+            val d = os.temp.dir()
             try
-                val sub = JFiles.createDirectories(d.resolve("part"))
-                JFiles.writeString(sub.resolve("inner.adoc"), "Nested.\n")
+                os.write(d / "part" / "inner.adoc", "Nested.\n", createFolders = true)
                 FileSource.fromDirectory(d).read match
                     case Right(t) =>
                         val path = t.allDocuments.head._1
                         assertTrue(t.size == 1, path.render.contains("inner.adoc"))
                     case Left(_) => assertTrue(false)
-            finally deleteRecursively(d)
+            finally cleanup(d)
         },
         test("FileSink.toDirectory creates nested parent directories for deep DocumentPath") {
-            val out = JFiles.createTempDirectory("ascribe-deep-out")
+            val out = os.temp.dir()
             try
-                val deep = DocumentPath.fromString("one/two/out.adoc")
-                val rendered = Map(deep -> "deep content\n")
+                val deep       = DocumentPath.fromString("one/two/out.adoc")
+                val rendered   = Map(deep -> "deep content\n")
                 FileSink.toDirectory(out).write(rendered) match
                     case Right(()) =>
-                        val p       = out.resolve("one").resolve("two").resolve("out.adoc")
-                        val onDisk  = JFiles.readString(p)
+                        val p        = out / "one" / "two" / "out.adoc"
+                        val onDisk   = os.read(p)
                         val expected = "deep content\n"
                         assertTrue(onDisk == expected)
                     case Left(_) => assertTrue(false)
-            finally deleteRecursively(out)
+            finally cleanup(out)
         },
         test("FileSink.toFile with empty rendered map succeeds without writing") {
-            val d = JFiles.createTempDirectory("ascribe-fs")
+            val d = os.temp.dir()
             try
-                val f = d.resolve("missing.txt")
+                val f = d / "missing.txt"
                 FileSink.toFile(f).write(Map.empty) match
                     case Right(()) =>
-                        val missing = !JFiles.exists(f)
+                        val missing = !os.exists(f)
                         assertTrue(missing)
-                    case Left(_)   => assertTrue(false)
-            finally deleteRecursively(d)
+                    case Left(_) => assertTrue(false)
+            finally cleanup(d)
         }
     )
