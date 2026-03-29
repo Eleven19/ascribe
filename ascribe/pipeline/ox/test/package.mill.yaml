@@ -1,0 +1,6 @@
+extends: [ascribe.pipeline.ox.ScalaTests, _root_.build.CommonScalaTestModule, TestModule.ZioTest]
+moduleDeps:
+  - build.ascribe.pipeline.ox
+mvnDeps:
+  - dev.zio::zio-test::2.1.24
+  - dev.zio::zio-test-sbt::2.1.24

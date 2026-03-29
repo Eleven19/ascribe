@@ -10,6 +10,8 @@ leading `v`.
 
 ### Added
 
+- Implemented full **`ascribe-pipeline-ox`** API parity with `ascribe-pipeline-kyo`: `Pipeline`, `Source`, `Sink`, `FileSource` / `FileSink`, `IncludeResolver`, `AsciiDocRenderer`, `AsgJsonRenderer`, `dsl`, and ZIO tests mirroring the Kyo suite. File and include stages run under Ox `supervised` scopes; results use `Either[PipelineError, *]` instead of Kyo effects.
+
 ### Changed
 
 ### Fixed

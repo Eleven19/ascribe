@@ -21,7 +21,7 @@ Built against the [AsciiDoc Language Specification](https://gitlab.eclipse.org/e
 | Umbrella | `ascribe` | Optional convenience aggregate (core + pipeline + HTML + Markdown + ASG + bridge) |
 | Pipeline (core) | `ascribe-pipeline-core` | Shared pipeline types, `PipelineOp`, pure rewrites |
 | Pipeline (Kyo) | `ascribe-pipeline-kyo` | Kyo-backed pipeline, file I/O, includes |
-| Pipeline (Ox) | `ascribe-pipeline-ox` | Ox-backed runtime (optional) |
+| Pipeline (Ox) | `ascribe-pipeline-ox` | Direct-style Ox pipeline (`Either[PipelineError, *]`), file I/O, includes—parity with the Kyo module |
 | HTML | `ascribe-pipeline-html` | scalatags HTML output |
 | Markdown | `ascribe-pipeline-markdown` | GFM via zio-blocks-docs (best-effort) |
 | ASG | `ascribe-asg` | Abstract Semantic Graph matching the AsciiDoc TCK schema |
