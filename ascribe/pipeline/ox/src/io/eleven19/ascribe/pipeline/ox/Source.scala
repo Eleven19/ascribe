@@ -1,8 +1,12 @@
 package io.eleven19.ascribe.pipeline.ox
 
 import io.eleven19.ascribe.Ascribe
-import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree, TreeNode}
+import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree}
 import io.eleven19.ascribe.pipeline.core.PipelineError
+import ox.either
+import ox.either.fail
+
+import scala.collection.mutable
 
 trait Source:
     def read: Either[PipelineError, DocumentTree]
@@ -23,16 +27,14 @@ object Source:
     def fromStrings(docs: (DocumentPath, String)*): Source =
         new Source:
             def read: Either[PipelineError, DocumentTree] =
-                val parsed = docs.toList.map { (path, content) =>
-                    Ascribe.parse(content) match
-                        case parsley.Success(doc) => Right((path, doc))
-                        case parsley.Failure(msg) =>
-                            Left(PipelineError.ParseError(msg.toString, Some(path)))
-                }
-                parsed.collectFirst { case Left(err) => err } match
-                    case Some(err) => Left(err)
-                    case None =>
-                        Right(DocumentTree.fromDocuments(parsed.collect { case Right(pair) => pair }))
+                either:
+                    val buf = mutable.ListBuffer.empty[(DocumentPath, Document)]
+                    for (path, content) <- docs do
+                        Ascribe.parse(content) match
+                            case parsley.Success(doc) => buf += ((path, doc))
+                            case parsley.Failure(msg) =>
+                                fail(PipelineError.ParseError(msg.toString, Some(path)))
+                    DocumentTree.fromDocuments(buf.toList)
 
     def fromDocument(document: Document): Source =
         new Source:

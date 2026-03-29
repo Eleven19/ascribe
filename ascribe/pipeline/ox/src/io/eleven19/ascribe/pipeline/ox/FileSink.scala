@@ -2,6 +2,8 @@ package io.eleven19.ascribe.pipeline.ox
 
 import io.eleven19.ascribe.ast.DocumentPath
 import io.eleven19.ascribe.pipeline.core.PipelineError
+import ox.either
+import ox.either.ok
 import ox.supervised
 
 /** File-backed [[Sink]] using [[https://github.com/com-lihaoyi/os-lib os-lib]] inside an Ox [[supervised]] scope
@@ -19,22 +21,20 @@ object FileSink:
         new Sink:
             def write(rendered: Map[DocumentPath, String]): Either[PipelineError, Unit] =
                 supervised:
-                    rendered.headOption match
-                        case Some((_, content)) =>
-                            writeString(outputFile, content, createFolders = true)
-                        case None => Right(())
+                    either:
+                        rendered.headOption match
+                            case Some((_, content)) =>
+                                writeString(outputFile, content, createFolders = true).ok()
+                            case None => ()
 
     private def writeEntries(
         outputDir: os.Path,
         entries: List[(DocumentPath, String)]
     ): Either[PipelineError, Unit] =
-        entries match
-            case Nil => Right(())
-            case (docPath, content) :: rest =>
+        either:
+            for (docPath, content) <- entries do
                 val targetPath = outputDir / os.SubPath(docPath.render)
-                writeString(targetPath, content, createFolders = true).flatMap { _ =>
-                    writeEntries(outputDir, rest)
-                }
+                writeString(targetPath, content, createFolders = true).ok()
 
     private def writeString(path: os.Path, content: String, createFolders: Boolean): Either[PipelineError, Unit] =
         try
