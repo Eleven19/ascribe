@@ -42,14 +42,14 @@ Mill modules live under the `ascribe/` directory (nested names use dots: `ascrib
 | Module | Mill | Artifact | Package | Purpose |
 |--------|------|----------|---------|---------|
 | Core | `ascribe.core` | `ascribe-core` | `io.eleven19.ascribe` | Parser, lexer, AST types, AST visitor, DSL |
-| ASG | `ascribe.core.asg` | `ascribe-asg` | `io.eleven19.ascribe.asg` | ASG node types, JSON codecs, ASG visitor, DSL |
-| Bridge | `ascribe.core.bridge` | `ascribe-bridge` | `io.eleven19.ascribe.bridge` | AST-to-ASG converter |
+| ASG | `ascribe.asg` | `ascribe-asg` | `io.eleven19.ascribe.asg` | ASG node types, JSON codecs, ASG visitor, DSL |
+| Bridge | `ascribe.bridge` | `ascribe-bridge` | `io.eleven19.ascribe.bridge` | AST-to-ASG converter |
 | Pipeline (core) | `ascribe.pipeline.core` | `ascribe-pipeline-core` | `io.eleven19.ascribe.pipeline.core` | `PipelineOp`, `RewriteRule`, pure rewrites |
 | Pipeline (Kyo) | `ascribe.pipeline.kyo` | `ascribe-pipeline-kyo` | `io.eleven19.ascribe.pipeline` | Kyo-backed pipeline, file I/O, includes |
 | Pipeline (HTML) | `ascribe.pipeline.html` | `ascribe-pipeline-html` | `io.eleven19.ascribe.pipeline.html` | scalatags HTML output |
 | Pipeline (Markdown) | `ascribe.pipeline.markdown` | `ascribe-pipeline-markdown` | `io.eleven19.ascribe.pipeline.markdown` | GFM via zio-blocks-docs |
 | Pipeline (Ox) | `ascribe.pipeline.ox` | `ascribe-pipeline-ox` | `io.eleven19.ascribe.pipeline.ox` | Ox-backed runtime (optional) |
-| TCK Runner | `ascribe.core.tck-runner` | — | `build.ascribe.tckrunner` | TCK test harness (Cucumber) — not published |
+| TCK Runner | `ascribe.tck-runner` | — | `build.ascribe.tckrunner` | TCK test harness (Cucumber) — not published |
 
 ## AST Type Hierarchy
 

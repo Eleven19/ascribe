@@ -5,5 +5,5 @@ moduleDeps:
   - build.ascribe.pipeline.core
   - build.ascribe.pipeline.html
   - build.ascribe.pipeline.markdown
-  - build.ascribe.core.asg
-  - build.ascribe.core.bridge
+  - build.ascribe.asg
+  - build.ascribe.bridge

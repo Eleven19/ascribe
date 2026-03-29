@@ -6,5 +6,5 @@ Feature: Block - Listing
 
     Examples:
       | test_name      | input_file                                                                           | output_file                                                                            |
-      | source-ruby    | ascribe/core/tck-runner/test/resources/tests/block/listing/source-ruby-input.adoc          | ascribe/core/tck-runner/test/resources/tests/block/listing/source-ruby-output.json           |
-      | titled-source  | ascribe/core/tck-runner/test/resources/tests/block/listing/titled-source-input.adoc        | ascribe/core/tck-runner/test/resources/tests/block/listing/titled-source-output.json         |
+      | source-ruby    | ascribe/tck-runner/test/resources/tests/block/listing/source-ruby-input.adoc          | ascribe/tck-runner/test/resources/tests/block/listing/source-ruby-output.json           |
+      | titled-source  | ascribe/tck-runner/test/resources/tests/block/listing/titled-source-input.adoc        | ascribe/tck-runner/test/resources/tests/block/listing/titled-source-output.json         |
