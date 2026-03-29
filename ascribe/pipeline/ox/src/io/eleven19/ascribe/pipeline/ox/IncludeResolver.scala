@@ -3,7 +3,11 @@ package io.eleven19.ascribe.pipeline.ox
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.cst.*
 import io.eleven19.ascribe.pipeline.core.PipelineError
+import ox.either
+import ox.either.{fail, ok}
 import parsley.{Failure, Success}
+
+import scala.collection.mutable
 
 /** Resolves `CstInclude` nodes using [[https://github.com/com-lihaoyi/os-lib os-lib]]; behavior matches the Kyo
   * [[io.eleven19.ascribe.pipeline.IncludeResolver]].
@@ -15,9 +19,9 @@ object IncludeResolver:
         baseDir: os.Path,
         maxDepth: Int = 64
     ): Either[PipelineError, CstDocument] =
-        resolveContent(cst.content, baseDir, maxDepth, 0).map { resolved =>
+        either:
+            val resolved = resolveContent(cst.content, baseDir, maxDepth, 0).ok()
             cst.copy(content = resolved)(cst.span)
-        }
 
     private def resolveContent(
         content: List[CstTopLevel],
@@ -25,14 +29,11 @@ object IncludeResolver:
         maxDepth: Int,
         depth: Int
     ): Either[PipelineError, List[CstTopLevel]] =
-        content match
-            case Nil => Right(Nil)
-            case head :: tail =>
-                resolveTopLevel(head, baseDir, maxDepth, depth).flatMap { resolved =>
-                    resolveContent(tail, baseDir, maxDepth, depth).map { rest =>
-                        resolved ++ rest
-                    }
-                }
+        either:
+            val buf = mutable.ListBuffer.empty[CstTopLevel]
+            for head <- content do
+                buf ++= resolveTopLevel(head, baseDir, maxDepth, depth).ok()
+            buf.toList
 
     private def resolveTopLevel(
         node: CstTopLevel,
@@ -47,9 +48,9 @@ object IncludeResolver:
             case db: CstDelimitedBlock =>
                 db.content match
                     case nc: CstNestedContent =>
-                        resolveContent(nc.children, baseDir, maxDepth, depth).map { resolved =>
+                        either:
+                            val resolved = resolveContent(nc.children, baseDir, maxDepth, depth).ok()
                             List(db.copy(content = nc.copy(resolved)(nc.span))(db.span))
-                        }
                     case _ => Right(List(db))
 
             case other => Right(List(other))
@@ -60,47 +61,47 @@ object IncludeResolver:
         maxDepth: Int,
         depth: Int
     ): Either[PipelineError, List[CstTopLevel]] =
-        val isOptional =
-            inc.attributes.positional.exists { raw =>
-                raw.split(",").map(_.trim).exists { token =>
-                    if token.contains("=") then
-                        val kv = token.split("=", 2)
-                        kv(0).trim == "opts" && kv(1).trim.split(",").map(_.trim).contains("optional")
-                    else token == "optional"
-                }
-            } ||
-                inc.attributes.named.get("opts").exists(v => v.split(",").map(_.trim).contains("optional"))
-        val targetPath = baseDir / os.SubPath(inc.target)
-        if depth >= maxDepth then
-            Left(
-                PipelineError.ParseError(
-                    s"Include depth limit ($maxDepth) exceeded for: ${inc.target}",
-                    None
-                )
-            )
-        else if !os.exists(targetPath) then
-            if isOptional then Right(Nil)
-            else
-                Left(
-                    PipelineError.ParseError(
-                        s"Include file not found: ${inc.target}",
+        either:
+            val isOptional =
+                inc.attributes.positional.exists { raw =>
+                    raw.split(",").map(_.trim).exists { token =>
+                        if token.contains("=") then
+                            val kv = token.split("=", 2)
+                            kv(0).trim == "opts" && kv(1).trim.split(",").map(_.trim).contains("optional")
+                        else token == "optional"
+                    }
+                } ||
+                    inc.attributes.named.get("opts").exists(v => v.split(",").map(_.trim).contains("optional"))
+            val targetPath = baseDir / os.SubPath(inc.target)
+            if depth >= maxDepth then
+                PipelineError
+                    .ParseError(
+                        s"Include depth limit ($maxDepth) exceeded for: ${inc.target}",
                         None
                     )
-                )
-        else
-            val parentDir = targetPath / os.up
-            readString(targetPath).flatMap { content =>
+                    .fail()
+            if !os.exists(targetPath) then
+                if isOptional then Nil
+                else
+                    PipelineError
+                        .ParseError(
+                            s"Include file not found: ${inc.target}",
+                            None
+                        )
+                        .fail()
+            else
+                val parentDir = targetPath / os.up
+                val content   = readString(targetPath).ok()
                 Ascribe.parseCst(content) match
                     case Success(includedCst) =>
-                        resolveContent(includedCst.content, parentDir, maxDepth, depth + 1)
+                        resolveContent(includedCst.content, parentDir, maxDepth, depth + 1).ok()
                     case Failure(msg) =>
-                        Left(
-                            PipelineError.ParseError(
+                        PipelineError
+                            .ParseError(
                                 s"Failed to parse include file ${inc.target}: $msg",
                                 None
                             )
-                        )
-            }
+                            .fail()
 
     private def readString(path: os.Path): Either[PipelineError, String] =
         try Right(os.read(path))

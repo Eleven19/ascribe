@@ -2,6 +2,8 @@ package io.eleven19.ascribe.pipeline.ox
 
 import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree, TreeNode}
 import io.eleven19.ascribe.pipeline.core.{PipelineError, RewriteRule as CoreRewriteRule}
+import ox.either
+import ox.either.ok
 
 case class Pipeline private (
     source: Source,
@@ -16,27 +18,28 @@ case class Pipeline private (
         copy(renderer = r)
 
     def run: Either[PipelineError, DocumentTree] =
-        source.read.map { tree =>
+        either:
+            val tree         = source.read.ok()
             val composedRule = CoreRewriteRule.compose(rules*)
             DocumentTree(rewriteTreeNode(tree.root, composedRule))
-        }
 
     def runToStrings: Either[PipelineError, Map[DocumentPath, String]] =
-        run.map { tree =>
+        either:
+            val tree = run.ok()
             renderDocList(tree.allDocuments, Map.empty)
-        }
 
     def runToString: Either[PipelineError, String] =
-        run.map { tree =>
+        either:
+            val tree = run.ok()
             tree.allDocuments.headOption match
                 case None         => ""
                 case Some((_, d)) => renderer.render(d)
-        }
 
     def runToTargets(
         targets: (String, Renderer)*
     ): Either[PipelineError, Map[String, Map[DocumentPath, String]]] =
-        run.map { tree =>
+        either:
+            val tree = run.ok()
             val docs = tree.allDocuments
             targets.map { (label, r) =>
                 val rendered = docs.map { (p, d) =>
@@ -44,20 +47,21 @@ case class Pipeline private (
                 }.toMap
                 (label, rendered)
             }.toMap
-        }
 
     def renderAll(
         renderers: Renderer*
     ): Either[PipelineError, List[Map[DocumentPath, String]]] =
-        run.map { tree =>
+        either:
+            val tree = run.ok()
             val docs = tree.allDocuments
             renderers.toList.map { r =>
                 docs.map((p, d) => (p, r.render(d))).toMap
             }
-        }
 
     def runTo(sink: Sink): Either[PipelineError, Unit] =
-        runToStrings.flatMap(sink.write)
+        either:
+            val strings = runToStrings.ok()
+            sink.write(strings).ok()
 
     private def renderDocList(
         docs: List[(DocumentPath, Document)],
