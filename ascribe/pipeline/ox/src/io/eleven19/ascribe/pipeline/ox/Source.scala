@@ -33,7 +33,7 @@ object Source:
                         Ascribe.parse(content) match
                             case parsley.Success(doc) => buf += ((path, doc))
                             case parsley.Failure(msg) =>
-                                fail(PipelineError.ParseError(msg.toString, Some(path)))
+                                fail(PipelineError.ParseError(msg.toString, Some(path)))()
                     DocumentTree.fromDocuments(buf.toList)
 
     def fromDocument(document: Document): Source =
