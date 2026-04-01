@@ -10,12 +10,27 @@ leading `v`.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Documentation
+
+### CI
+
+## [0.4.0-RC.01] - 2026-04-01
+
+### Added
+
 - Implemented full **`ascribe-pipeline-ox`** API parity with `ascribe-pipeline-kyo`: `Pipeline`, `Source`, `Sink`, `FileSource` / `FileSink`, `IncludeResolver`, `AsciiDocRenderer`, `AsgJsonRenderer`, `dsl`, and ZIO tests mirroring the Kyo suite. File and include stages run under Ox `supervised` scopes; results use `Either[PipelineError, *]` instead of Kyo effects.
 - Expanded **`ascribe-pipeline-ox`** tests with edge-case suites: empty trees, parse/sink error propagation, `Source`/`Sink` units, file I/O failure modes (non-directory, empty scan, nested output paths), include depth and parse failures, `OxRuntime` / `PipelineOp`, `dsl` integration, and extra `AsgJsonRenderer` checks.
 
 ### Changed
 
 ### Fixed
+
+- Fixed space-separated roles in link macro `role` attribute: `role="btn primary"` now correctly produces `List(CssRole("btn"), CssRole("primary"))` instead of a single `CssRole("btn primary")`.
+- Fixed missing trailing `()` on `either.fail()` call in `ascribe-pipeline-ox` `Source` to match updated Ox API.
 
 ### Documentation
 
