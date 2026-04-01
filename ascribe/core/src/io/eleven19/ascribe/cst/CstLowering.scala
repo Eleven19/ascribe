@@ -87,7 +87,8 @@ object CstLowering:
                         val wt = WindowTarget(value)
                         la = la.copy(window = Some(wt))
                         if wt == WindowTarget.Blank then la = la.copy(options = la.options + LinkOption.NoOpener)
-                    case "role"  => la = la.copy(roles = la.roles ++ value.split("\\s+").filter(_.nonEmpty).map(CssRole(_)))
+                    case "role" =>
+                        la = la.copy(roles = la.roles ++ value.split("\\s+").filter(_.nonEmpty).map(CssRole(_)))
                     case "id"    => la = la.copy(id = Some(ElementId(value)))
                     case "title" => la = la.copy(title = Some(value))
                     case "opts" =>
