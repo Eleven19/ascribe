@@ -566,6 +566,22 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
                 assertTrue(linkNode.attributes.roles == List(CssRole("btn")))
             },
+            test("space-separated roles produce multiple CssRoles") {
+                val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("role", "btn primary")), false)(u)
+                val cst = CstDocument(
+                    None,
+                    List(
+                        CstParagraph(
+                            List(
+                                CstParagraphLine(List(CstLinkMacro("path", attrList)(u)))(u)
+                            )
+                        )(u)
+                    )
+                )(u)
+                val result   = CstLowering.toAst(cst)
+                val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
+                assertTrue(linkNode.attributes.roles == List(CssRole("btn"), CssRole("primary")))
+            },
             test("opts=nofollow produces NoFollow") {
                 val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("opts", "nofollow")), false)(u)
                 val cst = CstDocument(
