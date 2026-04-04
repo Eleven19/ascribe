@@ -128,7 +128,9 @@ itest.moduleDeps            →  [core.jvm, asg.jvm, bridge.jvm]
 
 ```scala
 // mill-build/src/build/Modules.scala
-trait CommonScalaJSModule extends ScalaJSModule {
+trait CommonScalaTestModule extends ScalaModule with scalafmt.ScalafmtModule
+
+trait CommonScalaJSModule extends ScalaJSModule with scalafmt.ScalafmtModule {
   def scalaJSVersion = "1.18.2"
 }
 ```
