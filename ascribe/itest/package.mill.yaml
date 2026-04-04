@@ -2,7 +2,7 @@ extends: [_root_.build.CommonScalaModule, _root_.build.CommonScalaTestModule, Te
 moduleDeps:
   - build.ascribe.core.jvm
   - build.ascribe.asg.jvm
-  - build.ascribe.bridge
+  - build.ascribe.bridge.jvm
 mvnDeps:
   - org.scalameta::munit::1.0.4
   - io.cucumber::cucumber-scala::8.25.1

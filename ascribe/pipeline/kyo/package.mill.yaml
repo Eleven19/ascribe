@@ -4,6 +4,6 @@ moduleDeps:
   - build.ascribe.pipeline.core
   - build.ascribe.core.jvm
   - build.ascribe.asg.jvm
-  - build.ascribe.bridge
+  - build.ascribe.bridge.jvm
 mvnDeps:
   - io.getkyo::kyo-core::1.0-RC1

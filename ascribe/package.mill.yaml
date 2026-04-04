@@ -6,4 +6,4 @@ moduleDeps:
   - build.ascribe.pipeline.html
   - build.ascribe.pipeline.markdown
   - build.ascribe.asg.jvm
-  - build.ascribe.bridge
+  - build.ascribe.bridge.jvm
