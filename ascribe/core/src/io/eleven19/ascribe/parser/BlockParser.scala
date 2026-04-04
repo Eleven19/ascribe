@@ -664,9 +664,9 @@ object BlockParser:
             .map { case ((s, lines), e) => CstParagraph(lines)(mkSpan(s, e)) }
             .label("paragraph")
 
-    /** Parses a paragraph preceded by block attribute list(s) and/or a block title.
-      * This handles the case where `[.role]` or `.Title` appears before a paragraph.
-      * Uses `atomic` so that if the paragraph lines fail, we backtrack past the attributes.
+    /** Parses a paragraph preceded by block attribute list(s) and/or a block title. This handles the case where
+      * `[.role]` or `.Title` appears before a paragraph. Uses `atomic` so that if the paragraph lines fail, we
+      * backtrack past the attributes.
       */
     val attributedParagraph: Parsley[CstBlock] =
         atomic(
@@ -690,9 +690,9 @@ object BlockParser:
     // Top-level block combinator
     // -----------------------------------------------------------------------
 
-    /** Recognises any one block, trying block types in priority order.
-      * `attributedParagraph` must be tried before delimited blocks that also consume
-      * attribute lists, because `atomic` ensures we backtrack if it's really a delimited block.
+    /** Recognises any one block, trying block types in priority order. `attributedParagraph` must be tried before
+      * delimited blocks that also consume attribute lists, because `atomic` ensures we backtrack if it's really a
+      * delimited block.
       */
     private[parser] val block: Parsley[CstBlock] =
         attributedParagraph |

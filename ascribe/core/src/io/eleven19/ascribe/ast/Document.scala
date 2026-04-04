@@ -173,7 +173,8 @@ case class Paragraph(
     content: InlineContent,
     attributes: Option[AttributeList] = None,
     title: Option[Title] = None
-)(val span: Span) extends Block derives CanEqual
+)(val span: Span)
+    extends Block derives CanEqual
 
 /** A delimited listing block (verbatim code). May have attributes like `[source,ruby]`. */
 case class Listing(
