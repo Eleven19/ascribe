@@ -61,7 +61,7 @@ jobs:
           node-version: "22"
 
       - name: Compile JS modules
-        run: ./mill ascribe.core.js.compile ascribe.asg.js.compile ascribe.bridge.js.compile
+        run: ./mill ascribe.core.js.compile ascribe.asg.js.compile ascribe.bridge.js.compile ascribe.pipeline.core.js.compile ascribe.pipeline.html.js.compile ascribe.pipeline.markdown.js.compile ascribe.pipeline.kyo.js.compile
 
       - name: Run JS tests
-        run: ./mill ascribe.core.js.test ascribe.asg.js.test ascribe.bridge.js.test
+        run: ./mill ascribe.core.js.test ascribe.asg.js.test ascribe.bridge.js.test ascribe.pipeline.kyo.js.test
