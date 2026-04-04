@@ -1,4 +1,0 @@
-extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport, _root_.build.DocSiteSupport]
-artifactName: ascribe-core
-mvnDeps:
-  - com.github.j-mie6::parsley::4.6.2

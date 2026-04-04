@@ -1,0 +1,39 @@
+package build.ascribe.core
+
+import mill.*, scalalib.*, scalajslib.*
+
+trait CoreModule extends _root_.build.CommonScalaModule
+    with PlatformScalaModule
+    with _root_.build.PublishSupport
+    with _root_.build.DocSiteSupport {
+
+    override def artifactName = "ascribe-core"
+
+    def mvnDeps = Seq(
+        mvn"com.github.j-mie6::parsley::4.6.2"
+    )
+}
+
+object jvm extends CoreModule {
+    object test extends ScalaTests
+        with _root_.build.CommonScalaTestModule
+        with TestModule.ZioTest {
+
+        def mvnDeps = Seq(
+            mvn"dev.zio::zio-test::2.1.24",
+            mvn"dev.zio::zio-test-sbt::2.1.24"
+        )
+    }
+}
+
+object js extends CoreModule with _root_.build.CommonScalaJSModule {
+    object test extends ScalaJSTests
+        with _root_.build.CommonScalaTestModule
+        with TestModule.ZioTest {
+
+        def mvnDeps = Seq(
+            mvn"dev.zio::zio-test::2.1.24",
+            mvn"dev.zio::zio-test-sbt::2.1.24"
+        )
+    }
+}

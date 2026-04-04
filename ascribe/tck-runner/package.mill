@@ -5,7 +5,7 @@ import mill.scalalib.*
 
 object `package` extends _root_.build.CommonScalaModule with _root_.build.TckSubmoduleSupport {
 
-  def moduleDeps = Seq(build.ascribe.core, build.ascribe.asg, build.ascribe.bridge)
+  def moduleDeps = Seq(build.ascribe.core.jvm, build.ascribe.asg, build.ascribe.bridge)
 
   def tckRefresh() = Task.Command {
     val syncResult = tckSync()()

@@ -25,7 +25,7 @@ trait CommonScalaModule extends ScalaModule with scalafmt.ScalafmtModule {
 trait CommonScalaTestModule extends ScalaModule with scalafmt.ScalafmtModule
 
 trait CommonScalaJSModule extends ScalaJSModule with scalafmt.ScalafmtModule {
-  def scalaJSVersion = "1.18.2"
+  def scalaJSVersion = "1.20.1"
 }
 
 /** Groups `ascribe/pipeline/{core,html,...}` so Mill discovers `ascribe.pipeline.*` children. */

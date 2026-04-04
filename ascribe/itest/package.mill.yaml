@@ -1,6 +1,6 @@
 extends: [_root_.build.CommonScalaModule, _root_.build.CommonScalaTestModule, TestModule.Junit5]
 moduleDeps:
-  - build.ascribe.core
+  - build.ascribe.core.jvm
   - build.ascribe.asg
   - build.ascribe.bridge
 mvnDeps:

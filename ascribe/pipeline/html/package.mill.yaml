@@ -2,6 +2,6 @@ extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
 artifactName: ascribe-pipeline-html
 moduleDeps:
   - build.ascribe.pipeline.core
-  - build.ascribe.core
+  - build.ascribe.core.jvm
 mvnDeps:
   - com.lihaoyi::scalatags::0.13.1
