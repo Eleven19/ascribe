@@ -44,9 +44,12 @@ jobs:
 
   build-js:
     name: Build & Test (Scala.js)
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: actions/setup-java@v4
         with:

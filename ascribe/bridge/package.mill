@@ -11,7 +11,7 @@ object jvm extends BridgeModule {
 
     object test extends ScalaTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.Junit4 {
+        with TestModule.Munit {
 
         def mvnDeps = Seq(
             mvn"org.scalameta::munit::1.0.4"
@@ -24,7 +24,7 @@ object js extends BridgeModule with _root_.build.CommonScalaJSModule {
 
     object test extends ScalaJSTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.Junit4 {
+        with TestModule.Munit {
 
         def mvnDeps = Seq(
             mvn"org.scalameta::munit::1.0.4"

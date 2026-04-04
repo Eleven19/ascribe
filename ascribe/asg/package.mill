@@ -14,7 +14,7 @@ trait AsgModule extends _root_.build.CommonScalaModule
 object jvm extends AsgModule {
     object test extends ScalaTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.Junit4 {
+        with TestModule.Munit {
 
         def mvnDeps = Seq(
             mvn"org.scalameta::munit::1.0.4"
@@ -25,10 +25,11 @@ object jvm extends AsgModule {
 object js extends AsgModule with _root_.build.CommonScalaJSModule {
     object test extends ScalaJSTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.Junit4 {
+        with TestModule.Munit {
 
         def mvnDeps = Seq(
-            mvn"org.scalameta::munit::1.0.4"
+            mvn"org.scalameta::munit::1.0.4",
+            mvn"io.github.cquiroz::scala-java-time::2.6.0"
         )
     }
 }
