@@ -3,7 +3,7 @@ artifactName: ascribe-pipeline-ox
 moduleDeps:
   - build.ascribe.pipeline.core
   - build.ascribe.core.jvm
-  - build.ascribe.asg
+  - build.ascribe.asg.jvm
   - build.ascribe.bridge
 mvnDeps:
   - com.lihaoyi::os-lib::0.11.8
