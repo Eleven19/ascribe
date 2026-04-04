@@ -1,0 +1,47 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "inlines": [
+        {
+          "name": "text",
+          "value": "This is a simple paragraph.",
+          "location": [
+            {
+              "line": 1,
+              "col": 1
+            },
+            {
+              "line": 1,
+              "col": 27
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 1,
+          "col": 27
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 1,
+      "col": 27
+    }
+  ],
+  "type": "block"
+}

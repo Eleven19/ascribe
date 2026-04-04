@@ -32,7 +32,7 @@ object AscribeSpec extends ZIOSpecDefault:
                 Ascribe.parse(src) match
                     case Success(doc) =>
                         val texts = doc.blocks.flatMap {
-                            case Paragraph(content) => content.collect { case Text(c) => c }
+                            case Paragraph(content, _, _) => content.collect { case Text(c) => c }
                             case _                  => Nil
                         }
                         assertTrue(texts.contains("2.0"))
@@ -43,7 +43,7 @@ object AscribeSpec extends ZIOSpecDefault:
                 Ascribe.parse(src) match
                     case Success(doc) =>
                         val texts = doc.blocks.flatMap {
-                            case Paragraph(content) => content.collect { case Text(c) => c }
+                            case Paragraph(content, _, _) => content.collect { case Text(c) => c }
                             case _                  => Nil
                         }
                         assertTrue(texts.contains("Hello"))

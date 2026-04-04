@@ -40,8 +40,11 @@ case class CstHeading(
 
 case class CstParagraph(
     lines: List[CstParagraphLine]
-)(val span: Span)
-    extends CstBlock derives CanEqual
+)(
+    val span: Span,
+    val attributes: Option[CstAttributeList] = None,
+    val title: Option[CstBlockTitle] = None
+) extends CstBlock derives CanEqual
 
 case class CstParagraphLine(
     content: List[CstInline]

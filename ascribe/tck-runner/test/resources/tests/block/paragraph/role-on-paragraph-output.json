@@ -1,0 +1,50 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "metadata": {
+        "roles": ["lead"]
+      },
+      "inlines": [
+        {
+          "name": "text",
+          "value": "This is a lead paragraph.",
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 25
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 2,
+          "col": 25
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 2,
+      "col": 25
+    }
+  ],
+  "type": "block"
+}

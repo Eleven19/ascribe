@@ -101,7 +101,7 @@ object CstVisitor:
         case d: CstDocument             => d.header.toList ++ d.content
         case dh: CstDocumentHeader      => List(dh.title) ++ dh.attributes
         case h: CstHeading              => h.title
-        case p: CstParagraph            => p.lines
+        case p: CstParagraph            => p.attributes.toList ++ p.title.toList ++ p.lines
         case pl: CstParagraphLine       => pl.content
         case db: CstDelimitedBlock      => db.attributes.toList ++ db.title.toList ++ List(db.content)
         case _: CstVerbatimContent      => Nil

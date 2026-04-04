@@ -42,9 +42,19 @@ object AstToAsg:
                 blocks = Chunk.from(blocks.flatMap(convertBlockOpt)),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
-        case ast.Paragraph(content) =>
+        case ast.Paragraph(content, attrsOpt, titleOpt) =>
             val converted = mergeAdjacentTexts(content.map(convertInline))
+            val title    = titleOpt.map(t => Chunk.from(t.content.map(convertInline)))
+            val metadata = attrsOpt.map(al =>
+                asg.BlockMetadata(
+                    attributes = al.named.map((k, v) => (k.value, v.value)),
+                    options = Chunk.from(al.options.map(_.value)),
+                    roles = Chunk.from(al.roles.map(_.value))
+                )
+            )
             asg.Paragraph(
+                title = title,
+                metadata = metadata,
                 inlines = Chunk.from(converted),
                 location = contentLocation(block.span.start, lastContentPos(block))
             )
@@ -192,7 +202,7 @@ object AstToAsg:
             // Verse masquerading: [verse] on quote block
             if style.contains("verse") then
                 val verbatimContent = blocks.flatMap {
-                    case ast.Paragraph(content) => content.map(convertInline)
+                    case ast.Paragraph(content, _, _) => content.map(convertInline)
                     case _                      => Nil
                 }
                 asg.Verse(

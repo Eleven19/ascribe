@@ -3,8 +3,8 @@ package io.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstBlock}
-import io.eleven19.ascribe.parser.BlockParser.{admonitionParagraphBlock, attributeEntryBlock}
+import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstBlock, CstParagraph}
+import io.eleven19.ascribe.parser.BlockParser.{admonitionParagraphBlock, attributeEntryBlock, attributedParagraph, attributeListLine, block}
 
 object BlockParserSpec extends ZIOSpecDefault:
     private def parse(input: String) = attributeEntryBlock.parse(input)
@@ -42,6 +42,31 @@ object BlockParserSpec extends ZIOSpecDefault:
                 admonitionParagraphBlock.parse("NOTE something\n") match
                     case Failure(_) => assertTrue(true)
                     case Success(r) => assertTrue(s"should have failed, got: $r" == "")
+            }
+        ),
+        suite("attributedParagraph")(
+            test("parses [.lead] followed by paragraph text") {
+                attributedParagraph.parse("[.lead]\nThis is a lead paragraph.\n") match
+                    case Success(p: CstParagraph) =>
+                        assertTrue(p.attributes.isDefined) &&
+                        assertTrue(p.attributes.get.roles == List("lead")) &&
+                        assertTrue(p.lines.nonEmpty)
+                    case Success(other) => assertTrue(s"unexpected: $other" == "")
+                    case Failure(msg)   => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("attributeListLine parses [.lead]") {
+                attributeListLine.parse("[.lead]\n") match
+                    case Success(al) =>
+                        assertTrue(al.roles == List("lead"))
+                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+            },
+            test("block parses [.lead] + paragraph") {
+                block.parse("[.lead]\nThis is a lead paragraph.\n") match
+                    case Success(p: CstParagraph) =>
+                        assertTrue(p.attributes.isDefined) &&
+                        assertTrue(p.attributes.get.roles == List("lead"))
+                    case Success(other) => assertTrue(s"unexpected type: ${other.getClass.getSimpleName}" == "")
+                    case Failure(msg)   => assertTrue(s"Expected Success but got: $msg" == "")
             }
         ),
         suite("attributeEntryBlock")(
