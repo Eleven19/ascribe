@@ -124,9 +124,9 @@ object CstLowering:
             case CstHeading(level, _, title) =>
                 Some(Heading(level, lowerInlines(title))(block.span))
 
-            case CstParagraph(lines) =>
-                val content = lines.flatMap(line => lowerInlines(line.content))
-                Some(Paragraph(content)(block.span))
+            case p: CstParagraph =>
+                val content = p.lines.flatMap(line => lowerInlines(line.content))
+                Some(Paragraph(content, p.attributes.map(lowerAttrList), p.title.map(lowerBlockTitle))(block.span))
 
             case CstDelimitedBlock(DelimitedBlockKind.Comment, _, _, _, _) =>
                 None

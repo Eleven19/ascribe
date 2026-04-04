@@ -95,7 +95,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     Then("""^block (\d+) is a paragraph containing the text "(.+)"$""") { (idx: Int, expected: String) =>
         val block = getBlock(idx)
         block match
-            case Paragraph(inlines) =>
+            case Paragraph(inlines, _, _) =>
                 val text = inlinesToText(inlines)
                 assert(
                     text.contains(expected),
@@ -187,7 +187,7 @@ class AsciiDocParserSteps extends ScalaDsl with EN:
     ): Unit =
         val block = getBlock(idx)
         block match
-            case Paragraph(inlines) =>
+            case Paragraph(inlines, _, _) =>
                 val found = inlines.collectFirst(extract)
                 val text = found.getOrElse(
                     throw new AssertionError(

@@ -1,0 +1,47 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "inlines": [
+        {
+          "name": "text",
+          "value": "First line of the paragraph.\nSecond line of the paragraph.",
+          "location": [
+            {
+              "line": 1,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 29
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 2,
+          "col": 29
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 2,
+      "col": 29
+    }
+  ],
+  "type": "block"
+}

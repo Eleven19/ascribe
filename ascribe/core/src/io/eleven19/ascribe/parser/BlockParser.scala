@@ -664,13 +664,39 @@ object BlockParser:
             .map { case ((s, lines), e) => CstParagraph(lines)(mkSpan(s, e)) }
             .label("paragraph")
 
+    /** Parses a paragraph preceded by block attribute list(s) and/or a block title. This handles the case where
+      * `[.role]` or `.Title` appears before a paragraph. Uses `atomic` so that if the paragraph lines fail, we
+      * backtrack past the attributes.
+      */
+    val attributedParagraph: Parsley[CstBlock] =
+        atomic(
+            pos <~> option(atomic(blockTitle)) <~>
+                some(attributeListLine).map(als =>
+                    als.tail.foldLeft(als.head)((acc, al) =>
+                        CstAttributeList(
+                            acc.positional ++ al.positional,
+                            acc.named ++ al.named,
+                            acc.options ++ al.options,
+                            acc.roles ++ al.roles
+                        )(AstSpan(acc.span.start, al.span.end))
+                    )
+                ) <~>
+                some(cstParagraphLine).map(_.toList) <~> pos
+        ).map { case ((((s, title), attrs), lines), e) =>
+            CstParagraph(lines)(mkSpan(s, e), Some(attrs), title)
+        }.label("attributed paragraph")
+
     // -----------------------------------------------------------------------
     // Top-level block combinator
     // -----------------------------------------------------------------------
 
-    /** Recognises any one block, trying block types in priority order. */
+    /** Recognises any one block, trying block types in priority order. `attributedParagraph` must be tried before
+      * delimited blocks that also consume attribute lists, because `atomic` ensures we backtrack if it's really a
+      * delimited block.
+      */
     private[parser] val block: Parsley[CstBlock] =
-        listingBlock | literalBlock | commentBlock | passBlock |
+        attributedParagraph |
+            listingBlock | literalBlock | commentBlock | passBlock |
             sidebarBlock | exampleBlock | quoteBlock | openBlock |
             tableBlock | heading | unorderedList | orderedList |
             lineCommentBlock | includeDirective | attributeEntryBlock |

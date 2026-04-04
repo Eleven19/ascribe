@@ -57,8 +57,8 @@ object RewriteRule:
         block match
             case s @ Section(level, title, blocks) =>
                 Some(Section(level, rewriteInlines(title, rule), rewriteBlocks(blocks, rule))(s.span))
-            case p @ Paragraph(content) =>
-                Some(Paragraph(rewriteInlines(content, rule))(p.span))
+            case p @ Paragraph(content, attrs, title) =>
+                Some(Paragraph(rewriteInlines(content, rule), attrs, title)(p.span))
             case sb @ Sidebar(delim, blocks, attrs, title) =>
                 Some(Sidebar(delim, rewriteBlocks(blocks, rule), attrs, title)(sb.span))
             case ex @ Example(delim, blocks, attrs, title) =>

@@ -41,7 +41,7 @@ object AsciiDocRenderer extends Renderer:
                 sb.append('\n'): Unit
                 renderBlocks(blocks, sb)
 
-        case Paragraph(content) =>
+        case Paragraph(content, _, _) =>
             sb.append(renderInlines(content)).append('\n'): Unit
 
         case Listing(delimiter, content, attrs, title) =>
@@ -113,7 +113,7 @@ object AsciiDocRenderer extends Renderer:
         case Admonition(kind, blocks) =>
             val label = kind.toString.toUpperCase
             blocks match
-                case List(Paragraph(content)) =>
+                case List(Paragraph(content, _, _)) =>
                     sb.append(label).append(": ").append(renderInlines(content)).append('\n'): Unit
                 case _ =>
                     sb.append(label).append(":\n"): Unit
