@@ -2,6 +2,7 @@ package build
 
 import mill.*
 import mill.scalalib.*
+import mill.scalajslib.*
 
 trait CommonScalaModule extends ScalaModule with scalafmt.ScalafmtModule {
   override def scalaVersion = Task {
@@ -21,7 +22,11 @@ trait CommonScalaModule extends ScalaModule with scalafmt.ScalafmtModule {
   }
 }
 
-trait CommonScalaTestModule extends ScalaModule
+trait CommonScalaTestModule extends ScalaModule with scalafmt.ScalafmtModule
+
+trait CommonScalaJSModule extends ScalaJSModule with scalafmt.ScalafmtModule {
+  def scalaJSVersion = "1.20.1"
+}
 
 /** Groups `ascribe/pipeline/{core,html,...}` so Mill discovers `ascribe.pipeline.*` children. */
 trait PipelineContainerModule extends Module

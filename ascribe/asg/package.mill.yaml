@@ -1,3 +1,0 @@
-extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
-mvnDeps:
-  - dev.zio::zio-blocks-schema::0.0.29

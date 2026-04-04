@@ -1,4 +1,0 @@
-extends: [_root_.build.CommonScalaModule, _root_.build.PublishSupport]
-moduleDeps:
-  - build.ascribe.core
-  - build.ascribe.asg
