@@ -34,7 +34,7 @@ Enable ascribe's parser and ASG to run in the browser, be consumed by Scala.js d
 ### Additional Changes
 
 - Mill upgrade: 1.1.3 → 1.1.5
-- Scala.js version: 1.18.2
+- Scala.js version: 1.20.1 (required for Scala 3.8.2 compatibility)
 
 ## Architecture
 
