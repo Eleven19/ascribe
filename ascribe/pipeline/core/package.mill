@@ -1,0 +1,18 @@
+package build.ascribe.pipeline.core
+
+import mill.*, scalalib.*, scalajslib.*
+
+trait PipelineCoreModule extends _root_.build.CommonScalaModule
+    with PlatformScalaModule
+    with _root_.build.PublishSupport {
+
+    override def artifactName = "ascribe-pipeline-core"
+}
+
+object jvm extends PipelineCoreModule {
+    def moduleDeps = Seq(build.ascribe.core.jvm)
+}
+
+object js extends PipelineCoreModule with _root_.build.CommonScalaJSModule {
+    def moduleDeps = Seq(build.ascribe.core.js)
+}
