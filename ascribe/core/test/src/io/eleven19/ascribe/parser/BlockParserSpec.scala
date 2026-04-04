@@ -3,11 +3,14 @@ package io.eleven19.ascribe.parser
 import parsley.{Failure, Success}
 import zio.test.*
 
-import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstBlock, CstDelimitedBlock, CstParagraph}
+import io.eleven19.ascribe.cst.{CstAdmonitionParagraph, CstAttributeEntry, CstBlock, CstDelimitedBlock, CstParagraph, CstText}
 import io.eleven19.ascribe.parser.BlockParser.{admonitionParagraphBlock, attributeEntryBlock, attributedParagraph, attributeListLine, block}
 
 object BlockParserSpec extends ZIOSpecDefault:
     private def parse(input: String) = attributeEntryBlock.parse(input)
+
+    private def titleText(p: CstParagraph): String =
+        p.title.map(_.content.collect { case CstText(c) => c }.mkString).getOrElse("")
 
     def spec = suite("BlockParser")(
         suite("admonitionParagraphBlock")(
@@ -72,8 +75,7 @@ object BlockParserSpec extends ZIOSpecDefault:
                 attributedParagraph.parse("[.role1]\n[.role2]\nMulti-role paragraph.\n") match
                     case Success(p: CstParagraph) =>
                         val roles = p.attributes.map(_.roles).getOrElse(Nil)
-                        assertTrue(roles.contains("role1")) &&
-                        assertTrue(roles.contains("role2")) &&
+                        assertTrue(roles == List("role1", "role2")) &&
                         assertTrue(p.lines.nonEmpty)
                     case Success(other) => assertTrue(s"unexpected: $other" == "")
                     case Failure(msg)   => assertTrue(s"Expected Success but got: $msg" == "")
@@ -98,6 +100,7 @@ object BlockParserSpec extends ZIOSpecDefault:
                 attributedParagraph.parse(".My Title\n[.lead]\nParagraph text.\n") match
                     case Success(p: CstParagraph) =>
                         assertTrue(p.title.isDefined) &&
+                        assertTrue(titleText(p) == "My Title") &&
                         assertTrue(p.attributes.isDefined) &&
                         assertTrue(p.attributes.get.roles == List("lead")) &&
                         assertTrue(p.lines.nonEmpty)
