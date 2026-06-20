@@ -69,6 +69,10 @@ object CstLowering:
                 Link(LinkVariant.Macro(MacroKind.Link), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(
                     inline.span
                 )
+            case CstXrefMacro(target, attrList) =>
+                Link(LinkVariant.Macro(MacroKind.Xref), target, lowerInlines(attrList.text), lowerMacroAttrs(attrList))(
+                    inline.span
+                )
             case CstMailtoMacro(target, attrList) =>
                 Link(
                     LinkVariant.Macro(MacroKind.MailTo),

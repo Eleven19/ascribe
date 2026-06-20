@@ -204,6 +204,8 @@ case class CstLinkMacro(target: String, attrList: CstMacroAttrList)(val span: Sp
 
 case class CstMailtoMacro(target: String, attrList: CstMacroAttrList)(val span: Span) extends CstLink derives CanEqual
 
+case class CstXrefMacro(target: String, attrList: CstMacroAttrList)(val span: Span) extends CstLink derives CanEqual
+
 // ── Table sub-nodes ───────────────────────────────────────────────────────────
 
 case class CstTableRow(

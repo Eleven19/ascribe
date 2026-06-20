@@ -47,6 +47,7 @@ trait CstVisitor[A]:
     def visitUrlMacro(node: CstUrlMacro): A         = visitLink(node)
     def visitLinkMacro(node: CstLinkMacro): A       = visitLink(node)
     def visitMailtoMacro(node: CstMailtoMacro): A   = visitLink(node)
+    def visitXrefMacro(node: CstXrefMacro): A       = visitLink(node)
 
     def visitMacroAttrList(node: CstMacroAttrList): A     = visitNode(node)
     def visitVerbatimContent(node: CstVerbatimContent): A = visitNode(node)
@@ -90,6 +91,7 @@ object CstVisitor:
         case n: CstUrlMacro            => visitor.visitUrlMacro(n)
         case n: CstLinkMacro           => visitor.visitLinkMacro(n)
         case n: CstMailtoMacro         => visitor.visitMailtoMacro(n)
+        case n: CstXrefMacro           => visitor.visitXrefMacro(n)
         case n: CstMacroAttrList       => visitor.visitMacroAttrList(n)
         case n: CstVerbatimContent     => visitor.visitVerbatimContent(n)
         case n: CstNestedContent       => visitor.visitNestedContent(n)
@@ -130,6 +132,7 @@ object CstVisitor:
         case n: CstUrlMacro             => List(n.attrList)
         case n: CstLinkMacro            => List(n.attrList)
         case n: CstMailtoMacro          => List(n.attrList)
+        case n: CstXrefMacro            => List(n.attrList)
 
     /** Pre-order left fold: visits each node before its children, accumulating left-to-right. Stack-safe via
       * trampolining.

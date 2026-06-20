@@ -45,6 +45,9 @@ enum MacroKind derives CanEqual:
     /** Explicit link macro: `link:target[text]` */
     case Link
 
+    /** Cross-reference macro: `xref:target[text]` */
+    case Xref
+
     /** Mailto macro: `mailto:user@host[text]` */
     case MailTo
 

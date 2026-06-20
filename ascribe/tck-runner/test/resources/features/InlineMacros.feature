@@ -10,3 +10,5 @@ Feature: Inline - Macros (Links and URLs)
       | link-macro-simple | ascribe/tck-runner/test/resources/tests/inline/macros/link-macro/simple-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/link-macro/simple-output.json |
       | http-link-basic | ascribe/tck-runner/test/resources/tests/inline/macros/http-link/basic-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/http-link/basic-output.json |
       | mailto-link-basic | ascribe/tck-runner/test/resources/tests/inline/macros/mailto-link/basic-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/mailto-link/basic-output.json |
+      | xref-basic | ascribe/tck-runner/test/resources/tests/inline/macros/xref/basic-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/xref/basic-output.json |
+      | xref-with-text | ascribe/tck-runner/test/resources/tests/inline/macros/xref/with-text-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/xref/with-text-output.json |

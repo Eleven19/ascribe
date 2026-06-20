@@ -399,11 +399,14 @@ object AstToAsg:
                 location = inclusiveLocation(inline.span)
             )
         case ast.Link(variant, target, text, _) =>
+            val asgVariant = variant match
+                case ast.LinkVariant.Macro(ast.MacroKind.Xref) => "xref"
+                case _                                          => "link"
             val asgTarget = variant match
                 case ast.LinkVariant.Macro(ast.MacroKind.MailTo) => "mailto:" + target
                 case _                                           => target
             asg.Ref(
-                variant = "link",
+                variant = asgVariant,
                 target = asgTarget,
                 inlines = Chunk.from(text.map(convertInline)),
                 location = inclusiveLocation(inline.span)

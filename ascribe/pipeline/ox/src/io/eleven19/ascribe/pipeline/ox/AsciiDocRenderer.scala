@@ -156,6 +156,8 @@ object AsciiDocRenderer extends Renderer:
         case Link(LinkVariant.Auto, target, _, _) => target
         case Link(LinkVariant.Macro(MacroKind.Link), target, text, attrs) =>
             s"link:$target[${renderLinkBracketContent(text, attrs)}]"
+        case Link(LinkVariant.Macro(MacroKind.Xref), target, text, attrs) =>
+            s"xref:$target[${renderLinkBracketContent(text, attrs)}]"
         case Link(LinkVariant.Macro(MacroKind.MailTo), target, text, attrs) =>
             s"mailto:$target[${renderLinkBracketContent(text, attrs)}]"
         case Link(LinkVariant.Macro(MacroKind.Url(_)), target, text, attrs) =>

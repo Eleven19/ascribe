@@ -201,6 +201,12 @@ object CstRenderer:
             sb.append('[')
             renderMacroAttrList(attrList, sb)
             sb.append(']')
+        case CstXrefMacro(target, attrList) =>
+            sb.append("xref:")
+            sb.append(target)
+            sb.append('[')
+            renderMacroAttrList(attrList, sb)
+            sb.append(']')
 
     private def renderMacroAttrList(attrList: CstMacroAttrList, sb: StringBuilder): Unit =
         val hasStructuredAttrs = attrList.positional.nonEmpty || attrList.named.nonEmpty
