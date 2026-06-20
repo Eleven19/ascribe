@@ -1,109 +1,109 @@
 package io.eleven19.ascribe.cst
 
 import parsley.{Failure, Success}
-import zio.test.*
+import kyo.test.*
 
 import io.eleven19.ascribe.Ascribe
 
-object CstParserSpec extends ZIOSpecDefault:
+class CstParserSpec extends Test[Any]:
 
     private def parseCst(input: String) = Ascribe.parseCst(input)
 
-    def spec = suite("CstParser")(
-        suite("blank lines preserved")(
-            test("blank line between paragraphs is a CstBlankLine node") {
+    "CstParser" - {
+        "blank lines preserved" - {
+            "blank line between paragraphs is a CstBlankLine node" in {
                 parseCst("Para one.\n\nPara two.\n") match
                     case Success(doc) =>
                         val hasBlankLine = doc.content.exists(_.isInstanceOf[CstBlankLine])
-                        assertTrue(hasBlankLine)
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
-            },
-            test("content order: para, blank, para") {
+                        assert(hasBlankLine)
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
+            }
+            "content order: para, blank, para" in {
                 parseCst("A.\n\nB.\n") match
                     case Success(doc) =>
-                        assertTrue(doc.content.length == 3) &&
-                        assertTrue(doc.content(0).isInstanceOf[CstParagraph]) &&
-                        assertTrue(doc.content(1).isInstanceOf[CstBlankLine]) &&
-                        assertTrue(doc.content(2).isInstanceOf[CstParagraph])
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(doc.content.length == 3)
+                        assert(doc.content(0).isInstanceOf[CstParagraph])
+                        assert(doc.content(1).isInstanceOf[CstBlankLine])
+                        assert(doc.content(2).isInstanceOf[CstParagraph])
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        ),
-        suite("line comments")(
-            test("single-line comment becomes CstLineComment node") {
+        }
+        "line comments" - {
+            "single-line comment becomes CstLineComment node" in {
                 parseCst("// This is a comment\nPara.\n") match
                     case Success(doc) =>
                         val comment = doc.content.collectFirst { case c: CstLineComment => c }
-                        assertTrue(comment.isDefined) &&
-                        assertTrue(comment.get.content.contains("This is a comment"))
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(comment.isDefined)
+                        assert(comment.get.content.contains("This is a comment"))
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        ),
-        suite("include directives")(
-            test("include directive becomes CstInclude node (not resolved at parse time)") {
+        }
+        "include directives" - {
+            "include directive becomes CstInclude node (not resolved at parse time)" in {
                 parseCst("include::partial.adoc[]\n") match
                     case Success(doc) =>
                         val inc = doc.content.collectFirst { case i: CstInclude => i }
-                        assertTrue(inc.isDefined) &&
-                        assertTrue(inc.get.target == "partial.adoc")
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
-            },
-            test("include with opts=optional attribute") {
+                        assert(inc.isDefined)
+                        assert(inc.get.target == "partial.adoc")
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
+            }
+            "include with opts=optional attribute" in {
                 parseCst("include::file.adoc[opts=optional]\n") match
                     case Success(doc) =>
                         val inc = doc.content.collectFirst { case i: CstInclude => i }
-                        assertTrue(inc.isDefined) &&
-                        assertTrue(inc.get.target == "file.adoc")
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(inc.isDefined)
+                        assert(inc.get.target == "file.adoc")
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        ),
-        suite("paragraph lines")(
-            test("multi-line paragraph preserves individual CstParagraphLine nodes") {
+        }
+        "paragraph lines" - {
+            "multi-line paragraph preserves individual CstParagraphLine nodes" in {
                 parseCst("Line one.\nLine two.\nLine three.\n") match
                     case Success(doc) =>
                         val para = doc.content.collectFirst { case p: CstParagraph => p }
-                        assertTrue(para.isDefined) &&
-                        assertTrue(para.get.lines.length == 3)
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(para.isDefined)
+                        assert(para.get.lines.length == 3)
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        ),
-        suite("attribute entries")(
-            test("body attribute entry becomes CstAttributeEntry node") {
+        }
+        "attribute entries" - {
+            "body attribute entry becomes CstAttributeEntry node" in {
                 parseCst(":my-attr: some value\nPara.\n") match
                     case Success(doc) =>
                         val entry = doc.content.collectFirst { case e: CstAttributeEntry => e }
-                        assertTrue(entry.isDefined) &&
-                        assertTrue(entry.get.name == "my-attr") &&
-                        assertTrue(entry.get.value == "some value")
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(entry.isDefined)
+                        assert(entry.get.name == "my-attr")
+                        assert(entry.get.value == "some value")
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        ),
-        suite("document header")(
-            test("document header captures title as CstHeading") {
+        }
+        "document header" - {
+            "document header captures title as CstHeading" in {
                 parseCst("= My Document\n\nParagraph.\n") match
                     case Success(doc) =>
-                        assertTrue(doc.header.isDefined) &&
-                        assertTrue(doc.header.get.title.level == 1) &&
-                        assertTrue(doc.header.get.title.marker == "=")
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
-            },
-            test("document header captures attribute entries") {
+                        assert(doc.header.isDefined)
+                        assert(doc.header.get.title.level == 1)
+                        assert(doc.header.get.title.marker == "=")
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
+            }
+            "document header captures attribute entries" in {
                 parseCst("= Title\n:author: Jane\n:version: 1.0\n\nParagraph.\n") match
                     case Success(doc) =>
-                        assertTrue(doc.header.isDefined) &&
-                        assertTrue(doc.header.get.attributes.length == 2) &&
-                        assertTrue(doc.header.get.attributes.exists(_.name == "author"))
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(doc.header.isDefined)
+                        assert(doc.header.get.attributes.length == 2)
+                        assert(doc.header.get.attributes.exists(_.name == "author"))
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        ),
-        suite("headings")(
-            test("heading preserves marker string") {
+        }
+        "headings" - {
+            "heading preserves marker string" in {
                 parseCst("== Section Title\n") match
                     case Success(doc) =>
                         val h = doc.content.collectFirst { case h: CstHeading => h }
-                        assertTrue(h.isDefined) &&
-                        assertTrue(h.get.marker == "==") &&
-                        assertTrue(h.get.level == 2)
-                    case Failure(msg) => assertTrue(s"Expected Success but got: $msg" == "")
+                        assert(h.isDefined)
+                        assert(h.get.marker == "==")
+                        assert(h.get.level == 2)
+                    case Failure(msg) => assert(s"Expected Success but got: $msg" == "")
             }
-        )
-    )
+        }
+    }

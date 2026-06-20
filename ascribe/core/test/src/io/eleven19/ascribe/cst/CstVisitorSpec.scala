@@ -1,22 +1,22 @@
 package io.eleven19.ascribe.cst
 
-import zio.test.*
+import kyo.test.*
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.Span
 import io.eleven19.ascribe.cst.CstMacroAttrList
 import parsley.Success
 
-object CstVisitorSpec extends ZIOSpecDefault:
+class CstVisitorSpec extends Test[Any]:
 
-    def spec = suite("CstVisitor")(
-        test("count counts all nodes") {
+    "CstVisitor" - {
+        "count counts all nodes" in {
             Ascribe.parseCst("= Title\n\n// comment\n\nPara.\n") match
                 case Success(doc) =>
                     val n = doc.count
-                    assertTrue(n > 5) // document + header + heading + blank + comment + blank + paragraph + line + text
-                case _ => assertTrue(false)
-        },
-        test("foldLeft visits all nodes pre-order") {
+                    assert(n > 5) // document + header + heading + blank + comment + blank + paragraph + line + text
+                case _ => assert(false)
+        }
+        "foldLeft visits all nodes pre-order" in {
             Ascribe.parseCst("Para one.\n") match
                 case Success(doc) =>
                     val types = doc
@@ -24,63 +24,63 @@ object CstVisitorSpec extends ZIOSpecDefault:
                             n.getClass.getSimpleName :: acc
                         }
                         .reverse
-                    assertTrue(types.head == "CstDocument")
-                case _ => assertTrue(false)
-        },
-        test("collect extracts CstText values") {
+                    assert(types.head == "CstDocument")
+                case _ => assert(false)
+        }
+        "collect extracts CstText values" in {
             Ascribe.parseCst("Hello **world**.\n") match
                 case Success(doc) =>
                     val texts = doc.collect { case t: CstText => t.content }
-                    assertTrue(texts.contains("Hello ")) &&
-                    assertTrue(texts.contains("world"))
-                case _ => assertTrue(false)
-        },
-        test("collect finds CstLineComment nodes") {
+                    assert(texts.contains("Hello "))
+                    assert(texts.contains("world"))
+                case _ => assert(false)
+        }
+        "collect finds CstLineComment nodes" in {
             Ascribe.parseCst("// comment here\nPara.\n") match
                 case Success(doc) =>
                     val comments = doc.collect { case c: CstLineComment => c.content }
-                    assertTrue(comments.nonEmpty)
-                case _ => assertTrue(false)
-        },
-        test("count returns 1 for a leaf node") {
+                    assert(comments.nonEmpty)
+                case _ => assert(false)
+        }
+        "count returns 1 for a leaf node" in {
             val t = CstText("hello")(Span.unknown)
-            assertTrue(t.count == 1)
-        },
-        test("collect finds CstAttributeRef nodes") {
+            assert(t.count == 1)
+        }
+        "collect finds CstAttributeRef nodes" in {
             Ascribe.parseCst("{version} text\n") match
                 case Success(doc) =>
                     val refs = doc.collect { case r: CstAttributeRef => r.name }
-                    assertTrue(refs == List("version"))
-                case _ => assertTrue(false)
-        },
-        test("count includes CstAttributeRef in total") {
+                    assert(refs == List("version"))
+                case _ => assert(false)
+        }
+        "count includes CstAttributeRef in total" in {
             Ascribe.parseCst("{x}\n") match
                 case Success(doc) =>
-                    assertTrue(doc.count > 3) // document + paragraph + line + ref
-                case _ => assertTrue(false)
-        },
-        test("collect finds CstAdmonitionParagraph nodes") {
+                    assert(doc.count > 3) // document + paragraph + line + ref
+                case _ => assert(false)
+        }
+        "collect finds CstAdmonitionParagraph nodes" in {
             Ascribe.parseCst("NOTE: Watch out.\n") match
                 case Success(doc) =>
                     val kinds = doc.collect { case a: CstAdmonitionParagraph => a.kind }
-                    assertTrue(kinds == List("NOTE"))
-                case _ => assertTrue(false)
-        },
-        test("collect finds CstLink nodes via sealed trait") {
+                    assert(kinds == List("NOTE"))
+                case _ => assert(false)
+        }
+        "collect finds CstLink nodes via sealed trait" in {
             Ascribe.parseCst("See https://example.com today.\n") match
                 case Success(doc) =>
                     val links = doc.collect { case l: CstLink => l.target }
-                    assertTrue(links == List("https://example.com"))
-                case _ => assertTrue(false)
-        },
-        test("collect finds all link variants via CstLink") {
+                    assert(links == List("https://example.com"))
+                case _ => assert(false)
+        }
+        "collect finds all link variants via CstLink" in {
             Ascribe.parseCst("https://a.com and link:b.pdf[B] end.\n") match
                 case Success(doc) =>
                     val links = doc.collect { case l: CstLink => l.target }
-                    assertTrue(links == List("https://a.com", "b.pdf"))
-                case _ => assertTrue(false)
-        },
-        test("visitLink groups all link node types") {
+                    assert(links == List("https://a.com", "b.pdf"))
+                case _ => assert(false)
+        }
+        "visitLink groups all link node types" in {
             val u       = Span.unknown
             var visited = List.empty[String]
             val visitor = new CstVisitor[Unit]:
@@ -93,17 +93,17 @@ object CstVisitorSpec extends ZIOSpecDefault:
             CstVisitor.visit(CstLinkMacro("c.pdf", CstMacroAttrList.textOnly(Nil)(u))(u), visitor)
             CstVisitor.visit(CstMailtoMacro("d@e.com", CstMacroAttrList.textOnly(Nil)(u))(u), visitor)
 
-            assertTrue(visited == List("https://a.com", "https://b.com", "c.pdf", "d@e.com"))
-        },
-        test("children returns CstMacroAttrList for CstUrlMacro") {
+            assert(visited == List("https://a.com", "https://b.com", "c.pdf", "d@e.com"))
+        }
+        "children returns CstMacroAttrList for CstUrlMacro" in {
             val u        = Span.unknown
             val text     = CstText("click")(u)
             val attrList = CstMacroAttrList.textOnly(List(text))(u)
             val link     = CstUrlMacro("https://example.com", attrList)(u)
-            assertTrue(link.children == List(attrList))
-        },
-        test("children is empty for CstAutolink") {
-            val u = Span.unknown
-            assertTrue(CstAutolink("https://example.com")(u).children.isEmpty)
+            assert(link.children == List(attrList))
         }
-    )
+        "children is empty for CstAutolink" in {
+            val u = Span.unknown
+            assert(CstAutolink("https://example.com")(u).children.isEmpty)
+        }
+    }

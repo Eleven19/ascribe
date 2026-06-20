@@ -1,12 +1,12 @@
 package io.eleven19.ascribe.pipeline
 
-import zio.test.*
+import kyo.test.*
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.cst.*
 import kyo.{Path as KPath, Result}
 import parsley.Success
 
-object IncludeResolverSpec extends ZIOSpecDefault:
+class IncludeResolverSpec extends Test[Any]:
 
     private def deleteRecursively(root: java.nio.file.Path): Unit =
         if java.nio.file.Files.isDirectory(root) then
@@ -15,8 +15,8 @@ object IncludeResolverSpec extends ZIOSpecDefault:
             finally stream.close()
         java.nio.file.Files.deleteIfExists(root): Unit
 
-    def spec = suite("IncludeResolver")(
-        test("resolves basic include directive") {
+    "IncludeResolver" - {
+        "resolves basic include directive" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
             try
                 java.nio.file.Files.writeString(tmpDir.resolve("partial.adoc"), "Included content.\n")
@@ -30,15 +30,13 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                 result match
                     case Result.Success(resolved) =>
                         val texts = resolved.collect { case t: CstText => t.content }
-                        assertTrue(
-                            texts.exists(_.contains("Before.")),
-                            texts.exists(_.contains("Included content.")),
-                            texts.exists(_.contains("After."))
-                        )
-                    case _ => assertTrue(false)
+                        assert(texts.exists(_.contains("Before.")))
+                        assert(texts.exists(_.contains("Included content.")))
+                        assert(texts.exists(_.contains("After.")))
+                    case _ => assert(false)
             finally deleteRecursively(tmpDir)
-        },
-        test("fails on missing include file") {
+        }
+        "fails on missing include file" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
             try
                 val source = "include::missing.adoc[]\n"
@@ -48,10 +46,10 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                 val result = KyoTestSupport.runSyncAbort(
                     IncludeResolver.resolve(cst, KPath(tmpDir.toString))
                 )
-                assertTrue(!result.isSuccess)
+                assert(!result.isSuccess)
             finally deleteRecursively(tmpDir)
-        },
-        test("optional include silently skips missing file") {
+        }
+        "optional include silently skips missing file" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
             try
                 val source = "Before.\n\ninclude::missing.adoc[opts=optional]\n\nAfter.\n"
@@ -65,15 +63,13 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                     case Result.Success(resolved) =>
                         val hasInclude = resolved.content.exists(_.isInstanceOf[CstInclude])
                         val texts      = resolved.collect { case t: CstText => t.content }
-                        assertTrue(
-                            !hasInclude,
-                            texts.exists(_.contains("Before.")),
-                            texts.exists(_.contains("After."))
-                        )
-                    case _ => assertTrue(false)
+                        assert(!hasInclude)
+                        assert(texts.exists(_.contains("Before.")))
+                        assert(texts.exists(_.contains("After.")))
+                    case _ => assert(false)
             finally deleteRecursively(tmpDir)
-        },
-        test("resolves nested includes") {
+        }
+        "resolves nested includes" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-inc-cst-test")
             try
                 java.nio.file.Files.writeString(tmpDir.resolve("inner.adoc"), "Inner content.\n")
@@ -91,13 +87,11 @@ object IncludeResolverSpec extends ZIOSpecDefault:
                 result match
                     case Result.Success(resolved) =>
                         val texts = resolved.collect { case t: CstText => t.content }
-                        assertTrue(
-                            texts.exists(_.contains("Doc start.")),
-                            texts.exists(_.contains("Outer start.")),
-                            texts.exists(_.contains("Inner content.")),
-                            texts.exists(_.contains("Doc end."))
-                        )
-                    case _ => assertTrue(false)
+                        assert(texts.exists(_.contains("Doc start.")))
+                        assert(texts.exists(_.contains("Outer start.")))
+                        assert(texts.exists(_.contains("Inner content.")))
+                        assert(texts.exists(_.contains("Doc end.")))
+                    case _ => assert(false)
             finally deleteRecursively(tmpDir)
         }
-    )
+    }

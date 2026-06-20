@@ -23,14 +23,11 @@ object jvm extends PipelineKyoModule {
 
     object test extends ScalaTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.ZioTest {
+        with _root_.build.KyoTestModule {
 
         def mvnDeps = Seq(
-            mvn"dev.zio::zio-test::2.1.24",
-            mvn"dev.zio::zio-test-sbt::2.1.24",
-            mvn"io.getkyo::kyo-zio-test::1.0.0-RC4",
             mvn"io.getkyo::kyo-direct::1.0.0-RC4"
-        )
+        ) ++ super.mvnDeps()
     }
 }
 
@@ -44,13 +41,10 @@ object js extends PipelineKyoModule with _root_.build.CommonScalaJSModule {
 
     object test extends ScalaJSTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.ZioTest {
+        with _root_.build.KyoJSTestModule {
 
         def mvnDeps = Seq(
-            mvn"dev.zio::zio-test::2.1.24",
-            mvn"dev.zio::zio-test-sbt::2.1.24",
-            mvn"io.getkyo::kyo-zio-test::1.0.0-RC4",
             mvn"io.getkyo::kyo-direct::1.0.0-RC4"
-        )
+        ) ++ super.mvnDeps()
     }
 }

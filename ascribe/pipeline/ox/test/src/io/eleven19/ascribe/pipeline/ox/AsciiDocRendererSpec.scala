@@ -3,10 +3,10 @@ package io.eleven19.ascribe.pipeline.ox
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.ast.dsl.{*, given}
-import zio.test.*
+import kyo.test.*
 import scala.language.implicitConversions
 
-object AsciiDocRendererSpec extends ZIOSpecDefault:
+class AsciiDocRendererSpec extends Test[Any]:
 
     private def renderDoc(doc: Document): String =
         AsciiDocRenderer.render(doc)
@@ -16,117 +16,108 @@ object AsciiDocRendererSpec extends ZIOSpecDefault:
             case parsley.Success(doc) => renderDoc(doc)
             case parsley.Failure(msg) => throw new AssertionError(s"Parse failed: $msg")
 
-    def spec = suite("AsciiDocRenderer (Ox)")(
-        test("renders plain paragraph") {
-            assertTrue(renderDoc(document(paragraph("Hello world."))) == "Hello world.\n")
-        },
-        test("renders heading") {
-            assertTrue(renderDoc(document(heading(1, text("Title")))) == "== Title\n")
-        },
-        test("renders bold inline") {
+    "AsciiDocRenderer (Ox)" - {
+        "renders plain paragraph" in
+            assert(renderDoc(document(paragraph("Hello world."))) == "Hello world.\n")
+        "renders heading" in
+            assert(renderDoc(document(heading(1, text("Title")))) == "== Title\n")
+        "renders bold inline" in {
             val rendered = AsciiDocRenderer.renderInline(Bold(scala.List(Text("bold")(Span.unknown)))(Span.unknown))
-            assertTrue(rendered == "**bold**")
-        },
-        test("renders constrained bold inline") {
+            assert(rendered == "**bold**")
+        }
+        "renders constrained bold inline" in {
             val rendered = AsciiDocRenderer.renderInline(
                 ConstrainedBold(scala.List(Text("bold")(Span.unknown)))(Span.unknown)
             )
-            assertTrue(rendered == "*bold*")
-        },
-        test("renders italic inline") {
+            assert(rendered == "*bold*")
+        }
+        "renders italic inline" in {
             val rendered = AsciiDocRenderer.renderInline(Italic(scala.List(Text("em")(Span.unknown)))(Span.unknown))
-            assertTrue(rendered == "__em__")
-        },
-        test("renders monospace inline") {
+            assert(rendered == "__em__")
+        }
+        "renders monospace inline" in {
             val rendered = AsciiDocRenderer.renderInline(Mono(scala.List(Text("code")(Span.unknown)))(Span.unknown))
-            assertTrue(rendered == "``code``")
-        },
-        test("renders unordered list") {
+            assert(rendered == "``code``")
+        }
+        "renders unordered list" in {
             val rendered = renderDoc(
                 document(
                     unorderedList(listItem(text("first")), listItem(text("second")))
                 )
             )
-            assertTrue(rendered.contains("* first"), rendered.contains("* second"))
-        },
-        test("renders ordered list") {
+            assert(rendered.contains("* first"))
+            assert(rendered.contains("* second"))
+        }
+        "renders ordered list" in {
             val rendered = renderDoc(
                 document(
                     orderedList(listItem(text("one")), listItem(text("two")))
                 )
             )
-            assertTrue(rendered.contains(". one"), rendered.contains(". two"))
-        },
-        test("renders listing block with delimiter") {
+            assert(rendered.contains(". one"))
+            assert(rendered.contains(". two"))
+        }
+        "renders listing block with delimiter" in {
             val rendered = renderDoc(document(listingBlock("----", "puts 'hello'")))
-            assertTrue(rendered.contains("----\nputs 'hello'\n----"))
-        },
-        test("roundtrip: single paragraph") {
-            assertTrue(roundtrip("Hello world.\n") == "Hello world.\n")
-        },
-        test("roundtrip: heading and paragraph") {
-            assertTrue(roundtrip("== Title\n\nA paragraph.\n") == "== Title\n\nA paragraph.\n")
-        },
-        test("roundtrip: unordered list") {
-            assertTrue(roundtrip("* first\n* second\n") == "* first\n* second\n")
-        },
-        test("roundtrip: ordered list") {
-            assertTrue(roundtrip(". one\n. two\n") == ". one\n. two\n")
-        },
-        test("roundtrip: listing block") {
-            assertTrue(roundtrip("----\nputs 'hello'\n----\n") == "----\nputs 'hello'\n----\n")
-        },
-        test("renders NOTE admonition paragraph") {
+            assert(rendered.contains("----\nputs 'hello'\n----"))
+        }
+        "roundtrip: single paragraph" in
+            assert(roundtrip("Hello world.\n") == "Hello world.\n")
+        "roundtrip: heading and paragraph" in
+            assert(roundtrip("== Title\n\nA paragraph.\n") == "== Title\n\nA paragraph.\n")
+        "roundtrip: unordered list" in
+            assert(roundtrip("* first\n* second\n") == "* first\n* second\n")
+        "roundtrip: ordered list" in
+            assert(roundtrip(". one\n. two\n") == ". one\n. two\n")
+        "roundtrip: listing block" in
+            assert(roundtrip("----\nputs 'hello'\n----\n") == "----\nputs 'hello'\n----\n")
+        "renders NOTE admonition paragraph" in {
             val para     = Paragraph(List(Text("Watch out.")(Span.unknown)))(Span.unknown)
             val adm      = Admonition(AdmonitionKind.Note, List(para))(Span.unknown)
             val doc      = Document(None, List(adm))(Span.unknown)
             val rendered = renderDoc(doc)
-            assertTrue(rendered.contains("NOTE: Watch out."))
-        },
-        test("renders WARNING admonition paragraph") {
+            assert(rendered.contains("NOTE: Watch out."))
+        }
+        "renders WARNING admonition paragraph" in {
             val para     = Paragraph(List(Text("Danger!")(Span.unknown)))(Span.unknown)
             val adm      = Admonition(AdmonitionKind.Warning, List(para))(Span.unknown)
             val doc      = Document(None, List(adm))(Span.unknown)
             val rendered = renderDoc(doc)
-            assertTrue(rendered.contains("WARNING: Danger!"))
-        },
-        suite("link rendering")(
-            test("renders autolink as bare URL") {
+            assert(rendered.contains("WARNING: Danger!"))
+        }
+        "link rendering" - {
+            "renders autolink as bare URL" in {
                 val rendered = AsciiDocRenderer.renderInline(autoLink("https://example.com"))
-                assertTrue(rendered == "https://example.com")
-            },
-            test("renders link macro as link:target[text]") {
+                assert(rendered == "https://example.com")
+            }
+            "renders link macro as link:target[text]" in {
                 val rendered = AsciiDocRenderer.renderInline(link("report.pdf", text("Get Report")))
-                assertTrue(rendered == "link:report.pdf[Get Report]")
-            },
-            test("renders mailto macro as mailto:addr[text]") {
+                assert(rendered == "link:report.pdf[Get Report]")
+            }
+            "renders mailto macro as mailto:addr[text]" in {
                 val rendered = AsciiDocRenderer.renderInline(mailtoLink("user@example.com", text("Email me")))
-                assertTrue(rendered == "mailto:user@example.com[Email me]")
-            },
-            test("renders URL macro as url[text]") {
+                assert(rendered == "mailto:user@example.com[Email me]")
+            }
+            "renders URL macro as url[text]" in {
                 val rendered = AsciiDocRenderer.renderInline(urlLink("https", "https://example.com", text("click")))
-                assertTrue(rendered == "https://example.com[click]")
-            },
-            test("renders link macro with empty text as link:target[]") {
+                assert(rendered == "https://example.com[click]")
+            }
+            "renders link macro with empty text as link:target[]" in {
                 val rendered = AsciiDocRenderer.renderInline(link("report.pdf"))
-                assertTrue(rendered == "link:report.pdf[]")
-            },
-            test("roundtrip: bare autolink") {
-                assertTrue(roundtrip("Visit https://example.com today.\n") == "Visit https://example.com today.\n")
-            },
-            test("roundtrip: link macro") {
-                assertTrue(roundtrip("See link:report.pdf[Get Report].\n") == "See link:report.pdf[Get Report].\n")
-            },
-            test("roundtrip: mailto macro") {
-                assertTrue(
+                assert(rendered == "link:report.pdf[]")
+            }
+            "roundtrip: bare autolink" in
+                assert(roundtrip("Visit https://example.com today.\n") == "Visit https://example.com today.\n")
+            "roundtrip: link macro" in
+                assert(roundtrip("See link:report.pdf[Get Report].\n") == "See link:report.pdf[Get Report].\n")
+            "roundtrip: mailto macro" in
+                assert(
                     roundtrip("Contact mailto:user@example.com[Email me].\n") ==
                         "Contact mailto:user@example.com[Email me].\n"
                 )
-            },
-            test("roundtrip: URL macro") {
-                assertTrue(
+            "roundtrip: URL macro" in
+                assert(
                     roundtrip("Go to https://example.com[the site].\n") == "Go to https://example.com[the site].\n"
                 )
-            }
-        )
-    )
+        }
+    }
