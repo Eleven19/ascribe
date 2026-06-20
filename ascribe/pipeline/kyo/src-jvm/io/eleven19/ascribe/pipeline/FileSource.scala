@@ -4,7 +4,8 @@ import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.pipeline.core.PipelineError
 import io.eleven19.ascribe.ast.{Document, DocumentPath, DocumentTree, TreeNode}
 import io.eleven19.ascribe.cst.{CstDocument, CstLowering}
-import kyo.{<, Sync, Abort, Path, Chunk}
+import kyo.{<, Abort, Async, Path, Chunk, Scope, Sync}
+import kyo.toJava
 
 /** A Source that reads `.adoc` files from a directory on the file system.
   *
@@ -16,10 +17,10 @@ object FileSource:
     private val adocExtensions = Set(".adoc", ".asciidoc", ".ad", ".asc")
 
     /** Create a Source that reads all `.adoc` files from a directory. */
-    def fromDirectory(dir: Path): Source[Sync & Abort[PipelineError]] =
-        new Source[Sync & Abort[PipelineError]]:
-            def read: DocumentTree < (Sync & Abort[PipelineError]) =
-                dir.walk.run.map { paths =>
+    def fromDirectory(dir: Path): Source[Async & Abort[PipelineError]] =
+        new Source[Async & Abort[PipelineError]]:
+            def read: DocumentTree < (Async & Abort[PipelineError]) =
+                Scope.run(KyoFileError.fs(dir.walk.run)).map { paths =>
                     val adocPaths = paths.toList.filter { p =>
                         val name = p.toJava.getFileName.toString
                         adocExtensions.exists(ext => name.endsWith(ext))
@@ -33,7 +34,7 @@ object FileSource:
             def read: DocumentTree < (Sync & Abort[PipelineError]) =
                 val docPath   = DocumentPath.fromString(file.toJava.getFileName.toString)
                 val parentDir = Path(file.toJava.getParent.toString)
-                file.read.flatMap { rawContent =>
+                KyoFileError.read(file.read).flatMap { rawContent =>
                     parseCstOrAbort(rawContent, docPath).flatMap { cst =>
                         IncludeResolver.resolve(cst, parentDir).map { resolved =>
                             DocumentTree.single(docPath, CstLowering.toAst(resolved))
@@ -66,7 +67,7 @@ object FileSource:
                 val relativePath = baseDir.toJava.relativize(head.toJava).toString
                 val docPath      = DocumentPath.fromString(relativePath)
                 val parentDir    = Path(head.toJava.getParent.toString)
-                head.read.flatMap { rawContent =>
+                KyoFileError.read(head.read).flatMap { rawContent =>
                     parseCstOrAbort(rawContent, docPath).flatMap { cst =>
                         IncludeResolver.resolve(cst, parentDir).flatMap { resolved =>
                             readPathList(baseDir, tail, (docPath, CstLowering.toAst(resolved)) :: acc)

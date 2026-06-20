@@ -3,6 +3,7 @@ package io.eleven19.ascribe.pipeline
 import io.eleven19.ascribe.pipeline.core.PipelineError
 
 import kyo.{<, Sync, Abort, Path}
+import kyo.toJava
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.cst.*
 import parsley.{Success, Failure}
@@ -94,7 +95,7 @@ object IncludeResolver:
                         )
                 else
                     val parentDir = Path(targetPath.toJava.getParent.toString)
-                    targetPath.read.flatMap { content =>
+                    KyoFileError.read(targetPath.read).flatMap { content =>
                         Ascribe.parseCst(content) match
                             case Success(includedCst) =>
                                 resolveContent(includedCst.content, parentDir, maxDepth, depth + 1)
