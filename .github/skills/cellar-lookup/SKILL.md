@@ -63,7 +63,7 @@ cellar get-external com.github.j-mie6:parsley_3:4.6.2 parsley.Parsley
 cellar list-external dev.zio:zio-blocks-schema_3:0.0.29 zio.blocks.schema
 
 # Search by name
-cellar search-external com.lihaoyi:mill-libs-scalalib_3:1.1.5 PlatformScala
+cellar search-external com.lihaoyi:mill-libs-scalalib_3:1.2.0-RC1 PlatformScala
 
 # Get source code of a symbol
 cellar get-source dev.zio:zio-test_3:2.1.24 zio.test.ZIOSpecDefault
@@ -89,8 +89,8 @@ See [commands-reference.md](commands-reference.md) for the full coordinates tabl
 |---------|-----------|
 | parsley | `com.github.j-mie6:parsley_3:4.6.2` |
 | zio-blocks-schema | `dev.zio:zio-blocks-schema_3:0.0.29` |
-| Mill scalalib | `com.lihaoyi:mill-libs-scalalib_3:1.1.5` |
-| Mill scalajslib | `com.lihaoyi:mill-libs-scalajslib_3:1.1.5` |
+| Mill scalalib | `com.lihaoyi:mill-libs-scalalib_3:1.2.0-RC1` |
+| Mill scalajslib | `com.lihaoyi:mill-libs-scalajslib_3:1.2.0-RC1` |
 
 ## Installation
 

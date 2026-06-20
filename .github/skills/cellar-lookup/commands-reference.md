@@ -91,7 +91,7 @@ cellar get-external [--java-home <path>] [--repository <url>]... <coordinate> <f
 
 ```bash
 cellar get-external com.github.j-mie6:parsley_3:4.6.2 parsley.Parsley
-cellar get-external com.lihaoyi:mill-libs-scalalib_3:1.1.5 mill.scalalib.PlatformScalaModule
+cellar get-external com.lihaoyi:mill-libs-scalalib_3:1.2.0-RC1 mill.scalalib.PlatformScalaModule
 cellar get-external dev.zio:zio-test_3:2.1.24 zio.test.ZIOSpecDefault
 ```
 
@@ -105,7 +105,7 @@ cellar list-external [--limit <N>] [--java-home <path>] [--repository <url>]... 
 
 ```bash
 cellar list-external dev.zio:zio-blocks-schema_3:0.0.29 zio.blocks.schema
-cellar list-external com.lihaoyi:mill-libs-scalajslib_3:1.1.5 mill.scalajslib
+cellar list-external com.lihaoyi:mill-libs-scalajslib_3:1.2.0-RC1 mill.scalajslib
 ```
 
 ### `cellar search-external`
@@ -117,7 +117,7 @@ cellar search-external [--limit <N>] [--java-home <path>] [--repository <url>]..
 ```
 
 ```bash
-cellar search-external com.lihaoyi:mill-libs-scalalib_3:1.1.5 PlatformScala
+cellar search-external com.lihaoyi:mill-libs-scalalib_3:1.2.0-RC1 PlatformScala
 cellar search-external dev.zio:zio-test_3:2.1.24 TestFramework
 ```
 
@@ -162,9 +162,9 @@ cellar deps dev.zio:zio-test_sjs1_3:2.1.24
 | os-lib | `com.lihaoyi:os-lib_3:0.11.8` | (JVM-only) |
 | ox | `com.softwaremill.ox:core_3:0.3.0` | (JVM-only) |
 | kyo-core | `io.getkyo:kyo-core_3:1.0-RC1` | (JVM-only) |
-| Mill scalalib | `com.lihaoyi:mill-libs-scalalib_3:1.1.5` | n/a |
-| Mill scalajslib | `com.lihaoyi:mill-libs-scalajslib_3:1.1.5` | n/a |
-| Mill javalib | `com.lihaoyi:mill-libs-javalib_3:1.1.5` | n/a |
+| Mill scalalib | `com.lihaoyi:mill-libs-scalalib_3:1.2.0-RC1` | n/a |
+| Mill scalajslib | `com.lihaoyi:mill-libs-scalajslib_3:1.2.0-RC1` | n/a |
+| Mill javalib | `com.lihaoyi:mill-libs-javalib_3:1.2.0-RC1` | n/a |
 
 ## Troubleshooting
 
