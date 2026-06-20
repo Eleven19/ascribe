@@ -1,0 +1,95 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "inlines": [
+        {
+          "name": "text",
+          "value": "This is ",
+          "location": [
+            {
+              "line": 1,
+              "col": 1
+            },
+            {
+              "line": 1,
+              "col": 8
+            }
+          ],
+          "type": "string"
+        },
+        {
+          "name": "span",
+          "variant": "code",
+          "form": "unconstrained",
+          "inlines": [
+            {
+              "name": "text",
+              "value": "monospace text",
+              "location": [
+                {
+                  "line": 1,
+                  "col": 9
+                },
+                {
+                  "line": 1,
+                  "col": 26
+                }
+              ],
+              "type": "string"
+            }
+          ],
+          "location": [
+            {
+              "line": 1,
+              "col": 9
+            },
+            {
+              "line": 1,
+              "col": 26
+            }
+          ],
+          "type": "inline"
+        },
+        {
+          "name": "text",
+          "value": " here.",
+          "location": [
+            {
+              "line": 1,
+              "col": 27
+            },
+            {
+              "line": 1,
+              "col": 32
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 1,
+          "col": 32
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 1,
+      "col": 32
+    }
+  ],
+  "type": "block"
+}
