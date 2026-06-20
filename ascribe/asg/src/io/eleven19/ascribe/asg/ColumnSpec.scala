@@ -1,15 +1,14 @@
 package io.eleven19.ascribe.asg
 
-import zio.blocks.schema.Schema
 
-enum HAlign derives Schema:
+enum HAlign:
     case Left, Center, Right
 
-enum VAlign derives Schema:
+enum VAlign:
     case Top, Middle, Bottom
 
 /** Content style for table columns and cells. */
-enum CellStyle derives Schema:
+enum CellStyle:
     case Default, AsciiDoc, Emphasis, Header, Literal, Monospace, Strong
 
 object CellStyle:
@@ -29,7 +28,6 @@ opaque type ColSpan = Int
 
 object ColSpan:
     def apply(n: Int): ColSpan            = n
-    given Schema[ColSpan]                 = summon[Schema[Int]].transform[ColSpan](identity, identity)
     extension (c: ColSpan) def value: Int = c
 
 /** Row span factor — number of consecutive rows a cell spans. */
@@ -37,7 +35,6 @@ opaque type RowSpan = Int
 
 object RowSpan:
     def apply(n: Int): RowSpan            = n
-    given Schema[RowSpan]                 = summon[Schema[Int]].transform[RowSpan](identity, identity)
     extension (r: RowSpan) def value: Int = r
 
 /** Duplication count — number of times a cell is duplicated. */
@@ -45,7 +42,6 @@ opaque type DupCount = Int
 
 object DupCount:
     def apply(n: Int): DupCount            = n
-    given Schema[DupCount]                 = summon[Schema[Int]].transform[DupCount](identity, identity)
     extension (d: DupCount) def value: Int = d
 
 case class ColumnSpec(
@@ -53,4 +49,4 @@ case class ColumnSpec(
     halign: Option[HAlign] = None,
     valign: Option[VAlign] = None,
     style: Option[CellStyle] = None
-) derives Schema
+)

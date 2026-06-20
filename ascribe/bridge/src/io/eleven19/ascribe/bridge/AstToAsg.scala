@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.bridge
 
-import zio.blocks.chunk.Chunk
+import kyo.Chunk
 import io.eleven19.ascribe.ast
 import io.eleven19.ascribe.asg
 
