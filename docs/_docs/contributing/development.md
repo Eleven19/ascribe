@@ -7,7 +7,7 @@ title: Development Setup
 ## Prerequisites
 
 - **JVM 21** (Temurin recommended)
-- **Mill 1.1.3** (included as `./mill` wrapper in the repository)
+- **Mill 1.2.0-RC1** (included as `./mill` wrapper in the repository)
 
 ## Clone and Build
 
