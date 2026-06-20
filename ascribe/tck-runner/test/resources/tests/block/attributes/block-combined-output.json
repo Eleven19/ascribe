@@ -1,24 +1,51 @@
-[
-  {
-    "name": "blockAttributes",
-    "type": "object",
-    "value": {
-      "class": ["sidebar"],
-      "id": "info1"
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "id": "info1",
+      "metadata": {
+        "roles": ["sidebar"]
+      },
+      "inlines": [
+        {
+          "name": "text",
+          "value": "Paragraph with multiple attributes",
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 34
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 2,
+          "col": 34
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
     },
-    "location": [{ "line": 1, "col": 1 }, { "line": 1, "col": 16 }]
-  },
-  {
-    "name": "paragraph",
-    "type": "object",
-    "value": [
-      {
-        "name": "text",
-        "type": "string",
-        "value": "Paragraph with multiple attributes",
-        "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 34 }]
-      }
-    ],
-    "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 34 }]
-  }
-]
+    {
+      "line": 2,
+      "col": 34
+    }
+  ],
+  "type": "block"
+}

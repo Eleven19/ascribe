@@ -1,2 +1,0 @@
-[role="important"]
-Text with role attribute
