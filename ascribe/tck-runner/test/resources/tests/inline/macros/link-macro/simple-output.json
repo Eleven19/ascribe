@@ -1,0 +1,65 @@
+[
+  {
+    "name": "text",
+    "value": "Visit ",
+    "location": [
+      {
+        "line": 1,
+        "col": 1
+      },
+      {
+        "line": 1,
+        "col": 6
+      }
+    ],
+    "type": "string"
+  },
+  {
+    "name": "ref",
+    "variant": "link",
+    "target": "https://example.com",
+    "inlines": [
+      {
+        "name": "text",
+        "value": "our documentation",
+        "location": [
+          {
+            "line": 1,
+            "col": 1
+          },
+          {
+            "line": 1,
+            "col": 17
+          }
+        ],
+        "type": "string"
+      }
+    ],
+    "location": [
+      {
+        "line": 1,
+        "col": 7
+      },
+      {
+        "line": 1,
+        "col": 49
+      }
+    ],
+    "type": "inline"
+  },
+  {
+    "name": "text",
+    "value": " for more info.",
+    "location": [
+      {
+        "line": 1,
+        "col": 50
+      },
+      {
+        "line": 1,
+        "col": 64
+      }
+    ],
+    "type": "string"
+  }
+]

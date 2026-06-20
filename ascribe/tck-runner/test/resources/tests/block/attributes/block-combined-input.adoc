@@ -1,0 +1,2 @@
+[.sidebar#info1]
+Paragraph with multiple attributes

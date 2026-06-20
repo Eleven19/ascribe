@@ -1,0 +1,50 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "metadata": {
+        "roles": ["info"]
+      },
+      "inlines": [
+        {
+          "name": "text",
+          "value": "Paragraph with style class",
+          "location": [
+            {
+              "line": 2,
+              "col": 1
+            },
+            {
+              "line": 2,
+              "col": 26
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 2,
+          "col": 26
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 2,
+      "col": 26
+    }
+  ],
+  "type": "block"
+}

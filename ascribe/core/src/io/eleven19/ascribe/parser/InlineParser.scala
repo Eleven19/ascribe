@@ -20,7 +20,8 @@ import io.eleven19.ascribe.cst.{
     CstMailtoMacro,
     CstMono,
     CstText,
-    CstUrlMacro
+    CstUrlMacro,
+    CstXrefMacro
 }
 import io.eleven19.ascribe.lexer.AsciiDocLexer.*
 
@@ -261,6 +262,17 @@ object InlineParser:
             .label("link macro")
             .explain("Link macro syntax: link:target[text]")
 
+    /** Parses `xref:target[text]`. */
+    val xrefMacro: Parsley[CstInline] =
+        atomic(
+            (pos <~> (string("xref:") *> macroTargetChars) <~> macroAttrList <~> pos)
+                .map { case (((s, target), attrList), e) =>
+                    CstXrefMacro(target, attrList)(mkSpan(s, e))
+                }
+        ).flatMap(node => lastChar.set(Some(']')) *> pure(node: CstInline))
+            .label("xref macro")
+            .explain("Xref macro syntax: xref:target[text]")
+
     /** Parses `mailto:addr[text]`. */
     val mailtoMacro: Parsley[CstInline] =
         atomic(
@@ -306,7 +318,9 @@ object InlineParser:
 
     /** Lookahead that recognises the start of a link or URL prefix within prose. */
     private val linkOrUrlPrefix: Parsley[Unit] =
-        (atomic(string("link:")) | atomic(string("mailto:")) | atomic(string("https://")) | atomic(
+        (atomic(string("link:")) | atomic(string("xref:")) | atomic(string("mailto:")) | atomic(
+            string("https://")
+        ) | atomic(
             string("http://")
         ) | atomic(string("ftp://")) | atomic(string("irc://"))).void
 
@@ -339,7 +353,7 @@ object InlineParser:
     val inlineElement: Parsley[CstInline] =
         boldSpan | italicSpan | monoSpan |
             constrainedBoldSpan | constrainedItalicSpan | constrainedMonoSpan |
-            linkMacro | mailtoMacro | urlMacro | autolink |
+            xrefMacro | linkMacro | mailtoMacro | urlMacro | autolink |
             attrRefInline | plainTextInline | unpairedMarkupInline
 
     /** Parses zero or more inline elements, stopping naturally at a newline or end-of-input. */

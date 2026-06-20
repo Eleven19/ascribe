@@ -1,0 +1,48 @@
+[
+  {
+    "name": "text",
+    "value": "Check out ",
+    "location": [
+      {
+        "line": 1,
+        "col": 1
+      },
+      {
+        "line": 1,
+        "col": 10
+      }
+    ],
+    "type": "string"
+  },
+  {
+    "name": "ref",
+    "variant": "link",
+    "target": "https://example.com",
+    "location": [
+      {
+        "line": 1,
+        "col": 11
+      },
+      {
+        "line": 1,
+        "col": 29
+      }
+    ],
+    "type": "inline"
+  },
+  {
+    "name": "text",
+    "value": " for details.",
+    "location": [
+      {
+        "line": 1,
+        "col": 30
+      },
+      {
+        "line": 1,
+        "col": 42
+      }
+    ],
+    "type": "string"
+  }
+]

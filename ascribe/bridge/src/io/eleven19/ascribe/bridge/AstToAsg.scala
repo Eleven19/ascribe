@@ -45,14 +45,21 @@ object AstToAsg:
         case ast.Paragraph(content, attrsOpt, titleOpt) =>
             val converted = mergeAdjacentTexts(content.map(convertInline))
             val title    = titleOpt.map(t => Chunk.from(t.content.map(convertInline)))
+            val (id, attributes) = attrsOpt match
+                case Some(al) =>
+                    val idVal = al.named.collectFirst { case (k, v) if k.value == "id" => v.value }
+                    val attrs = al.named.filterNot(_._1.value == "id").map((k, v) => (k.value, v.value))
+                    (idVal, attrs)
+                case None => (None, Map.empty)
             val metadata = attrsOpt.map(al =>
                 asg.BlockMetadata(
-                    attributes = al.named.map((k, v) => (k.value, v.value)),
+                    attributes = attributes,
                     options = Chunk.from(al.options.map(_.value)),
                     roles = Chunk.from(al.roles.map(_.value))
                 )
             )
             asg.Paragraph(
+                id = id,
                 title = title,
                 metadata = metadata,
                 inlines = Chunk.from(converted),
@@ -392,11 +399,14 @@ object AstToAsg:
                 location = inclusiveLocation(inline.span)
             )
         case ast.Link(variant, target, text, _) =>
+            val asgVariant = variant match
+                case ast.LinkVariant.Macro(ast.MacroKind.Xref) => "xref"
+                case _                                          => "link"
             val asgTarget = variant match
                 case ast.LinkVariant.Macro(ast.MacroKind.MailTo) => "mailto:" + target
                 case _                                           => target
             asg.Ref(
-                variant = "link",
+                variant = asgVariant,
                 target = asgTarget,
                 inlines = Chunk.from(text.map(convertInline)),
                 location = inclusiveLocation(inline.span)

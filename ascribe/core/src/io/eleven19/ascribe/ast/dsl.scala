@@ -39,6 +39,9 @@ object dsl:
     def link(target: String, text: Inline*): Link =
         Link(LinkVariant.Macro(MacroKind.Link), target, text.toList, LinkAttributes.empty)(u)
 
+    def xref(target: String, text: Inline*): Link =
+        Link(LinkVariant.Macro(MacroKind.Xref), target, text.toList, LinkAttributes.empty)(u)
+
     def mailtoLink(target: String, text: Inline*): Link =
         Link(LinkVariant.Macro(MacroKind.MailTo), target, text.toList, LinkAttributes.empty)(u)
 

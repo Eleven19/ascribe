@@ -1,0 +1,65 @@
+[
+  {
+    "name": "text",
+    "value": "See ",
+    "location": [
+      {
+        "line": 1,
+        "col": 1
+      },
+      {
+        "line": 1,
+        "col": 4
+      }
+    ],
+    "type": "string"
+  },
+  {
+    "name": "ref",
+    "variant": "xref",
+    "target": "section-a",
+    "inlines": [
+      {
+        "name": "text",
+        "value": "Section A",
+        "location": [
+          {
+            "line": 1,
+            "col": 1
+          },
+          {
+            "line": 1,
+            "col": 9
+          }
+        ],
+        "type": "string"
+      }
+    ],
+    "location": [
+      {
+        "line": 1,
+        "col": 5
+      },
+      {
+        "line": 1,
+        "col": 29
+      }
+    ],
+    "type": "inline"
+  },
+  {
+    "name": "text",
+    "value": " for details.",
+    "location": [
+      {
+        "line": 1,
+        "col": 30
+      },
+      {
+        "line": 1,
+        "col": 42
+      }
+    ],
+    "type": "string"
+  }
+]

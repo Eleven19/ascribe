@@ -1,0 +1,2 @@
+[.info]
+Paragraph with style class
