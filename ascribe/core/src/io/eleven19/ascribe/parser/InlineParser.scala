@@ -318,7 +318,9 @@ object InlineParser:
 
     /** Lookahead that recognises the start of a link or URL prefix within prose. */
     private val linkOrUrlPrefix: Parsley[Unit] =
-        (atomic(string("link:")) | atomic(string("xref:")) | atomic(string("mailto:")) | atomic(string("https://")) | atomic(
+        (atomic(string("link:")) | atomic(string("xref:")) | atomic(string("mailto:")) | atomic(
+            string("https://")
+        ) | atomic(
             string("http://")
         ) | atomic(string("ftp://")) | atomic(string("irc://"))).void
 
