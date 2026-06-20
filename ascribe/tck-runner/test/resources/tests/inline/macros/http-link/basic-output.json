@@ -1,0 +1,65 @@
+[
+  {
+    "name": "text",
+    "value": "Check ",
+    "location": [
+      {
+        "line": 1,
+        "col": 1
+      },
+      {
+        "line": 1,
+        "col": 6
+      }
+    ],
+    "type": "string"
+  },
+  {
+    "name": "ref",
+    "variant": "link",
+    "target": "http://example.org",
+    "inlines": [
+      {
+        "name": "text",
+        "value": "our site",
+        "location": [
+          {
+            "line": 1,
+            "col": 1
+          },
+          {
+            "line": 1,
+            "col": 8
+          }
+        ],
+        "type": "string"
+      }
+    ],
+    "location": [
+      {
+        "line": 1,
+        "col": 7
+      },
+      {
+        "line": 1,
+        "col": 39
+      }
+    ],
+    "type": "inline"
+  },
+  {
+    "name": "text",
+    "value": " for details.",
+    "location": [
+      {
+        "line": 1,
+        "col": 40
+      },
+      {
+        "line": 1,
+        "col": 52
+      }
+    ],
+    "type": "string"
+  }
+]

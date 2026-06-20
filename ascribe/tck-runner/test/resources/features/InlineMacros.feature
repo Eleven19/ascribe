@@ -8,3 +8,5 @@ Feature: Inline - Macros (Links and URLs)
       | test_name | input_file | output_file |
       | autolink-https | ascribe/tck-runner/test/resources/tests/inline/macros/autolink/https-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/autolink/https-output.json |
       | link-macro-simple | ascribe/tck-runner/test/resources/tests/inline/macros/link-macro/simple-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/link-macro/simple-output.json |
+      | http-link-basic | ascribe/tck-runner/test/resources/tests/inline/macros/http-link/basic-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/http-link/basic-output.json |
+      | mailto-link-basic | ascribe/tck-runner/test/resources/tests/inline/macros/mailto-link/basic-input.adoc | ascribe/tck-runner/test/resources/tests/inline/macros/mailto-link/basic-output.json |
