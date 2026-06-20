@@ -1,0 +1,95 @@
+{
+  "name": "document",
+  "blocks": [
+    {
+      "name": "paragraph",
+      "inlines": [
+        {
+          "name": "text",
+          "value": "Use ",
+          "location": [
+            {
+              "line": 1,
+              "col": 1
+            },
+            {
+              "line": 1,
+              "col": 4
+            }
+          ],
+          "type": "string"
+        },
+        {
+          "name": "span",
+          "variant": "emphasis",
+          "form": "constrained",
+          "inlines": [
+            {
+              "name": "text",
+              "value": "italic text",
+              "location": [
+                {
+                  "line": 1,
+                  "col": 5
+                },
+                {
+                  "line": 1,
+                  "col": 17
+                }
+              ],
+              "type": "string"
+            }
+          ],
+          "location": [
+            {
+              "line": 1,
+              "col": 5
+            },
+            {
+              "line": 1,
+              "col": 17
+            }
+          ],
+          "type": "inline"
+        },
+        {
+          "name": "text",
+          "value": " for emphasis.",
+          "location": [
+            {
+              "line": 1,
+              "col": 18
+            },
+            {
+              "line": 1,
+              "col": 31
+            }
+          ],
+          "type": "string"
+        }
+      ],
+      "location": [
+        {
+          "line": 1,
+          "col": 1
+        },
+        {
+          "line": 1,
+          "col": 31
+        }
+      ],
+      "type": "block"
+    }
+  ],
+  "location": [
+    {
+      "line": 1,
+      "col": 1
+    },
+    {
+      "line": 1,
+      "col": 31
+    }
+  ],
+  "type": "block"
+}

@@ -10,4 +10,6 @@ Feature: Constrained Formatting Spans
       | bold-constrained-multi-char      | ascribe/tck-runner/test/resources/tests/inline/span/bold/constrained-multi-char-input.adoc      | ascribe/tck-runner/test/resources/tests/inline/span/bold/constrained-multi-char-output.json      |
       | italic-constrained-multi-char    | ascribe/tck-runner/test/resources/tests/inline/span/italic/constrained-multi-char-input.adoc    | ascribe/tck-runner/test/resources/tests/inline/span/italic/constrained-multi-char-output.json    |
       | mono-constrained-multi-char      | ascribe/tck-runner/test/resources/tests/inline/span/mono/constrained-multi-char-input.adoc      | ascribe/tck-runner/test/resources/tests/inline/span/mono/constrained-multi-char-output.json      |
-
+      | bold-constrained-single-char     | ascribe/tck-runner/test/resources/tests/inline/span/bold/constrained-single-char-input.adoc      | ascribe/tck-runner/test/resources/tests/inline/span/bold/constrained-single-char-output.json      |
+      | italic-constrained-single-char   | ascribe/tck-runner/test/resources/tests/inline/span/italic/constrained-single-char-input.adoc    | ascribe/tck-runner/test/resources/tests/inline/span/italic/constrained-single-char-output.json    |
+      | mono-constrained-single-char     | ascribe/tck-runner/test/resources/tests/inline/span/mono/constrained-single-char-input.adoc      | ascribe/tck-runner/test/resources/tests/inline/span/mono/constrained-single-char-output.json      |
