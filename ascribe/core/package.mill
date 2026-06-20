@@ -17,23 +17,11 @@ trait CoreModule extends _root_.build.CommonScalaModule
 object jvm extends CoreModule {
     object test extends ScalaTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.ZioTest {
-
-        def mvnDeps = Seq(
-            mvn"dev.zio::zio-test::2.1.24",
-            mvn"dev.zio::zio-test-sbt::2.1.24"
-        )
-    }
+        with _root_.build.KyoTestModule
 }
 
 object js extends CoreModule with _root_.build.CommonScalaJSModule {
     object test extends ScalaJSTests
         with _root_.build.CommonScalaTestModule
-        with TestModule.ZioTest {
-
-        def mvnDeps = Seq(
-            mvn"dev.zio::zio-test::2.1.24",
-            mvn"dev.zio::zio-test-sbt::2.1.24"
-        )
-    }
+        with _root_.build.KyoJSTestModule
 }

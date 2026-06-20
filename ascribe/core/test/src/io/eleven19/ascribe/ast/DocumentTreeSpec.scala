@@ -1,27 +1,25 @@
 package io.eleven19.ascribe.ast
 
 import scala.language.implicitConversions
-import zio.test.*
+import kyo.test.*
 import io.eleven19.ascribe.ast.dsl.{*, given}
 
-object DocumentTreeSpec extends ZIOSpecDefault:
+class DocumentTreeSpec extends Test[Any]:
 
-    def spec = suite("DocumentTree")(
-        test("single creates a one-document tree") {
+    "DocumentTree" - {
+        "single creates a one-document tree" in {
             val doc  = document(paragraph("hello"))
             val tree = DocumentTree.single(doc)
-            assertTrue(tree.size == 1)
-        },
-        test("single with path creates a named document") {
+            assert(tree.size == 1)
+        }
+        "single with path creates a named document" in {
             val doc  = document(paragraph("hello"))
             val path = DocumentPath("intro.adoc")
             val tree = DocumentTree.single(path, doc)
-            assertTrue(
-                tree.size == 1,
-                tree.get(path).isDefined
-            )
-        },
-        test("fromDocuments creates a flat tree") {
+            assert(tree.size == 1)
+            assert(tree.get(path).isDefined)
+        }
+        "fromDocuments creates a flat tree" in {
             val doc1 = document(paragraph("one"))
             val doc2 = document(paragraph("two"))
             val tree = DocumentTree.fromDocuments(
@@ -30,23 +28,20 @@ object DocumentTreeSpec extends ZIOSpecDefault:
                     (DocumentPath("b.adoc"), doc2)
                 )
             )
-            assertTrue(tree.size == 2)
-        },
-        test("fromDocuments preserves full paths") {
+            assert(tree.size == 2)
+        }
+        "fromDocuments preserves full paths" in {
             val doc1  = document(paragraph("one"))
             val doc2  = document(paragraph("two"))
             val path1 = DocumentPath("chapters", "intro.adoc")
             val path2 = DocumentPath("chapters", "conclusion.adoc")
             val tree  = DocumentTree.fromDocuments(List((path1, doc1), (path2, doc2)))
-            assertTrue(
-                tree.get(path1).isDefined,
-                tree.get(path2).isDefined
-            )
-        },
-        test("empty tree has no documents") {
-            assertTrue(DocumentTree.empty.size == 0)
-        },
-        test("allDocuments returns all leaf documents") {
+            assert(tree.get(path1).isDefined)
+            assert(tree.get(path2).isDefined)
+        }
+        "empty tree has no documents" in
+            assert(DocumentTree.empty.size == 0)
+        "allDocuments returns all leaf documents" in {
             val doc1 = document(paragraph("one"))
             val doc2 = document(paragraph("two"))
             val tree = DocumentTree.fromDocuments(
@@ -56,20 +51,20 @@ object DocumentTreeSpec extends ZIOSpecDefault:
                 )
             )
             val docs = tree.allDocuments
-            assertTrue(docs.size == 2)
-        },
-        test("mapDocuments transforms every document") {
+            assert(docs.size == 2)
+        }
+        "mapDocuments transforms every document" in {
             val doc    = document(paragraph("hello"))
             val tree   = DocumentTree.single(doc)
             val mapped = tree.mapDocuments(d => Document(d.header, d.blocks ++ scala.List(paragraph("added")))(d.span))
             val blocks = mapped.allDocuments.head._2.blocks
-            assertTrue(blocks.size == 2)
-        },
-        test("mapDocuments on empty tree returns empty") {
+            assert(blocks.size == 2)
+        }
+        "mapDocuments on empty tree returns empty" in {
             val mapped = DocumentTree.empty.mapDocuments(d => Document(d.header, Nil)(d.span))
-            assertTrue(mapped.size == 0)
-        },
-        test("filter removes non-matching documents") {
+            assert(mapped.size == 0)
+        }
+        "filter removes non-matching documents" in {
             val doc1 = document(paragraph("keep"))
             val doc2 = document(paragraph("drop"))
             val tree = DocumentTree.fromDocuments(
@@ -79,28 +74,28 @@ object DocumentTreeSpec extends ZIOSpecDefault:
                 )
             )
             val filtered = tree.filter(_.name == "keep.adoc")
-            assertTrue(filtered.size == 1)
-        },
-        test("filter on empty tree returns empty") {
+            assert(filtered.size == 1)
+        }
+        "filter on empty tree returns empty" in {
             val filtered = DocumentTree.empty.filter(_ => true)
-            assertTrue(filtered.size == 0)
-        },
-        test("filter removing root leaf returns empty tree") {
+            assert(filtered.size == 0)
+        }
+        "filter removing root leaf returns empty tree" in {
             val tree     = DocumentTree.single(document(paragraph("x")))
             val filtered = tree.filter(_ => false)
-            assertTrue(filtered.size == 0)
-        },
-        test("get finds document by path") {
+            assert(filtered.size == 0)
+        }
+        "get finds document by path" in {
             val doc  = document(paragraph("found"))
             val path = DocumentPath("chapters", "intro.adoc")
             val tree = DocumentTree.single(path, doc)
-            assertTrue(tree.get(path).isDefined)
-        },
-        test("get returns None for missing path") {
+            assert(tree.get(path).isDefined)
+        }
+        "get returns None for missing path" in {
             val tree = DocumentTree.single(document(paragraph("x")))
-            assertTrue(tree.get(DocumentPath("missing.adoc")).isEmpty)
-        },
-        test("collect extracts values from matching documents") {
+            assert(tree.get(DocumentPath("missing.adoc")).isEmpty)
+        }
+        "collect extracts values from matching documents" in {
             val doc1 = document(paragraph("one"))
             val doc2 = document(paragraph("two"))
             val tree = DocumentTree.fromDocuments(
@@ -110,89 +105,78 @@ object DocumentTreeSpec extends ZIOSpecDefault:
                 )
             )
             val names = tree.collect { case (p, _) => p.name }
-            assertTrue(names == scala.List("a.adoc", "b.adoc"))
-        },
-        test("TreeNode.nodePath accessor works for both variants") {
+            assert(names == scala.List("a.adoc", "b.adoc"))
+        }
+        "TreeNode.nodePath accessor works for both variants" in {
             val leaf   = TreeNode.DocLeaf(DocumentPath("a.adoc"), document())
             val branch = TreeNode.TreeBranch(DocumentPath("dir"), Nil)
-            assertTrue(
-                leaf.nodePath == DocumentPath("a.adoc"),
-                branch.nodePath == DocumentPath("dir")
-            )
-        },
-        suite("DocumentPath")(
-            test("segments and operations") {
+            assert(leaf.nodePath == DocumentPath("a.adoc"))
+            assert(branch.nodePath == DocumentPath("dir"))
+        }
+        "DocumentPath" - {
+            "segments and operations" in {
                 val path = DocumentPath("chapters", "intro.adoc")
-                assertTrue(
-                    path.segments == scala.List("chapters", "intro.adoc"),
-                    path.name == "intro.adoc",
-                    path.parent == DocumentPath("chapters"),
-                    path.depth == 2,
-                    path.render == "chapters/intro.adoc",
-                    !path.isRoot,
-                    DocumentPath.root.isRoot
-                )
-            },
-            test("/ operator appends segment") {
+                assert(path.segments == scala.List("chapters", "intro.adoc"))
+                assert(path.name == "intro.adoc")
+                assert(path.parent == DocumentPath("chapters"))
+                assert(path.depth == 2)
+                assert(path.render == "chapters/intro.adoc")
+                assert(!path.isRoot)
+                assert(DocumentPath.root.isRoot)
+            }
+            "/ operator appends segment" in {
                 val path = DocumentPath("docs") / "guides" / "intro.adoc"
-                assertTrue(path.render == "docs/guides/intro.adoc")
-            },
-            test("/ ignores empty segments") {
+                assert(path.render == "docs/guides/intro.adoc")
+            }
+            "/ ignores empty segments" in {
                 val path = DocumentPath("docs") / "" / "guide.adoc"
-                assertTrue(path.render == "docs/guide.adoc")
-            },
-            test("fromString parses slash-separated path") {
+                assert(path.render == "docs/guide.adoc")
+            }
+            "fromString parses slash-separated path" in {
                 val path = DocumentPath.fromString("chapters/intro.adoc")
-                assertTrue(path == DocumentPath("chapters", "intro.adoc"))
-            },
-            test("fromString normalizes double slashes") {
+                assert(path == DocumentPath("chapters", "intro.adoc"))
+            }
+            "fromString normalizes double slashes" in {
                 val path = DocumentPath.fromString("chapters//intro.adoc")
-                assertTrue(path == DocumentPath("chapters", "intro.adoc"))
-            },
-            test("apply filters empty segments") {
+                assert(path == DocumentPath("chapters", "intro.adoc"))
+            }
+            "apply filters empty segments" in {
                 val path = DocumentPath("a", "", "b")
-                assertTrue(path == DocumentPath("a", "b"))
-            },
-            test("no-arg apply creates root") {
-                assertTrue(DocumentPath() == DocumentPath.root)
-            },
-            test("root.parent is root") {
-                assertTrue(DocumentPath.root.parent == DocumentPath.root)
-            },
-            test("root.name is empty string") {
-                assertTrue(DocumentPath.root.name == "")
-            },
-            test("parentOption returns None for root") {
-                assertTrue(DocumentPath.root.parentOption.isEmpty)
-            },
-            test("parentOption returns Some for non-root") {
+                assert(path == DocumentPath("a", "b"))
+            }
+            "no-arg apply creates root" in
+                assert(DocumentPath() == DocumentPath.root)
+            "root.parent is root" in
+                assert(DocumentPath.root.parent == DocumentPath.root)
+            "root.name is empty string" in
+                assert(DocumentPath.root.name == "")
+            "parentOption returns None for root" in
+                assert(DocumentPath.root.parentOption.isEmpty)
+            "parentOption returns Some for non-root" in {
                 val path = DocumentPath("a", "b")
-                assertTrue(path.parentOption == Some(DocumentPath("a")))
-            },
-            test("contains returns true when other is nested within") {
+                assert(path.parentOption == Some(DocumentPath("a")))
+            }
+            "contains returns true when other is nested within" in {
                 val dir  = DocumentPath("chapters")
                 val file = DocumentPath("chapters", "intro.adoc")
-                assertTrue(dir.contains(file))
-            },
-            test("contains returns false for same path") {
+                assert(dir.contains(file))
+            }
+            "contains returns false for same path" in {
                 val path = DocumentPath("chapters")
-                assertTrue(!path.contains(path))
-            },
-            test("contains returns false for unrelated path") {
+                assert(!path.contains(path))
+            }
+            "contains returns false for unrelated path" in {
                 val dir  = DocumentPath("chapters")
                 val file = DocumentPath("appendix", "a.adoc")
-                assertTrue(!dir.contains(file))
-            },
-            test("root contains all non-root paths") {
-                assertTrue(DocumentPath.root.contains(DocumentPath("a.adoc")))
-            },
-            test("startsWith checks prefix") {
-                val path = DocumentPath("chapters", "intro.adoc")
-                assertTrue(
-                    path.startsWith(DocumentPath("chapters")),
-                    path.startsWith(DocumentPath.root),
-                    !path.startsWith(DocumentPath("appendix"))
-                )
+                assert(!dir.contains(file))
             }
-        )
-    )
+            "root contains all non-root paths" in
+                assert(DocumentPath.root.contains(DocumentPath("a.adoc")))
+            "startsWith checks prefix" in {
+                val path = DocumentPath("chapters", "intro.adoc")
+                assert(path.startsWith(DocumentPath("chapters")))
+                assert(path.startsWith(DocumentPath.root))
+                assert(!path.startsWith(DocumentPath("appendix")))
+            }
+        }
+    }

@@ -1,67 +1,68 @@
 package io.eleven19.ascribe.pipeline.ox
 
 import io.eleven19.ascribe.ast.DocumentPath
-import zio.test.*
+import kyo.test.*
 
 /** File I/O branches: invalid inputs, empty trees, nested paths, subdirectory discovery. */
-object FileSourceEdgeSpec extends ZIOSpecDefault:
+class FileSourceEdgeSpec extends Test[Any]:
 
     private def cleanup(root: os.Path): Unit =
         if os.exists(root) then os.remove.all(root)
 
-    def spec = suite("FileSource & FileSink (Ox) edge cases")(
-        test("FileSource.fromDirectory fails when path is a regular file") {
+    "FileSource & FileSink (Ox) edge cases" - {
+        "FileSource.fromDirectory fails when path is a regular file" in {
             val d = os.temp.dir()
             val f = d / "only.adoc"
             os.write(f, "", createFolders = true)
             try
                 val r = FileSource.fromDirectory(f).read
-                assertTrue(r.isLeft)
+                assert(r.isLeft)
             finally cleanup(d)
-        },
-        test("FileSource.fromDirectory with no .adoc files yields empty tree") {
+        }
+        "FileSource.fromDirectory with no .adoc files yields empty tree" in {
             val d = os.temp.dir()
             try
                 os.write(d / "note.txt", "not adoc", createFolders = true)
                 FileSource.fromDirectory(d).read match
-                    case Right(t) => assertTrue(t.size == 0)
-                    case Left(_)  => assertTrue(false)
+                    case Right(t) => assert(t.size == 0)
+                    case Left(_)  => assert(false)
             finally cleanup(d)
-        },
-        test("FileSource.fromDirectory discovers .adoc in subdirectories") {
+        }
+        "FileSource.fromDirectory discovers .adoc in subdirectories" in {
             val d = os.temp.dir()
             try
                 os.write(d / "part" / "inner.adoc", "Nested.\n", createFolders = true)
                 FileSource.fromDirectory(d).read match
                     case Right(t) =>
                         val path = t.allDocuments.head._1
-                        assertTrue(t.size == 1, path.render.contains("inner.adoc"))
-                    case Left(_) => assertTrue(false)
+                        assert(t.size == 1)
+                        assert(path.render.contains("inner.adoc"))
+                    case Left(_) => assert(false)
             finally cleanup(d)
-        },
-        test("FileSink.toDirectory creates nested parent directories for deep DocumentPath") {
+        }
+        "FileSink.toDirectory creates nested parent directories for deep DocumentPath" in {
             val out = os.temp.dir()
             try
-                val deep       = DocumentPath.fromString("one/two/out.adoc")
-                val rendered   = Map(deep -> "deep content\n")
+                val deep     = DocumentPath.fromString("one/two/out.adoc")
+                val rendered = Map(deep -> "deep content\n")
                 FileSink.toDirectory(out).write(rendered) match
                     case Right(()) =>
                         val p        = out / "one" / "two" / "out.adoc"
                         val onDisk   = os.read(p)
                         val expected = "deep content\n"
-                        assertTrue(onDisk == expected)
-                    case Left(_) => assertTrue(false)
+                        assert(onDisk == expected)
+                    case Left(_) => assert(false)
             finally cleanup(out)
-        },
-        test("FileSink.toFile with empty rendered map succeeds without writing") {
+        }
+        "FileSink.toFile with empty rendered map succeeds without writing" in {
             val d = os.temp.dir()
             try
                 val f = d / "missing.txt"
                 FileSink.toFile(f).write(Map.empty) match
                     case Right(()) =>
                         val missing = !os.exists(f)
-                        assertTrue(missing)
-                    case Left(_) => assertTrue(false)
+                        assert(missing)
+                    case Left(_) => assert(false)
             finally cleanup(d)
         }
-    )
+    }

@@ -1,2 +1,5 @@
 mill-version: 1.2.0-RC1
 mill-jvm-version: "temurin:21"
+mill-build:
+  mvnDeps:
+    - io.eleven19.kymora::kymora-kyo-mill::0.2.0

@@ -1,157 +1,144 @@
 package io.eleven19.ascribe.cst
 
 import parsley.{Failure, Success}
-import zio.test.*
+import kyo.test.*
 import io.eleven19.ascribe.Ascribe
 import io.eleven19.ascribe.cst.CstMacroAttrList
 
-object CstRendererSpec extends ZIOSpecDefault:
+class CstRendererSpec extends Test[Any]:
 
     /** Parse, render, re-parse and compare the re-parsed CST structure. */
-    private def roundtrip(source: String): zio.test.TestResult =
+    private def roundtrip(source: String)(using AssertScope): Unit =
         Ascribe.parseCst(source) match
             case Success(cst) =>
                 val rendered = CstRenderer.render(cst)
                 Ascribe.parseCst(rendered) match
                     case Success(cst2) =>
-                        assertTrue(cst.content.length == cst2.content.length)
+                        assert(cst.content.length == cst2.content.length)
                     case Failure(msg) =>
-                        assertTrue(s"Re-parse failed: $msg, rendered was: $rendered" == "")
-            case Failure(msg) => assertTrue(s"Initial parse failed: $msg" == "")
+                        assert(s"Re-parse failed: $msg, rendered was: $rendered" == "")
+            case Failure(msg) => assert(s"Initial parse failed: $msg" == "")
 
-    def spec = suite("CstRenderer")(
-        test("empty document roundtrips") {
+    "CstRenderer" - {
+        "empty document roundtrips" in
             roundtrip("")
-        },
-        test("paragraph roundtrips") {
+        "paragraph roundtrips" in
             roundtrip("Hello world.\n")
-        },
-        test("heading roundtrips") {
+        "heading roundtrips" in
             roundtrip("== Section Title\n")
-        },
-        test("blank lines preserved in roundtrip") {
+        "blank lines preserved in roundtrip" in
             roundtrip("Para one.\n\nPara two.\n")
-        },
-        test("line comment roundtrips") {
+        "line comment roundtrips" in
             roundtrip("// This is a comment\nPara.\n")
-        },
-        test("include directive roundtrips") {
+        "include directive roundtrips" in
             roundtrip("include::file.adoc[]\n")
-        },
-        test("attribute entry roundtrips") {
+        "attribute entry roundtrips" in
             roundtrip(":my-attr: value\nPara.\n")
-        },
-        test("render produces correct text for heading") {
+        "render produces correct text for heading" in {
             Ascribe.parseCst("== My Section\n") match
                 case Success(cst) =>
                     val rendered = CstRenderer.render(cst)
-                    assertTrue(rendered.contains("== My Section"))
-                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        },
-        test("render produces correct text for line comment") {
+                    assert(rendered.contains("== My Section"))
+                case Failure(msg) => assert(s"Parse failed: $msg" == "")
+        }
+        "render produces correct text for line comment" in {
             Ascribe.parseCst("// my comment\n") match
                 case Success(cst) =>
                     val rendered = CstRenderer.render(cst)
-                    assertTrue(rendered.contains("// my comment"))
-                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        },
-        test("render produces correct text for include") {
+                    assert(rendered.contains("// my comment"))
+                case Failure(msg) => assert(s"Parse failed: $msg" == "")
+        }
+        "render produces correct text for include" in {
             Ascribe.parseCst("include::file.adoc[]\n") match
                 case Success(cst) =>
                     val rendered = CstRenderer.render(cst)
-                    assertTrue(rendered.contains("include::file.adoc"))
-                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        },
-        test("render produces :!name: for unset entry") {
+                    assert(rendered.contains("include::file.adoc"))
+                case Failure(msg) => assert(s"Parse failed: $msg" == "")
+        }
+        "render produces :!name: for unset entry" in {
             Ascribe.parseCst(":!my-attr:\n") match
                 case Success(cst) =>
                     val rendered = CstRenderer.render(cst)
-                    assertTrue(rendered.contains(":!my-attr:"))
-                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        },
-        test("attribute ref roundtrips") {
+                    assert(rendered.contains(":!my-attr:"))
+                case Failure(msg) => assert(s"Parse failed: $msg" == "")
+        }
+        "attribute ref roundtrips" in
             roundtrip("{version} text\n")
-        },
-        test("render produces correct text for attribute ref") {
+        "render produces correct text for attribute ref" in {
             Ascribe.parseCst("Release {version}.\n") match
                 case Success(cst) =>
                     val rendered = CstRenderer.render(cst)
-                    assertTrue(rendered.contains("{version}"))
-                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        },
-        test("admonition paragraph roundtrips") {
+                    assert(rendered.contains("{version}"))
+                case Failure(msg) => assert(s"Parse failed: $msg" == "")
+        }
+        "admonition paragraph roundtrips" in
             roundtrip("NOTE: Watch out.\n")
-        },
-        test("render produces NOTE: prefix") {
+        "render produces NOTE: prefix" in {
             Ascribe.parseCst("NOTE: Watch out.\n") match
                 case Success(cst) =>
                     val rendered = CstRenderer.render(cst)
-                    assertTrue(rendered.startsWith("NOTE: "))
-                case Failure(msg) => assertTrue(s"Parse failed: $msg" == "")
-        },
-        suite("link node rendering")(
-            test("renders CstAutolink as bare URL") {
+                    assert(rendered.startsWith("NOTE: "))
+                case Failure(msg) => assert(s"Parse failed: $msg" == "")
+        }
+        "link node rendering" - {
+            "renders CstAutolink as bare URL" in {
                 val u    = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstAutolink("https://example.com")(u)
-                assertTrue(CstRenderer.renderInline(node) == "https://example.com")
-            },
-            test("renders CstUrlMacro as url[text]") {
+                assert(CstRenderer.renderInline(node) == "https://example.com")
+            }
+            "renders CstUrlMacro as url[text]" in {
                 val u = io.eleven19.ascribe.ast.Span.unknown
                 val node =
                     CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(List(CstText("click")(u)))(u))(u)
-                assertTrue(CstRenderer.renderInline(node) == "https://example.com[click]")
-            },
-            test("renders CstUrlMacro with empty text as url[]") {
+                assert(CstRenderer.renderInline(node) == "https://example.com[click]")
+            }
+            "renders CstUrlMacro with empty text as url[]" in {
                 val u    = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstUrlMacro("https://example.com", CstMacroAttrList.textOnly(Nil)(u))(u)
-                assertTrue(CstRenderer.renderInline(node) == "https://example.com[]")
-            },
-            test("renders CstLinkMacro as link:target[text]") {
+                assert(CstRenderer.renderInline(node) == "https://example.com[]")
+            }
+            "renders CstLinkMacro as link:target[text]" in {
                 val u    = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro("report.pdf", CstMacroAttrList.textOnly(List(CstText("Get Report")(u)))(u))(u)
-                assertTrue(CstRenderer.renderInline(node) == "link:report.pdf[Get Report]")
-            },
-            test("renders CstMailtoMacro as mailto:addr[text]") {
+                assert(CstRenderer.renderInline(node) == "link:report.pdf[Get Report]")
+            }
+            "renders CstMailtoMacro as mailto:addr[text]" in {
                 val u = io.eleven19.ascribe.ast.Span.unknown
                 val node =
                     CstMailtoMacro("user@example.com", CstMacroAttrList.textOnly(List(CstText("Email me")(u)))(u))(u)
-                assertTrue(CstRenderer.renderInline(node) == "mailto:user@example.com[Email me]")
-            },
-            test("renders CstLinkMacro with named attributes") {
+                assert(CstRenderer.renderInline(node) == "mailto:user@example.com[Email me]")
+            }
+            "renders CstLinkMacro with named attributes" in {
                 val u = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro(
                     "target.html",
                     CstMacroAttrList(List(CstText("click")(u)), Nil, List(("window", "_blank")), false)(u)
                 )(u)
-                assertTrue(CstRenderer.renderInline(node) == "link:target.html[click,window=_blank]")
-            },
-            test("renders CstLinkMacro with caret shorthand") {
+                assert(CstRenderer.renderInline(node) == "link:target.html[click,window=_blank]")
+            }
+            "renders CstLinkMacro with caret shorthand" in {
                 val u = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro(
                     "target.html",
                     CstMacroAttrList(List(CstText("click")(u)), Nil, Nil, hasCaretShorthand = true)(u)
                 )(u)
-                assertTrue(CstRenderer.renderInline(node) == "link:target.html[click^]")
-            },
-            test("renders CstLinkMacro with positional and named attributes") {
+                assert(CstRenderer.renderInline(node) == "link:target.html[click^]")
+            }
+            "renders CstLinkMacro with positional and named attributes" in {
                 val u = io.eleven19.ascribe.ast.Span.unknown
                 val node = CstLinkMacro(
                     "target.html",
                     CstMacroAttrList(List(CstText("text")(u)), List("pos1"), List(("role", "btn")), false)(u)
                 )(u)
-                assertTrue(CstRenderer.renderInline(node) == "link:target.html[text,pos1,role=btn]")
-            },
-            test("bare autolink roundtrips") {
-                roundtrip("Visit https://example.com today.\n")
-            },
-            test("link macro roundtrips") {
-                roundtrip("See link:report.pdf[Get Report] here.\n")
-            },
-            test("mailto macro roundtrips") {
-                roundtrip("Contact mailto:user@example.com[Email me] now.\n")
-            },
-            test("URL macro roundtrips") {
-                roundtrip("Go to https://example.com[the site].\n")
+                assert(CstRenderer.renderInline(node) == "link:target.html[text,pos1,role=btn]")
             }
-        )
-    )
+            "bare autolink roundtrips" in
+                roundtrip("Visit https://example.com today.\n")
+            "link macro roundtrips" in
+                roundtrip("See link:report.pdf[Get Report] here.\n")
+            "mailto macro roundtrips" in
+                roundtrip("Contact mailto:user@example.com[Email me] now.\n")
+            "URL macro roundtrips" in
+                roundtrip("Go to https://example.com[the site].\n")
+        }
+    }

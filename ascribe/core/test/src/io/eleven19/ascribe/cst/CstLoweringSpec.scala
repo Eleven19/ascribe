@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.cst
 
-import zio.test.*
+import kyo.test.*
 import io.eleven19.ascribe.ast.{
     Admonition,
     AdmonitionKind,
@@ -35,15 +35,15 @@ import io.eleven19.ascribe.cst.{
     CstUrlMacro
 }
 
-object CstLoweringSpec extends ZIOSpecDefault:
+class CstLoweringSpec extends Test[Any]:
     private val u = Span.unknown
 
-    def spec = suite("CstLowering")(
-        test("empty document") {
+    "CstLowering" - {
+        "empty document" in {
             val cst = CstDocument(None, Nil)(u)
-            assertTrue(CstLowering.toAst(cst) == document())
-        },
-        test("document with paragraph") {
+            assert(CstLowering.toAst(cst) == document())
+        }
+        "document with paragraph" in {
             val cst = CstDocument(
                 None,
                 List(
@@ -54,9 +54,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )(u)
                 )
             )(u)
-            assertTrue(CstLowering.toAst(cst) == document(paragraph(text("Hello world."))))
-        },
-        test("multi-line paragraph merges lines") {
+            assert(CstLowering.toAst(cst) == document(paragraph(text("Hello world."))))
+        }
+        "multi-line paragraph merges lines" in {
             val cst = CstDocument(
                 None,
                 List(
@@ -69,12 +69,12 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )
             )(u)
             // Lines are flattened (no newline separator — matches current AST behaviour)
-            assertTrue(
+            assert(
                 CstLowering.toAst(cst) ==
                     document(paragraph(text("Line one."), text("Line two.")))
             )
-        },
-        test("blank lines are dropped") {
+        }
+        "blank lines are dropped" in {
             val cst = CstDocument(
                 None,
                 List(
@@ -87,9 +87,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     CstBlankLine()(u)
                 )
             )(u)
-            assertTrue(CstLowering.toAst(cst) == document(paragraph(text("Hello."))))
-        },
-        test("line comments are dropped") {
+            assert(CstLowering.toAst(cst) == document(paragraph(text("Hello."))))
+        }
+        "line comments are dropped" in {
             val cst = CstDocument(
                 None,
                 List(
@@ -97,10 +97,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     CstParagraph(List(CstParagraphLine(List(CstText("Para.")(u)))(u)))(u)
                 )
             )(u)
-            assertTrue(CstLowering.toAst(cst) == document(paragraph(text("Para."))))
-        },
-        suite("inline lowering")(
-            test("unconstrained bold") {
+            assert(CstLowering.toAst(cst) == document(paragraph(text("Para."))))
+        }
+        "inline lowering" - {
+            "unconstrained bold" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -115,12 +115,12 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(
+                assert(
                     CstLowering.toAst(cst) ==
                         document(paragraph(bold(text("bold"))))
                 )
-            },
-            test("constrained bold") {
+            }
+            "constrained bold" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -135,12 +135,12 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(
+                assert(
                     CstLowering.toAst(cst) ==
                         document(paragraph(constrainedBold(text("bold"))))
                 )
-            },
-            test("italic") {
+            }
+            "italic" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -151,12 +151,12 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(
+                assert(
                     CstLowering.toAst(cst) ==
                         document(paragraph(italic(text("it"))))
                 )
-            },
-            test("mono") {
+            }
+            "mono" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -167,14 +167,14 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(
+                assert(
                     CstLowering.toAst(cst) ==
                         document(paragraph(mono(text("m"))))
                 )
             }
-        ),
-        suite("constrained italic/mono lowering")(
-            test("CstItalic(constrained=false) lowers to Italic") {
+        }
+        "constrained italic/mono lowering" - {
+            "CstItalic(constrained=false) lowers to Italic" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -185,9 +185,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(italic(text("em")))))
-            },
-            test("CstItalic(constrained=true) lowers to ConstrainedItalic") {
+                assert(CstLowering.toAst(cst) == document(paragraph(italic(text("em")))))
+            }
+            "CstItalic(constrained=true) lowers to ConstrainedItalic" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -198,9 +198,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(constrainedItalic(text("em")))))
-            },
-            test("CstMono(constrained=false) lowers to Mono") {
+                assert(CstLowering.toAst(cst) == document(paragraph(constrainedItalic(text("em")))))
+            }
+            "CstMono(constrained=false) lowers to Mono" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -211,9 +211,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(mono(text("cd")))))
-            },
-            test("CstMono(constrained=true) lowers to ConstrainedMono") {
+                assert(CstLowering.toAst(cst) == document(paragraph(mono(text("cd")))))
+            }
+            "CstMono(constrained=true) lowers to ConstrainedMono" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -224,11 +224,11 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         )(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(constrainedMono(text("cd")))))
+                assert(CstLowering.toAst(cst) == document(paragraph(constrainedMono(text("cd")))))
             }
-        ),
-        suite("attribute references")(
-            test("resolves attribute ref defined in header") {
+        }
+        "attribute references" - {
+            "resolves attribute ref defined in header" in {
                 val entry = CstAttributeEntry("version", "1.0", false)(u)
                 val ref   = CstAttributeRef("version")(u)
                 val cst = CstDocument(
@@ -240,14 +240,14 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     ),
                     List(CstParagraph(List(CstParagraphLine(List(ref))(u)))(u))
                 )(u)
-                assertTrue(
+                assert(
                     CstLowering.toAst(cst) == document(
                         documentHeader(List(text("Doc")), List("version" -> "1.0")),
                         paragraph(text("1.0"))
                     )
                 )
-            },
-            test("resolves attribute ref defined in body") {
+            }
+            "resolves attribute ref defined in body" in {
                 val entry = CstAttributeEntry("foo", "bar", false)(u)
                 val ref   = CstAttributeRef("foo")(u)
                 val cst = CstDocument(
@@ -257,9 +257,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(text("bar"))))
-            },
-            test("unresolved attribute ref passes through as {name}") {
+                assert(CstLowering.toAst(cst) == document(paragraph(text("bar"))))
+            }
+            "unresolved attribute ref passes through as {name}" in {
                 val ref = CstAttributeRef("unknown")(u)
                 val cst = CstDocument(
                     None,
@@ -267,9 +267,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(text("{unknown}"))))
-            },
-            test("unset body entry removes attribute from scope") {
+                assert(CstLowering.toAst(cst) == document(paragraph(text("{unknown}"))))
+            }
+            "unset body entry removes attribute from scope" in {
                 val set   = CstAttributeEntry("foo", "bar", false)(u)
                 val unset = CstAttributeEntry("foo", "", true)(u)
                 val ref   = CstAttributeRef("foo")(u)
@@ -281,9 +281,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(text("{foo}"))))
-            },
-            test("built-in {empty} resolves to empty string") {
+                assert(CstLowering.toAst(cst) == document(paragraph(text("{foo}"))))
+            }
+            "built-in {empty} resolves to empty string" in {
                 val ref = CstAttributeRef("empty")(u)
                 val cst = CstDocument(
                     None,
@@ -291,9 +291,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(text(""))))
-            },
-            test("built-in {sp} resolves to space") {
+                assert(CstLowering.toAst(cst) == document(paragraph(text(""))))
+            }
+            "built-in {sp} resolves to space" in {
                 val ref = CstAttributeRef("sp")(u)
                 val cst = CstDocument(
                     None,
@@ -301,9 +301,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         CstParagraph(List(CstParagraphLine(List(ref))(u)))(u)
                     )
                 )(u)
-                assertTrue(CstLowering.toAst(cst) == document(paragraph(text(" "))))
-            },
-            test("attribute ref in block title is resolved via lowerInlines") {
+                assert(CstLowering.toAst(cst) == document(paragraph(text(" "))))
+            }
+            "attribute ref in block title is resolved via lowerInlines" in {
                 import io.eleven19.ascribe.ast.{Listing, Title, Text as AstText}
                 val entry    = CstAttributeEntry("lang", "ruby", false)(u)
                 val titleRef = CstAttributeRef("lang")(u)
@@ -323,14 +323,14 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 val doc = CstLowering.toAst(cst)
                 doc.blocks match
                     case List(l: Listing) =>
-                        assertTrue(
+                        assert(
                             l.title.exists(t => t.content.exists { case AstText(c) => c == "ruby"; case _ => false })
                         )
-                    case other => assertTrue(s"unexpected: $other" == "")
+                    case other => assert(s"unexpected: $other" == "")
             }
-        ),
-        suite("admonition paragraphs")(
-            test("NOTE: text lowers to Admonition(Note, [Paragraph])") {
+        }
+        "admonition paragraphs" - {
+            "NOTE: text lowers to Admonition(Note, [Paragraph])" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -339,10 +339,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val doc = CstLowering.toAst(cst)
                 doc.blocks match
-                    case List(Admonition(AdmonitionKind.Note, List(_: Paragraph))) => assertTrue(true)
-                    case other => assertTrue(s"unexpected: $other" == "")
-            },
-            test("WARNING: lowers to AdmonitionKind.Warning") {
+                    case List(Admonition(AdmonitionKind.Note, List(_: Paragraph))) => assert(true)
+                    case other => assert(s"unexpected: $other" == "")
+            }
+            "WARNING: lowers to AdmonitionKind.Warning" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -351,10 +351,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val doc = CstLowering.toAst(cst)
                 doc.blocks match
-                    case List(Admonition(AdmonitionKind.Warning, _)) => assertTrue(true)
-                    case other                                       => assertTrue(s"unexpected: $other" == "")
-            },
-            test("all five admonition kinds lower correctly") {
+                    case List(Admonition(AdmonitionKind.Warning, _)) => assert(true)
+                    case other                                       => assert(s"unexpected: $other" == "")
+            }
+            "all five admonition kinds lower correctly" in {
                 val kinds = List(
                     "NOTE"      -> AdmonitionKind.Note,
                     "TIP"       -> AdmonitionKind.Tip,
@@ -373,11 +373,11 @@ object CstLoweringSpec extends ZIOSpecDefault:
                         case List(Admonition(kind, _)) => kind == expected
                         case _                         => false
                 }
-                assertTrue(results.forall(identity))
+                assert(results.forall(identity))
             }
-        ),
-        suite("heading and section restructuring")(
-            test("level-1 heading is not restructured into a section") {
+        }
+        "heading and section restructuring" - {
+            "level-1 heading is not restructured into a section" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -386,10 +386,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 // Level-1 headings stay as Heading in the block list
                 val doc = CstLowering.toAst(cst)
-                assertTrue(doc.blocks.length == 1) &&
-                assertTrue(doc.blocks.head.isInstanceOf[Heading])
-            },
-            test("level-2 heading becomes a section") {
+                assert(doc.blocks.length == 1)
+                assert(doc.blocks.head.isInstanceOf[Heading])
+            }
+            "level-2 heading becomes a section" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -397,10 +397,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )
                 )(u)
                 val doc = CstLowering.toAst(cst)
-                assertTrue(doc.blocks.length == 1) &&
-                assertTrue(doc.blocks.head.isInstanceOf[Section])
-            },
-            test("document header is lowered") {
+                assert(doc.blocks.length == 1)
+                assert(doc.blocks.head.isInstanceOf[Section])
+            }
+            "document header is lowered" in {
                 val cst = CstDocument(
                     Some(
                         CstDocumentHeader(
@@ -410,14 +410,14 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     ),
                     Nil
                 )(u)
-                assertTrue(
+                assert(
                     CstLowering.toAst(cst) ==
                         document(documentHeader(text("My Doc")))
                 )
             }
-        ),
-        suite("link lowering")(
-            test("CstAutolink lowers to Link(Auto, ...)") {
+        }
+        "link lowering" - {
+            "CstAutolink lowers to Link(Auto, ...)" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -429,9 +429,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )
                 )(u)
                 val result = CstLowering.toAst(cst)
-                assertTrue(result == document(paragraph(autoLink("https://example.com"))))
-            },
-            test("CstUrlMacro lowers to Link(Macro(Url(...)), ...)") {
+                assert(result == document(paragraph(autoLink("https://example.com"))))
+            }
+            "CstUrlMacro lowers to Link(Macro(Url(...)), ...)" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -450,9 +450,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )
                 )(u)
                 val result = CstLowering.toAst(cst)
-                assertTrue(result == document(paragraph(urlLink("https", "https://example.com", text("click")))))
-            },
-            test("CstLinkMacro lowers to Link(Macro(Link), ...)") {
+                assert(result == document(paragraph(urlLink("https", "https://example.com", text("click")))))
+            }
+            "CstLinkMacro lowers to Link(Macro(Link), ...)" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -471,9 +471,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )
                 )(u)
                 val result = CstLowering.toAst(cst)
-                assertTrue(result == document(paragraph(link("report.pdf", text("Get Report")))))
-            },
-            test("CstMailtoMacro lowers to Link(Macro(MailTo), ...)") {
+                assert(result == document(paragraph(link("report.pdf", text("Get Report")))))
+            }
+            "CstMailtoMacro lowers to Link(Macro(MailTo), ...)" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -492,9 +492,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )
                 )(u)
                 val result = CstLowering.toAst(cst)
-                assertTrue(result == document(paragraph(mailtoLink("user@host.com", text("Email")))))
-            },
-            test("CstUrlMacro with empty text lowers to Link with empty text list") {
+                assert(result == document(paragraph(mailtoLink("user@host.com", text("Email")))))
+            }
+            "CstUrlMacro with empty text lowers to Link with empty text list" in {
                 val cst = CstDocument(
                     None,
                     List(
@@ -508,11 +508,11 @@ object CstLoweringSpec extends ZIOSpecDefault:
                     )
                 )(u)
                 val result = CstLowering.toAst(cst)
-                assertTrue(result == document(paragraph(urlLink("https", "https://example.com"))))
+                assert(result == document(paragraph(urlLink("https", "https://example.com"))))
             }
-        ),
-        suite("link attribute lowering")(
-            test("caret shorthand produces window=_blank and NoOpener") {
+        }
+        "link attribute lowering" - {
+            "caret shorthand produces window=_blank and NoOpener" in {
                 val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, Nil, hasCaretShorthand = true)(u)
                 val cst = CstDocument(
                     None,
@@ -526,12 +526,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val result   = CstLowering.toAst(cst)
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
-                assertTrue(
-                    linkNode.attributes.window == Some(WindowTarget.Blank),
-                    linkNode.attributes.options.contains(LinkOption.NoOpener)
-                )
-            },
-            test("window=_blank named attr produces window and NoOpener") {
+                assert(linkNode.attributes.window == Some(WindowTarget.Blank))
+                assert(linkNode.attributes.options.contains(LinkOption.NoOpener))
+            }
+            "window=_blank named attr produces window and NoOpener" in {
                 val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("window", "_blank")), false)(u)
                 val cst = CstDocument(
                     None,
@@ -545,12 +543,10 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val result   = CstLowering.toAst(cst)
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
-                assertTrue(
-                    linkNode.attributes.window == Some(WindowTarget.Blank),
-                    linkNode.attributes.options.contains(LinkOption.NoOpener)
-                )
-            },
-            test("role attr produces CssRole") {
+                assert(linkNode.attributes.window == Some(WindowTarget.Blank))
+                assert(linkNode.attributes.options.contains(LinkOption.NoOpener))
+            }
+            "role attr produces CssRole" in {
                 val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("role", "btn")), false)(u)
                 val cst = CstDocument(
                     None,
@@ -564,9 +560,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val result   = CstLowering.toAst(cst)
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
-                assertTrue(linkNode.attributes.roles == List(CssRole("btn")))
-            },
-            test("space-separated roles produce multiple CssRoles") {
+                assert(linkNode.attributes.roles == List(CssRole("btn")))
+            }
+            "space-separated roles produce multiple CssRoles" in {
                 val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("role", "btn primary")), false)(u)
                 val cst = CstDocument(
                     None,
@@ -580,9 +576,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val result   = CstLowering.toAst(cst)
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
-                assertTrue(linkNode.attributes.roles == List(CssRole("btn"), CssRole("primary")))
-            },
-            test("opts=nofollow produces NoFollow") {
+                assert(linkNode.attributes.roles == List(CssRole("btn"), CssRole("primary")))
+            }
+            "opts=nofollow produces NoFollow" in {
                 val attrList = CstMacroAttrList(List(CstText("click")(u)), Nil, List(("opts", "nofollow")), false)(u)
                 val cst = CstDocument(
                     None,
@@ -596,9 +592,9 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val result   = CstLowering.toAst(cst)
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
-                assertTrue(linkNode.attributes.options.contains(LinkOption.NoFollow))
-            },
-            test("empty attrs produce LinkAttributes.empty") {
+                assert(linkNode.attributes.options.contains(LinkOption.NoFollow))
+            }
+            "empty attrs produce LinkAttributes.empty" in {
                 val attrList = CstMacroAttrList(Nil, Nil, Nil, false)(u)
                 val cst = CstDocument(
                     None,
@@ -612,7 +608,7 @@ object CstLoweringSpec extends ZIOSpecDefault:
                 )(u)
                 val result   = CstLowering.toAst(cst)
                 val linkNode = result.blocks.head.asInstanceOf[Paragraph].content.head.asInstanceOf[Link]
-                assertTrue(linkNode.attributes == LinkAttributes.empty)
+                assert(linkNode.attributes == LinkAttributes.empty)
             }
-        )
-    )
+        }
+    }

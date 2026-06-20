@@ -3,9 +3,9 @@ package io.eleven19.ascribe.pipeline
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.pipeline.core.{RewriteAction, RewriteRule}
 import kyo.{Abort, Path as KPath, Result}
-import zio.test.*
+import kyo.test.*
 
-object FileSourceSinkSpec extends ZIOSpecDefault:
+class FileSourceSinkSpec extends Test[Any]:
 
     private def deleteRecursively(root: java.nio.file.Path): Unit =
         if java.nio.file.Files.isDirectory(root) then
@@ -14,18 +14,18 @@ object FileSourceSinkSpec extends ZIOSpecDefault:
             finally stream.close()
         java.nio.file.Files.deleteIfExists(root): Unit
 
-    def spec = suite("FileSource & FileSink")(
-        test("FileSource.fromFile reads and parses a single .adoc file") {
+    "FileSource & FileSink" - {
+        "FileSource.fromFile reads and parses a single .adoc file" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-test")
             try
                 java.nio.file.Files.writeString(tmpDir.resolve("test.adoc"), "Hello world.\n")
                 val result = KyoTestSupport.runSyncAbort(
                     FileSource.fromFile(KPath(tmpDir.resolve("test.adoc").toString)).read
                 )
-                assertTrue(result.isSuccess)
+                assert(result.isSuccess)
             finally deleteRecursively(tmpDir)
-        },
-        test("FileSource.fromDirectory reads all .adoc files") {
+        }
+        "FileSource.fromDirectory reads all .adoc files" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-test")
             try
                 java.nio.file.Files.writeString(tmpDir.resolve("a.adoc"), "First.\n")
@@ -35,21 +35,22 @@ object FileSourceSinkSpec extends ZIOSpecDefault:
                     FileSource.fromDirectory(KPath(tmpDir.toString)).read
                 )
                 result match
-                    case Result.Success(tree) => assertTrue(tree.size == 2)
-                    case _                    => assertTrue(false)
+                    case Result.Success(tree) => assert(tree.size == 2)
+                    case _                    => assert(false)
             finally deleteRecursively(tmpDir)
-        },
-        test("FileSink.toFile writes rendered output") {
+        }
+        "FileSink.toFile writes rendered output" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-test")
             try
                 val tmpFile     = tmpDir.resolve("output.adoc")
                 val rendered    = Map(DocumentPath("doc.adoc") -> "Hello world.\n")
                 val writeResult = KyoTestSupport.runSyncAbort(FileSink.toFile(KPath(tmpFile.toString)).write(rendered))
                 val content     = java.nio.file.Files.readString(tmpFile)
-                assertTrue(writeResult.isSuccess, content == "Hello world.\n")
+                assert(writeResult.isSuccess)
+                assert(content == "Hello world.\n")
             finally deleteRecursively(tmpDir)
-        },
-        test("FileSink.toDirectory writes multiple files") {
+        }
+        "FileSink.toDirectory writes multiple files" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-test")
             try
                 val rendered = Map(
@@ -60,20 +61,22 @@ object FileSourceSinkSpec extends ZIOSpecDefault:
                     KyoTestSupport.runSyncAbort(FileSink.toDirectory(KPath(tmpDir.toString)).write(rendered))
                 val content1 = java.nio.file.Files.readString(tmpDir.resolve("a.adoc"))
                 val content2 = java.nio.file.Files.readString(tmpDir.resolve("b.adoc"))
-                assertTrue(writeResult.isSuccess, content1 == "First.\n", content2 == "Second.\n")
+                assert(writeResult.isSuccess)
+                assert(content1 == "First.\n")
+                assert(content2 == "Second.\n")
             finally deleteRecursively(tmpDir)
-        },
-        test("FileSource fails on parse error") {
+        }
+        "FileSource fails on parse error" in {
             val tmpDir = java.nio.file.Files.createTempDirectory("ascribe-test")
             try
                 java.nio.file.Files.writeString(tmpDir.resolve("bad.adoc"), "[invalid\n")
                 val result = KyoTestSupport.runSyncAbort(
                     FileSource.fromFile(KPath(tmpDir.resolve("bad.adoc").toString)).read
                 )
-                assertTrue(!result.isSuccess)
+                assert(!result.isSuccess)
             finally deleteRecursively(tmpDir)
-        },
-        test("end-to-end: read, transform, write") {
+        }
+        "end-to-end: read, transform, write" in {
             val srcDir = java.nio.file.Files.createTempDirectory("ascribe-src")
             val outDir = java.nio.file.Files.createTempDirectory("ascribe-out")
             try
@@ -89,10 +92,11 @@ object FileSourceSinkSpec extends ZIOSpecDefault:
                         val writeResult =
                             KyoTestSupport.runSyncAbort(FileSink.toDirectory(KPath(outDir.toString)).write(rendered))
                         val output = java.nio.file.Files.readString(outDir.resolve("doc.adoc"))
-                        assertTrue(writeResult.isSuccess, output == "HELLO.\n")
-                    case _ => assertTrue(false)
+                        assert(writeResult.isSuccess)
+                        assert(output == "HELLO.\n")
+                    case _ => assert(false)
             finally
                 deleteRecursively(srcDir)
                 deleteRecursively(outDir)
         }
-    )
+    }

@@ -1,43 +1,44 @@
 package io.eleven19.ascribe.pipeline
 
-import zio.test.*
+import kyo.test.*
 import io.eleven19.ascribe.ast.*
 import io.eleven19.ascribe.ast.dsl.{*, given}
 import scala.language.implicitConversions
-import kyo.{<, Abort, Result}
+import kyo.{<, Abort, Result, Sync}
 
-object PipelineSpec extends ZIOSpecDefault:
+class PipelineSpec extends Test[Any]:
 
     /** Evaluate a pure Kyo value (no pending effects). */
-    private def runPure[A](v: A < Any): A = v.asInstanceOf[A]
+    private def runPure[A](v: A < Any): A =
+        KyoTestSupport.runSync(v.asInstanceOf[A < Sync])
 
     /** Run an Abort[PipelineError] effect and extract the result. */
     private def runAbort[A](v: A < Abort[PipelineError]): Result[PipelineError, A] =
-        runPure(Abort.run[PipelineError](v))
+        KyoTestSupport.runSyncAbort(v.asInstanceOf[A < (Sync & Abort[PipelineError])])
 
-    def spec = suite("Pipeline")(
-        test("roundtrip: parse and render produces original") {
+    "Pipeline" - {
+        "roundtrip: parse and render produces original" in {
             val input  = "Hello world.\n"
             val result = runAbort(Pipeline.fromString(input).runToString)
-            assertTrue(result == Result.Success("Hello world.\n"))
-        },
-        test("pipeline with rewrite rule modifies output") {
+            assert(result == Result.Success("Hello world.\n"))
+        }
+        "pipeline with rewrite rule modifies output" in {
             val rule = RewriteRule.forInlines { case Text(content) =>
                 RewriteAction.Replace(Text(content.toUpperCase)(Span.unknown))
             }
             val result = runAbort(Pipeline.fromString("hello.\n").rewrite(rule).runToString)
-            assertTrue(result == Result.Success("HELLO.\n"))
-        },
-        test("pipeline with remove rule eliminates blocks") {
+            assert(result == Result.Success("HELLO.\n"))
+        }
+        "pipeline with remove rule eliminates blocks" in {
             val doc = Document(
                 None,
                 scala.List(paragraph("keep"), Comment("////", "drop")(Span.unknown))
             )(Span.unknown)
             val rule = RewriteRule.forBlocks { case _: Comment => RewriteAction.Remove }
             val tree = runPure(Pipeline.fromDocument(doc).rewrite(rule).run)
-            assertTrue(tree.allDocuments.head._2.blocks.size == 1)
-        },
-        test("pipeline with composed rules applies in order") {
+            assert(tree.allDocuments.head._2.blocks.size == 1)
+        }
+        "pipeline with composed rules applies in order" in {
             val rule1 = RewriteRule.forInlines { case Text("hello.") =>
                 RewriteAction.Replace(Text("world.")(Span.unknown))
             }
@@ -45,9 +46,9 @@ object PipelineSpec extends ZIOSpecDefault:
                 RewriteAction.Replace(Text("ignored.")(Span.unknown))
             }
             val result = runAbort(Pipeline.fromString("hello.\n").rewrite(rule1).rewrite(rule2).runToString)
-            assertTrue(result == Result.Success("world.\n"))
-        },
-        test("runToStrings returns map of all rendered documents") {
+            assert(result == Result.Success("world.\n"))
+        }
+        "runToStrings returns map of all rendered documents" in {
             val tree = DocumentTree.fromDocuments(
                 scala.List(
                     (DocumentPath("a.adoc"), document(paragraph("one"))),
@@ -55,32 +56,30 @@ object PipelineSpec extends ZIOSpecDefault:
                 )
             )
             val result = runPure(Pipeline.fromTree(tree).runToStrings)
-            assertTrue(
-                result.size == 2,
-                result(DocumentPath("a.adoc")) == "one\n",
-                result(DocumentPath("b.adoc")) == "two\n"
-            )
-        },
-        test("runTo writes to a MapSink") {
+            assert(result.size == 2)
+            assert(result(DocumentPath("a.adoc")) == "one\n")
+            assert(result(DocumentPath("b.adoc")) == "two\n")
+        }
+        "runTo writes to a MapSink" in {
             val sink = Sink.toMap()
             runPure(Pipeline.fromDocument(document(paragraph("hello"))).runTo(sink))
-            assertTrue(sink.output.size == 1)
-        },
-        test("runTo writes to a StringSink") {
+            assert(sink.output.size == 1)
+        }
+        "runTo writes to a StringSink" in {
             val sink = Sink.toStringResult()
             runPure(Pipeline.fromDocument(document(paragraph("hello"))).runTo(sink))
-            assertTrue(sink.output == "hello\n")
-        },
-        test("renderWith switches renderer") {
+            assert(sink.output == "hello\n")
+        }
+        "renderWith switches renderer" in {
             val result = runPure(
                 Pipeline
                     .fromDocument(document(paragraph("hello")))
                     .renderWith(AsgJsonRenderer.asInstanceOf[Renderer[Any]])
                     .runToString
             )
-            assertTrue(result.contains("\"name\":\"document\""))
-        },
-        test("Source.fromStrings creates multi-document tree") {
+            assert(result.contains("\"name\":\"document\""))
+        }
+        "Source.fromStrings creates multi-document tree" in {
             val result = runAbort(
                 Source
                     .fromStrings(
@@ -89,13 +88,13 @@ object PipelineSpec extends ZIOSpecDefault:
                     )
                     .read
             )
-            assertTrue(result.map(_.size) == Result.Success(2))
-        },
-        test("Source.fromString fails on invalid input") {
+            assert(result.map(_.size) == Result.Success(2))
+        }
+        "Source.fromString fails on invalid input" in {
             val result = runAbort(Source.fromString("[invalid\n").read)
-            assertTrue(!result.isSuccess)
-        },
-        test("runToTargets renders through multiple renderers in a single run") {
+            assert(!result.isSuccess)
+        }
+        "runToTargets renders through multiple renderers in a single run" in {
             val results = runPure(
                 Pipeline
                     .fromDocument(document(paragraph("hello")))
@@ -104,25 +103,21 @@ object PipelineSpec extends ZIOSpecDefault:
                         "json" -> AsgJsonRenderer
                     )
             )
-            assertTrue(
-                results.size == 2,
-                results("adoc").values.head == "hello\n",
-                results("json").values.head.contains("\"name\":\"document\"")
-            )
-        },
-        test("renderAll returns a list of results per renderer") {
+            assert(results.size == 2)
+            assert(results("adoc").values.head == "hello\n")
+            assert(results("json").values.head.contains("\"name\":\"document\""))
+        }
+        "renderAll returns a list of results per renderer" in {
             val results = runPure(
                 Pipeline
                     .fromDocument(document(paragraph("hello")))
                     .renderAll(AsciiDocRenderer, AsgJsonRenderer)
             )
-            assertTrue(
-                results.size == 2,
-                results.head.values.head == "hello\n",
-                results(1).values.head.contains("\"name\":\"document\"")
-            )
-        },
-        test("runToTargets works with multi-document tree") {
+            assert(results.size == 2)
+            assert(results.head.values.head == "hello\n")
+            assert(results(1).values.head.contains("\"name\":\"document\""))
+        }
+        "runToTargets works with multi-document tree" in {
             val tree = DocumentTree.fromDocuments(
                 scala.List(
                     (DocumentPath("a.adoc"), document(paragraph("one"))),
@@ -132,10 +127,8 @@ object PipelineSpec extends ZIOSpecDefault:
             val results = runPure(
                 Pipeline.fromTree(tree).runToTargets("adoc" -> AsciiDocRenderer)
             )
-            assertTrue(
-                results("adoc").size == 2,
-                results("adoc")(DocumentPath("a.adoc")) == "one\n",
-                results("adoc")(DocumentPath("b.adoc")) == "two\n"
-            )
+            assert(results("adoc").size == 2)
+            assert(results("adoc")(DocumentPath("a.adoc")) == "one\n")
+            assert(results("adoc")(DocumentPath("b.adoc")) == "two\n")
         }
-    )
+    }
