@@ -1,0 +1,2 @@
+[.warning#alert1]
+Text with combined class and id

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "blockAttributes",
+    "type": "object",
+    "value": {
+      "type": "NOTE"
+    },
+    "location": [{ "line": 1, "col": 1 }, { "line": 1, "col": 7 }]
+  },
+  {
+    "name": "paragraph",
+    "type": "object",
+    "value": [
+      {
+        "name": "text",
+        "type": "string",
+        "value": "Note block with admonition type",
+        "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 31 }]
+      }
+    ],
+    "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 31 }]
+  }
+]

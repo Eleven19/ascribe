@@ -1,0 +1,24 @@
+[
+  {
+    "name": "blockAttributes",
+    "type": "object",
+    "value": {
+      "class": ["sidebar"],
+      "id": "info1"
+    },
+    "location": [{ "line": 1, "col": 1 }, { "line": 1, "col": 16 }]
+  },
+  {
+    "name": "paragraph",
+    "type": "object",
+    "value": [
+      {
+        "name": "text",
+        "type": "string",
+        "value": "Paragraph with multiple attributes",
+        "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 34 }]
+      }
+    ],
+    "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 34 }]
+  }
+]

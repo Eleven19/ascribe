@@ -1,0 +1,16 @@
+[
+  {
+    "name": "inlineAttributes",
+    "type": "object",
+    "value": {
+      "role": "important"
+    },
+    "location": [{ "line": 1, "col": 1 }, { "line": 1, "col": 18 }]
+  },
+  {
+    "name": "text",
+    "type": "string",
+    "value": "Text with role attribute",
+    "location": [{ "line": 2, "col": 1 }, { "line": 2, "col": 23 }]
+  }
+]
