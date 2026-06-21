@@ -175,9 +175,9 @@ private[asg] object AsgWire:
     private def columnSpec(value: ColumnSpec): Value =
         record(
             opt("width", value.width)(int) ++
-                opt("halign", value.halign)(v => str(v.toString)) ++
-                opt("valign", value.valign)(v => str(v.toString)) ++
-                opt("style", value.style)(v => str(v.toString))
+                opt("halign", value.halign)(v => str(halignName(v))) ++
+                opt("valign", value.valign)(v => str(valignName(v))) ++
+                opt("style", value.style)(v => str(cellStyleName(v)))
         )
 
     private def inlines(value: Chunk[Inline]): Value =
@@ -300,8 +300,8 @@ private[asg] object AsgWire:
                 record(blockBase(blockName(n), n) ++ requiredChunk("cells", n.cells)(block) ++ field("location", location(n.location)) ++ blockType(n))
             case n: TableCell =>
                 record(
-                    blockBase(blockName(n), n) ++
-                        opt("style", n.style)(v => str(v.toString)) ++
+                        blockBase(blockName(n), n) ++
+                        opt("style", n.style)(v => str(cellStyleName(v))) ++
                         opt("colSpan", n.colSpan)(v => int(v.value)) ++
                         opt("rowSpan", n.rowSpan)(v => int(v.value)) ++
                         opt("dupCount", n.dupCount)(v => int(v.value)) ++
@@ -334,6 +334,28 @@ private[asg] object AsgWire:
 
     private def fieldValue(fields: Chunk[(String, Value)], name: String): Either[String, Value] =
         fields.find(_._1 == name).map(_._2).toRight(s"Missing field: $name")
+
+    private def halignName(value: HAlign): String =
+        value match
+            case HAlign.Left   => "left"
+            case HAlign.Center => "center"
+            case HAlign.Right  => "right"
+
+    private def valignName(value: VAlign): String =
+        value match
+            case VAlign.Top    => "top"
+            case VAlign.Middle => "middle"
+            case VAlign.Bottom => "bottom"
+
+    private def cellStyleName(value: CellStyle): String =
+        value match
+            case CellStyle.Default   => "default"
+            case CellStyle.AsciiDoc  => "asciiDoc"
+            case CellStyle.Emphasis  => "emphasis"
+            case CellStyle.Header    => "header"
+            case CellStyle.Literal   => "literal"
+            case CellStyle.Monospace => "monospace"
+            case CellStyle.Strong    => "strong"
 
     private def fieldString(fields: Chunk[(String, Value)], name: String): Either[String, String] =
         fieldValue(fields, name).flatMap {
@@ -477,15 +499,36 @@ private[asg] object AsgWire:
             case Value.Record(fields) =>
                 for
                     width  <- optionalInt(fields, "width")
-                    halign <- optionalString(fields, "halign").flatMap(_.fold[Either[String, Option[HAlign]]](Right(None))(v => enumValue(HAlign.valueOf, "halign", v).map(Some(_))))
-                    valign <- optionalString(fields, "valign").flatMap(_.fold[Either[String, Option[VAlign]]](Right(None))(v => enumValue(VAlign.valueOf, "valign", v).map(Some(_))))
-                    style  <- optionalString(fields, "style").flatMap(_.fold[Either[String, Option[CellStyle]]](Right(None))(v => enumValue(CellStyle.valueOf, "style", v).map(Some(_))))
+                    halign <- optionalString(fields, "halign").flatMap(_.fold[Either[String, Option[HAlign]]](Right(None))(halignFrom(_).map(Some(_))))
+                    valign <- optionalString(fields, "valign").flatMap(_.fold[Either[String, Option[VAlign]]](Right(None))(valignFrom(_).map(Some(_))))
+                    style  <- optionalString(fields, "style").flatMap(_.fold[Either[String, Option[CellStyle]]](Right(None))(cellStyleFrom(_).map(Some(_))))
                 yield ColumnSpec(width, halign, valign, style)
             case other => Left(s"Expected column spec object, got $other")
 
-    private def enumValue[A](f: String => A, field: String, value: String): Either[String, A] =
-        try Right(f(value))
-        catch case _: IllegalArgumentException => Left(s"Unknown $field value: $value")
+    private def halignFrom(value: String): Either[String, HAlign] =
+        value match
+            case "left" | "Left"     => Right(HAlign.Left)
+            case "center" | "Center" => Right(HAlign.Center)
+            case "right" | "Right"   => Right(HAlign.Right)
+            case other               => Left(s"Unknown halign value: $other")
+
+    private def valignFrom(value: String): Either[String, VAlign] =
+        value match
+            case "top" | "Top"       => Right(VAlign.Top)
+            case "middle" | "Middle" => Right(VAlign.Middle)
+            case "bottom" | "Bottom" => Right(VAlign.Bottom)
+            case other               => Left(s"Unknown valign value: $other")
+
+    private def cellStyleFrom(value: String): Either[String, CellStyle] =
+        value match
+            case "default" | "Default"     => Right(CellStyle.Default)
+            case "asciiDoc" | "AsciiDoc"   => Right(CellStyle.AsciiDoc)
+            case "emphasis" | "Emphasis"   => Right(CellStyle.Emphasis)
+            case "header" | "Header"       => Right(CellStyle.Header)
+            case "literal" | "Literal"     => Right(CellStyle.Literal)
+            case "monospace" | "Monospace" => Right(CellStyle.Monospace)
+            case "strong" | "Strong"       => Right(CellStyle.Strong)
+            case other                     => Left(s"Unknown style value: $other")
 
     private def documentFrom(fields: Chunk[(String, Value)]): Either[String, Document] =
         for
@@ -643,7 +686,7 @@ private[asg] object AsgWire:
                 yield TableRow(id, title, reftext, metadata, cells, loc)
             case "tableCell" =>
                 for
-                    style    <- optionalString(fields, "style").flatMap(_.fold[Either[String, Option[CellStyle]]](Right(None))(v => enumValue(CellStyle.valueOf, "style", v).map(Some(_))))
+                    style    <- optionalString(fields, "style").flatMap(_.fold[Either[String, Option[CellStyle]]](Right(None))(cellStyleFrom(_).map(Some(_))))
                     colSpan  <- optionalInt(fields, "colSpan").map(_.map(ColSpan(_)))
                     rowSpan  <- optionalInt(fields, "rowSpan").map(_.map(RowSpan(_)))
                     dupCount <- optionalInt(fields, "dupCount").map(_.map(DupCount(_)))

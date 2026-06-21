@@ -1,14 +1,14 @@
 package io.eleven19.ascribe.asg
 
 
-enum HAlign:
+enum HAlign derives CanEqual:
     case Left, Center, Right
 
-enum VAlign:
+enum VAlign derives CanEqual:
     case Top, Middle, Bottom
 
 /** Content style for table columns and cells. */
-enum CellStyle:
+enum CellStyle derives CanEqual:
     case Default, AsciiDoc, Emphasis, Header, Literal, Monospace, Strong
 
 object CellStyle:
