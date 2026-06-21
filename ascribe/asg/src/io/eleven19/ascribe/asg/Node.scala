@@ -646,6 +646,34 @@ object TableCell:
             "block"
         )
 
+    private[asg] def fromWire(
+        id: Option[String],
+        title: Option[Chunk[Inline]],
+        reftext: Option[Chunk[Inline]],
+        metadata: Option[BlockMetadata],
+        style: Option[CellStyle],
+        colSpan: Option[ColSpan],
+        rowSpan: Option[RowSpan],
+        dupCount: Option[DupCount],
+        inlines: Chunk[Inline],
+        blocks: Chunk[Block],
+        location: Location
+    ): TableCell =
+        new TableCell(
+            id,
+            title,
+            reftext,
+            metadata,
+            style,
+            colSpan,
+            rowSpan,
+            dupCount,
+            inlines,
+            blocks,
+            location,
+            "block"
+        )
+
 // --- Block macros (each a concrete type with fixed name) ---
 
 case class Audio private (
