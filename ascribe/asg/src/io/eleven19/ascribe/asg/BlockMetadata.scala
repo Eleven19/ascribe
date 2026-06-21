@@ -1,7 +1,6 @@
 package io.eleven19.ascribe.asg
 
-import zio.blocks.chunk.Chunk
-import zio.blocks.schema.Schema
+import kyo.Chunk
 
 /** Metadata that can be attached to any block node. */
 case class BlockMetadata(
@@ -9,4 +8,4 @@ case class BlockMetadata(
     options: Chunk[String] = Chunk.empty,
     roles: Chunk[String] = Chunk.empty,
     location: Option[Location] = None
-) derives Schema
+)

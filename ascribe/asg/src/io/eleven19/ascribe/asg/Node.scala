@@ -1,18 +1,17 @@
 package io.eleven19.ascribe.asg
 
-import zio.blocks.chunk.Chunk
-import zio.blocks.schema.{Modifier, Schema}
+import kyo.Chunk
 
 /** Base trait for all ASG nodes. Every node has a location and a nodeType (category: "block", "inline", or "string").
   */
-sealed trait Node derives Schema:
+sealed trait Node:
     def location: Location
     def nodeType: String
 
 /** Base trait for block-level ASG nodes. All blocks have type "block" and share optional id, title, reftext, and
   * metadata fields.
   */
-sealed trait Block extends Node derives Schema:
+sealed trait Block extends Node:
     def id: Option[String]
     def title: Option[Chunk[Inline]]
     def reftext: Option[Chunk[Inline]]
@@ -21,7 +20,7 @@ sealed trait Block extends Node derives Schema:
 /** Base trait for inline ASG nodes. Inline nodes have varying nodeType: parent inlines (Span, Ref) use "inline",
   * literal inlines (Text, CharRef, Raw) use "string".
   */
-sealed trait Inline extends Node derives Schema
+sealed trait Inline extends Node
 
 // === Block subtypes ===
 
@@ -32,8 +31,8 @@ case class Document private (
     header: Option[Header],
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Node derives Schema
+    nodeType: String
+) extends Node
 
 object Document:
 
@@ -54,8 +53,8 @@ case class Section private (
     level: Int,
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Section:
 
@@ -76,8 +75,8 @@ case class Heading private (
     metadata: Option[BlockMetadata],
     level: Int,
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Heading:
 
@@ -101,8 +100,8 @@ case class Paragraph private (
     delimiter: Option[String],
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Paragraph:
 
@@ -126,8 +125,8 @@ case class Listing private (
     delimiter: Option[String],
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Listing:
 
@@ -151,8 +150,8 @@ case class Literal private (
     delimiter: Option[String],
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Literal:
 
@@ -176,8 +175,8 @@ case class Pass private (
     delimiter: Option[String],
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Pass:
 
@@ -201,8 +200,8 @@ case class Stem private (
     delimiter: Option[String],
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Stem:
 
@@ -226,8 +225,8 @@ case class Verse private (
     delimiter: Option[String],
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Verse:
 
@@ -253,8 +252,8 @@ case class Sidebar private (
     delimiter: String,
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Sidebar:
 
@@ -278,8 +277,8 @@ case class Example private (
     delimiter: String,
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Example:
 
@@ -304,8 +303,8 @@ case class Admonition private (
     variant: String,
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Admonition:
 
@@ -330,8 +329,8 @@ case class Open private (
     delimiter: String,
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Open:
 
@@ -355,8 +354,8 @@ case class Quote private (
     delimiter: String,
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Quote:
 
@@ -382,8 +381,8 @@ case class List private (
     marker: String,
     items: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object List:
 
@@ -398,7 +397,6 @@ object List:
         location: Location
     ): List = new List(id, title, reftext, metadata, variant, marker, items, location, "block")
 
-@Modifier.rename("dlist")
 case class DList private (
     id: Option[String],
     title: Option[Chunk[Inline]],
@@ -407,8 +405,8 @@ case class DList private (
     marker: String,
     items: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object DList:
 
@@ -431,8 +429,8 @@ case class ListItem private (
     principal: Chunk[Inline],
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object ListItem:
 
@@ -447,7 +445,6 @@ object ListItem:
         location: Location
     ): ListItem = new ListItem(id, title, reftext, metadata, marker, principal, blocks, location, "block")
 
-@Modifier.rename("dlistItem")
 case class DListItem private (
     id: Option[String],
     title: Option[Chunk[Inline]],
@@ -458,8 +455,8 @@ case class DListItem private (
     principal: Option[Chunk[Inline]],
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object DListItem:
 
@@ -484,8 +481,8 @@ case class Break private (
     metadata: Option[BlockMetadata],
     variant: String,
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Break:
 
@@ -519,8 +516,8 @@ case class Table private (
     grid: Option[String],
     stripes: Option[String],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Table:
 
@@ -565,8 +562,8 @@ case class TableRow private (
     metadata: Option[BlockMetadata],
     cells: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object TableRow:
 
@@ -592,8 +589,8 @@ case class TableCell private (
     inlines: Chunk[Inline],
     blocks: Chunk[Block],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object TableCell:
 
@@ -649,6 +646,34 @@ object TableCell:
             "block"
         )
 
+    private[asg] def fromWire(
+        id: Option[String],
+        title: Option[Chunk[Inline]],
+        reftext: Option[Chunk[Inline]],
+        metadata: Option[BlockMetadata],
+        style: Option[CellStyle],
+        colSpan: Option[ColSpan],
+        rowSpan: Option[RowSpan],
+        dupCount: Option[DupCount],
+        inlines: Chunk[Inline],
+        blocks: Chunk[Block],
+        location: Location
+    ): TableCell =
+        new TableCell(
+            id,
+            title,
+            reftext,
+            metadata,
+            style,
+            colSpan,
+            rowSpan,
+            dupCount,
+            inlines,
+            blocks,
+            location,
+            "block"
+        )
+
 // --- Block macros (each a concrete type with fixed name) ---
 
 case class Audio private (
@@ -659,8 +684,8 @@ case class Audio private (
     form: String,
     target: Option[String],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Audio:
 
@@ -682,8 +707,8 @@ case class Video private (
     form: String,
     target: Option[String],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Video:
 
@@ -705,8 +730,8 @@ case class Image private (
     form: String,
     target: Option[String],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Image:
 
@@ -728,8 +753,8 @@ case class Toc private (
     form: String,
     target: Option[String],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Block derives Schema
+    nodeType: String
+) extends Block
 
 object Toc:
 
@@ -753,8 +778,8 @@ case class Span private (
     form: String,
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Inline derives Schema
+    nodeType: String
+) extends Inline
 
 object Span:
 
@@ -767,8 +792,8 @@ case class Ref private (
     target: String,
     inlines: Chunk[Inline],
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Inline derives Schema
+    nodeType: String
+) extends Inline
 
 object Ref:
 
@@ -781,8 +806,8 @@ object Ref:
 case class Text private (
     value: String,
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Inline derives Schema
+    nodeType: String
+) extends Inline
 
 object Text:
 
@@ -790,12 +815,11 @@ object Text:
         new Text(value, location, "string")
 
 /** Character reference. */
-@Modifier.rename("charref")
 case class CharRef private (
     value: String,
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Inline derives Schema
+    nodeType: String
+) extends Inline
 
 object CharRef:
 
@@ -806,8 +830,8 @@ object CharRef:
 case class Raw private (
     value: String,
     location: Location,
-    @Modifier.rename("type") nodeType: String
-) extends Inline derives Schema
+    nodeType: String
+) extends Inline
 
 object Raw:
 

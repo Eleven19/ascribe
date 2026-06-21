@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.asg
 
-import zio.blocks.chunk.Chunk
+import kyo.Chunk
 
 /** DSL for constructing ASG nodes with implicit location threading.
   *

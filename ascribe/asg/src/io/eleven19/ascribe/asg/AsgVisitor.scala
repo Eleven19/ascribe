@@ -1,6 +1,6 @@
 package io.eleven19.ascribe.asg
 
-import zio.blocks.chunk.Chunk
+import kyo.Chunk
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.TailCalls.*
 

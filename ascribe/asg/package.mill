@@ -7,7 +7,7 @@ trait AsgModule extends _root_.build.CommonScalaModule
     with _root_.build.PublishSupport {
 
     def mvnDeps = Seq(
-        mvn"dev.zio::zio-blocks-schema::0.0.29"
+        mvn"io.getkyo::kyo-schema::1.0.0-RC4"
     )
 }
 
