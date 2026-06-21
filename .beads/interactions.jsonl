@@ -1,0 +1,1 @@
+{"id":"int-a8e354abf8f50b77a670a80d38eb7a4a","kind":"field_change","created_at":"2026-06-21T00:40:26.308156Z","actor":"Damian Reeves","issue_id":"ascribe-3p8","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Merged kyo-schema migration PR #54"}}
