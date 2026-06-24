@@ -9,7 +9,7 @@ trait PipelineKyoModule extends _root_.build.CommonScalaModule
     override def artifactName = "ascribe-pipeline-kyo"
 
     def mvnDeps = Seq(
-        mvn"io.getkyo::kyo-core::1.0.0-RC4"
+        mvn"io.getkyo::kyo-core::${_root_.build.Versions.kyo}"
     )
 }
 
@@ -26,7 +26,7 @@ object jvm extends PipelineKyoModule {
         with _root_.build.KyoTestModule {
 
         def mvnDeps = Seq(
-            mvn"io.getkyo::kyo-direct::1.0.0-RC4"
+            mvn"io.getkyo::kyo-direct::${_root_.build.Versions.kyo}"
         ) ++ super.mvnDeps()
     }
 }
@@ -44,7 +44,7 @@ object js extends PipelineKyoModule with _root_.build.CommonScalaJSModule {
         with _root_.build.KyoJSTestModule {
 
         def mvnDeps = Seq(
-            mvn"io.getkyo::kyo-direct::1.0.0-RC4"
+            mvn"io.getkyo::kyo-direct::${_root_.build.Versions.kyo}"
         ) ++ super.mvnDeps()
     }
 }
