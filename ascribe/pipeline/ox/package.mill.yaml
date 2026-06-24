@@ -7,4 +7,4 @@ moduleDeps:
   - build.ascribe.bridge.jvm
 mvnDeps:
   - com.lihaoyi::os-lib::0.11.8
-  - com.softwaremill.ox::core::0.3.0
+  - com.softwaremill.ox::core::1.0.5
