@@ -773,7 +773,7 @@ object Toc:
 // --- Parent inlines (contain child inlines, nodeType = "inline") ---
 
 /** Inline formatting span (strong, emphasis, code, mark). */
-case class Span private (
+case class Span private[asg] (
     variant: String,
     form: String,
     inlines: Chunk[Inline],
@@ -787,7 +787,7 @@ object Span:
         new Span(variant, form, inlines, location, "inline")
 
 /** Inline reference (link, xref). */
-case class Ref private (
+case class Ref private[asg] (
     variant: String,
     target: String,
     inlines: Chunk[Inline],
@@ -803,7 +803,7 @@ object Ref:
 // --- Literal inlines (leaf nodes with string values, nodeType = "string") ---
 
 /** Plain text content. */
-case class Text private (
+case class Text private[asg] (
     value: String,
     location: Location,
     nodeType: String
@@ -815,7 +815,7 @@ object Text:
         new Text(value, location, "string")
 
 /** Character reference. */
-case class CharRef private (
+case class CharRef private[asg] (
     value: String,
     location: Location,
     nodeType: String
@@ -827,7 +827,7 @@ object CharRef:
         new CharRef(value, location, "string")
 
 /** Raw (passthrough) inline content. */
-case class Raw private (
+case class Raw private[asg] (
     value: String,
     location: Location,
     nodeType: String
